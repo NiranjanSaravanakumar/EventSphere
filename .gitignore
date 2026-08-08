@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════
+#  EventSphere — Root .gitignore
+#  Covers: Java/Maven · Node/React · IDE · OS · Docker · Secrets
+# ═══════════════════════════════════════════════════════════
+
+# ── Secrets & Environment Variables ─────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+*.secret
+secrets/
+
+# ── Java / Maven (backend/) ──────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Maven wrapper downloads cache
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# Spring Boot dev-tools restart trigger
+.reloadtrigger
+
+# ── Node / React / Vite (frontend/) ─────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Vite cache
+.vite/
+.cache/
+
+# npm / yarn / pnpm lockfiles (keep package-lock.json or yarn.lock — your choice)
+# npm-debug.log*
+# yarn-debug.log*
+# yarn-error.log*
+
+# ── IDE & Editor ─────────────────────────────────────────────
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+nbactions.xml
+.nb-gradle/
+
+# ── Operating System ─────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+# ── Docker ───────────────────────────────────────────────────
+.dockerignore
+docker-compose.override.yml
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Misc ─────────────────────────────────────────────────────
+*.tmp
+*.swp
+*.swo
+*.bak
+.parcel-cache/
