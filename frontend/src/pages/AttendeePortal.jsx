@@ -223,6 +223,17 @@ const AttendeePortal = () => {
     }
   };
 
+  const handleCancel = async (registrationId) => {
+    if (!window.confirm('Cancel this registration? Your spot will be freed.')) return;
+    try {
+      await registrationsApi.cancel(registrationId);
+      showToast('Registration cancelled.');
+      await fetchAll();
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Cancellation failed.', 'error');
+    }
+  };
+
   const registeredEventIds = new Set(tickets.map(t => t.eventId));
   const filteredEvents = events.filter(e =>
     e.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -379,6 +390,7 @@ const AttendeePortal = () => {
                           initial={{ opacity: 0, y: 32 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ type: 'spring', stiffness: 280, damping: 24, delay: i * 0.08 }}
+                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}
                         >
                           <TicketPass
                             eventName={ticket.eventTitle}
@@ -390,6 +402,22 @@ const AttendeePortal = () => {
                             qrToken={ticket.qrToken}
                             status={ticket.status}
                           />
+                          {/* Cancel button — only for REGISTERED tickets */}
+                          {ticket.status === 'REGISTERED' && (
+                            <motion.button
+                              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                              onClick={() => handleCancel(ticket.registrationId)}
+                              style={{
+                                padding: '0.4rem 1.25rem', borderRadius: '0.625rem',
+                                background: 'rgba(239,68,68,0.08)',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                                color: '#f87171', fontSize: '0.75rem',
+                                fontWeight: 600, cursor: 'pointer',
+                              }}
+                            >
+                              Cancel Registration
+                            </motion.button>
+                          )}
                         </motion.div>
                       ))}
                     </div>

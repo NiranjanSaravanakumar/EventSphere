@@ -11,6 +11,9 @@
 *.secret
 secrets/
 
+# Local test credentials — NEVER commit
+TEST_CREDENTIALS.env
+
 # ── Java / Maven (backend/) ──────────────────────────────────
 target/
 *.class

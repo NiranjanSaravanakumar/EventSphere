@@ -53,8 +53,16 @@ export const eventsApi = {
 
 // ── Registrations endpoints ────────────────────────────────────────────────
 export const registrationsApi = {
-  register:  (eventId) => api.post(`/registrations/event/${eventId}`),
-  myTickets: ()        => api.get('/registrations/my-tickets'),
+  register:  (eventId)        => api.post(`/registrations/event/${eventId}`),
+  myTickets: ()               => api.get('/registrations/my-tickets'),
+  cancel:    (registrationId) => api.delete(`/registrations/${registrationId}`),
+  guestList: (eventId)        => api.get(`/registrations/event/${eventId}/guests`),
+};
+
+// ── Admin endpoints ────────────────────────────────────────────────
+export const adminApi = {
+  getUsers:  () => api.get('/admin/users'),
+  getEvents: () => api.get('/admin/events'),
 };
 
 // ── Check-in endpoint ──────────────────────────────────────────────────────
