@@ -1,6 +1,7 @@
 # EventSphere — Frontend
 
-React 19 + Vite 8 frontend for the EventSphere platform, built with a premium **Liquid Glass** design system.
+React 19 + Vite 8 SPA for the EventSphere event management platform.  
+Styled with a premium **"Liquid Glass"** design language — heavy backdrop blur, monochrome palette, Framer Motion physics animations, and Apple-inspired UI components.
 
 ---
 
@@ -8,250 +9,269 @@ React 19 + Vite 8 frontend for the EventSphere platform, built with a premium **
 
 | | |
 |---|---|
-| Framework | React 19 |
-| Build Tool | Vite 8 |
-| Language | JavaScript (JSX) — no TypeScript |
+| Framework | React 19 (JSX only — no TypeScript) |
+| Bundler | Vite 8 |
 | Animations | Framer Motion 13 |
 | Icons | Lucide React |
 | HTTP | Axios |
 | Routing | React Router DOM v7 |
-| Styles | Vanilla CSS (inline `style` props) — no Tailwind dependency |
+| Fonts | Inter (Google Fonts) |
 
 ---
 
 ## Prerequisites
 
-- **Node.js 20+** — [Download](https://nodejs.org/)
-- **npm 10+** (bundled with Node)
-- EventSphere backend running on `http://localhost:8080`
+- **Node.js 20+**
+- Backend running at `http://localhost:8080`
 
 ---
 
-## Setup & Running
+## Running Locally
 
 ```bash
-# 1. Install dependencies
+cd frontend
 npm install
-
-# 2. Start development server (hot-reload)
 npm run dev
+# App available at http://localhost:5173
 ```
 
-App runs at **http://localhost:5173** with a built-in proxy that forwards `/api` requests to the backend.
+The `VITE_API_BASE_URL` defaults to `http://localhost:8080/api` if no `.env` is present.
+
+---
+
+## Stopping the Dev Server / Managing Processes
+
+If you see **"Port 5173 already in use"**, an old Vite/Node process is still running. Kill it first:
+
+```powershell
+# Windows — Kill by port
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess -Force
+
+# Windows — Kill all Node processes
+Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# Windows — Find PID manually, then kill
+netstat -ano | findstr ":5173"
+Stop-Process -Id <PID> -Force
+```
+
+```bash
+# Linux / macOS
+kill -9 $(lsof -t -i:5173)
+```
+
+In VS Code terminal: press **Ctrl + C** to stop Vite, then click the **🗑️ trash icon** on the terminal tab to fully close it.
 
 ---
 
 ## Environment Variables
 
-Create a `.env` file in this directory (already provided — **do not commit**):
+Create a `.env` file in the `frontend/` directory:
 
 ```env
-# Local development
 VITE_API_BASE_URL=http://localhost:8080/api
 ```
 
-For production, `.env.production` is used automatically by Vite during `npm run build`:
-
-```env
-# Production (Render backend)
-VITE_API_BASE_URL=https://eventsphere-api.onrender.com/api
-```
-
-> All `VITE_` prefixed variables are embedded at build time by Vite.
-
----
-
-## Production Build
-
-```bash
-npm run build
-# Output: dist/
-```
-
-Preview the built output locally:
-
-```bash
-npm run preview
-```
+For production, set this in your hosting provider (Vercel etc.) — do NOT commit `.env.production`.
 
 ---
 
 ## Project Structure
 
 ```
-src/
-├── App.jsx                       # Root router + role-based route guards
+frontend/src/
+│
+├── App.jsx                       # Root — router, role-based route guards
 ├── main.jsx                      # React DOM entry point
 │
-├── assets/
-│   └── index.css                 # Global styles, @keyframes spin, font imports
-│
 ├── context/
-│   └── AuthContext.jsx           # JWT state (login/register/logout/rehydrate)
+│   └── AuthContext.jsx           # JWT state management
+│                                   login(), register(), logout()
+│                                   Token rehydrated from localStorage on refresh
+│                                   login() returns user object for role checks
 │
 ├── services/
-│   └── api.js                    # Axios instance with JWT interceptor + 401 handler
+│   └── api.js                    # Axios instance + all endpoint wrappers
+│                                   authApi, eventsApi, registrationsApi,
+│                                   checkInApi, analyticsApi, adminApi
 │
 ├── pages/
-│   ├── AuthPage.jsx              # Liquid Glass login / register
-│   ├── OrganizerDashboard.jsx    # Event management for organizers
-│   ├── AttendeePortal.jsx        # Event discovery + My Tickets
-│   └── AnalyticsDashboard.jsx    # Animated stats + charts
+│   ├── AdminLoginPage.jsx        # Dedicated admin login at /adminlogin
+│   │                               Indigo accent design, role guard after login
+│   ├── AnalyticsDashboard.jsx    # Animated stat cards, ring charts, funnel bars
+│   │                               Admin → global; Organizer → own events only
+│   ├── AttendeePortal.jsx        # Discover events + My Tickets + Cancel Registration
+│   ├── AuthPage.jsx              # Liquid Glass login / sign-up (role selector)
+│   └── OrganizerDashboard.jsx    # Event CRUD, stats row, scanner, analytics link
 │
 └── components/
     ├── shared/
-    │   ├── Navbar.jsx            # Sticky glass navigation bar
-    │   ├── TicketPass.jsx        # Apple Wallet-style QR ticket card
-    │   └── ScannerPanel.jsx      # Organizer QR check-in validator
+    │   ├── Navbar.jsx            # Top navigation with role-based menu links
+    │   ├── ScannerPanel.jsx      # QR token input modal for organizer check-in
+    │   └── TicketPass.jsx        # 3D magnetic Apple Wallet-style ticket card
+    │                               Physics hover (useSpring + useTransform)
+    │                               Cursor-chasing specular glare overlay
+    │                               REGISTERED / CHECKED_IN status variants
     └── ui/
-        ├── GlassButton.jsx       # Primary / ghost button with spring animation
-        ├── GlassInput.jsx        # Floating label input with focus glow
-        ├── GlassCard.jsx         # Base glass card with tilt + specular
-        └── AnimatedCounter.jsx   # Framer Motion spring count-up
+        ├── AnimatedCounter.jsx   # useSpring count-up animation
+        ├── GlassButton.jsx       # Reusable glass-morphism button
+        ├── GlassCard.jsx         # Card with backdrop blur and specular border
+        └── GlassInput.jsx        # Icon-prefixed glass-style input field
 ```
 
 ---
 
-## Pages & Routing
+## Routing
 
-| Route | Component | Access |
+| Path | Component | Access |
 |---|---|---|
-| `/auth` | `AuthPage` | Public (redirects away if logged in) |
+| `/auth` | `AuthPage` | Public (redirects if authenticated) |
+| `/adminlogin` | `AdminLoginPage` | Public — Admin portal |
+| `/` | `HomeRedirect` | Smart redirect based on role |
+| `/portal` | `AttendeePortal` | All authenticated users |
 | `/dashboard` | `OrganizerDashboard` | ORGANIZER, ADMIN |
 | `/analytics` | `AnalyticsDashboard` | ORGANIZER, ADMIN |
-| `/portal` | `AttendeePortal` | All authenticated users |
-| `/*` | `HomeRedirect` | Smart redirect based on role |
+| `/admin/dashboard` | `AnalyticsDashboard` | ADMIN only |
 
-**Role → Default Route:**
-- `ROLE_ORGANIZER` / `ROLE_ADMIN` → `/dashboard`
-- `ROLE_ATTENDEE` → `/portal`
-
----
-
-## Design System — Liquid Glass
-
-All components use **inline `style` props** (no Tailwind class dependency) built around these principles:
-
-| Token | Value | Usage |
-|---|---|---|
-| Background | `#050505` | Page backgrounds |
-| Foreground | `#FAFAFA` | Primary text |
-| Muted | `#71717A` | Secondary text, icons |
-| Subtle | `#D4D4D8` | Tertiary text |
-| Glass surface | `rgba(255,255,255,0.04)` | Card backgrounds |
-| Glass border | `rgba(255,255,255,0.08)` | Card borders |
-| Backdrop blur | `blur(32px)` | Glass effect |
-| Specular top | `linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)` | Top edge glow |
-
-**Animation patterns:**
-```js
-// Standard spring — used across all interactive elements
-const SPRING = { type: 'spring', stiffness: 400, damping: 30 }
-
-// Staggered entrance — used for card grids
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show:   { opacity: 1, transition: { staggerChildren: 0.08 } }
-}
-
-// Card entrance — blur-in from below
-const cardVariants = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
-  show:   { opacity: 1, y: 0,  filter: 'blur(0px)' }
-}
-```
-
----
-
-## Key Components
-
-### `TicketPass.jsx`
-3D magnetic hover Wallet Pass with Apple-style perforated divider.
-
-```jsx
-<TicketPass
-  eventName="VisionOS Summit"
-  date="Oct 15, 2026"
-  time="09:00 AM"
-  location="Cupertino, CA"
-  attendeeName="John Doe"
-  qrBase64="data:image/png;base64,..."   // from /my-tickets API
-  qrToken="ES-42-A3F9CC..."
-  status="REGISTERED"                    // or "CHECKED_IN"
-/>
-```
-
-**Effects:**
-- `useSpring` tilt (±7°) tracking cursor position
-- `useTransform` radial-gradient glare chasing cursor
-- `CHECKED_IN` renders green border + badge + "Already Scanned" label
-
-### `AnimatedCounter.jsx`
-Spring-eased count-up from 0 to any value:
-
-```jsx
-<AnimatedCounter value={4850} />               // → 4,850
-<AnimatedCounter value={86.8} suffix="%" decimals={1} />  // → 86.8%
-```
-
-### `ScannerPanel.jsx`
-Modal for organizers to validate a QR token against the backend:
-
-```jsx
-<ScannerPanel onClose={() => setScannerOpen(false)} />
-```
-
-Calls `POST /api/check-in { qrToken }` and displays:
-- ✅ Attendee name + event name on success
-- ❌ Error message (invalid token / already used / cancelled)
-- "Scan Another" reset button
+All protected routes use the `<ProtectedRoute roles={[...]}>` guard.  
+Unauthorized role access redirects to `/portal`.
 
 ---
 
 ## Authentication Flow
 
 ```
-1. User submits login form
-   └─► POST /api/auth/login
-       ← { accessToken, userId, name, email, role }
+User submits login form
+  └─► authApi.login({ email, password })
+        └─► POST /api/auth/login
+              ← { accessToken, userId, name, email, role }
+              → Stored in localStorage (eventsphere_token, eventsphere_user)
+              → AuthContext sets user + token state
+              → App re-renders with new auth state
+              → HomeRedirect sends to /dashboard or /portal
 
-2. AuthContext stores token in localStorage
-   └─► All Axios requests get: Authorization: Bearer <token>
+On page refresh:
+  AuthProvider reads localStorage → sets user + token without API call
 
-3. On page refresh:
-   └─► AuthContext reads localStorage → rehydrates user state
-       (no round-trip needed)
-
-4. 401 response from any endpoint:
-   └─► Axios interceptor clears localStorage → redirects to /auth
+On 401 response:
+  Axios interceptor → clears localStorage → redirects to /auth
 ```
 
 ---
 
-## Vite Proxy Config
+## Key Pages
 
-`vite.config.js` proxies `/api` → backend in dev mode so there are no CORS issues during local development:
+### AuthPage (`/auth`)
+- Toggle between **Sign In** and **Sign Up** with animated panel transition
+- Sign Up includes a role dropdown: `Attendee` or `Organizer`
+- Liquid Glass card with specular top border and ambient orbs
+
+### AdminLoginPage (`/adminlogin`)
+- Separate styled portal with indigo accent
+- Credential hint box showing default credentials
+- After login, verifies `user.role === 'ROLE_ADMIN'`; rejects non-admins
+
+### OrganizerDashboard (`/dashboard`)
+- Stats row: Total Events · Total Registered · Total Capacity · Almost Full
+- Event card grid with edit/delete inline actions
+- `+ Create Event` modal
+- **Scanner** button opens `ScannerPanel` modal for QR check-in
+- **View Analytics** link navigates to `/analytics`
+
+### AttendeePortal (`/portal`)
+- **Discover** tab: event grid with live search and capacity bars
+- **My Tickets** tab: gallery of `TicketPass` Apple Wallet cards
+- Each registered ticket shows a **Cancel Registration** button (red, REGISTERED only)
+- After registration, auto-switches to "My Tickets" tab
+
+### AnalyticsDashboard (`/analytics` or `/admin/dashboard`)
+- Animated count-up stat cards (AnimatedCounter via useSpring)
+- Two SVG ring charts: Fill Rate · Attendance Rate
+- Animated horizontal funnel (Capacity → Registered → Checked In)
+- Per-event breakdown rows with dual-layer progress bars
+- Refresh button with spinning icon animation
+
+### TicketPass (component)
+- `300×300` QR code rendered as `<img src="data:image/png;base64,...">`
+- 3D hover: `rotateX` / `rotateY` driven by mouse position via `useSpring`
+- Cursor-chasing specular glare with `useTransform` + radial gradient
+- Perforated divider: notched circles + dashed line (pure CSS)
+- CHECKED_IN state: muted green badge
+
+---
+
+## API Service (`api.js`)
 
 ```js
-server: {
-  proxy: {
-    '/api': {
-      target: 'http://localhost:8080',
-      changeOrigin: true,
-    },
-  },
-}
-```
+// Auth
+authApi.register({ name, email, password, role })
+authApi.login({ email, password })
+authApi.me()
 
-In production, the frontend calls `VITE_API_BASE_URL` directly (CORS is configured on the Spring Boot side).
+// Events
+eventsApi.getAll()
+eventsApi.getById(id)
+eventsApi.getMyEvents()
+eventsApi.create(data)
+eventsApi.update(id, data)
+eventsApi.delete(id)
+
+// Registrations
+registrationsApi.register(eventId)
+registrationsApi.myTickets()
+registrationsApi.cancel(registrationId)       // DELETE /registrations/{id}
+registrationsApi.guestList(eventId)           // GET /registrations/event/{id}/guests
+
+// Check-In
+checkInApi.validate(qrToken)
+
+// Analytics
+analyticsApi.dashboard()
+
+// Admin
+adminApi.getUsers()                           // GET /admin/users
+adminApi.getEvents()                          // GET /admin/events
+```
 
 ---
 
-## Deploying to Vercel
+## Build for Production
 
-1. Push to GitHub
-2. Import repo in [Vercel](https://vercel.com/new)
-3. **Root Directory:** `frontend`
-4. **Framework Preset:** Vite (auto-detected)
-5. **Environment Variable:** `VITE_API_BASE_URL` = your Render backend URL
-6. Deploy — Vercel handles the build and CDN distribution automatically
+```bash
+npm run build
+# Output: dist/
+```
+
+Serve `dist/` from Vercel, Netlify, or any static host.  
+Set `VITE_API_BASE_URL` to your deployed backend URL in your hosting environment.
+
+---
+
+## Linting
+
+```bash
+npm run lint
+```
+
+ESLint with `eslint-plugin-react-hooks` and `eslint-plugin-react-refresh`.
+
+---
+
+## Design System
+
+All styling is **vanilla CSS-in-JS** (inline `style` props) with design tokens:
+
+| Token | Value |
+|---|---|
+| Background | `#050505` |
+| Surface | `rgba(255,255,255,0.04)` |
+| Border | `rgba(255,255,255,0.08)` |
+| Primary text | `#FAFAFA` |
+| Secondary text | `#71717A` |
+| Muted | `#3f3f46` |
+| Success accent | `#34d399` |
+| Danger | `#f87171` |
+| Admin accent | `#6366f1` (indigo) |
+| Backdrop blur | `20–32px` |
+| Border radius | `0.75rem` – `1.5rem` |
+| Font | Inter, system-ui, sans-serif |

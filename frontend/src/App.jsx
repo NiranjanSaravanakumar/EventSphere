@@ -51,7 +51,7 @@ const HomeRedirect = () => {
 
 // ── App routes ──────────────────────────────────────────────────────────────
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <Routes>

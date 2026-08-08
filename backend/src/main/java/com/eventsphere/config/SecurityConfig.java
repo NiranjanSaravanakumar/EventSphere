@@ -1,8 +1,7 @@
 package com.eventsphere.config;
 
 import com.eventsphere.security.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,11 +22,13 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // Injected — NOT declared as @Bean here to avoid double-registration
     private final CorsConfigurationSource corsConfigurationSource;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
-        this.corsConfigurationSource = corsConfigurationSource;
+    public SecurityConfig(CorsConfigurationSource corsConfigurationSource,
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.corsConfigurationSource    = corsConfigurationSource;
+        this.jwtAuthenticationFilter    = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -40,9 +41,18 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    @Autowired
-    @Lazy
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    /**
+     * Prevent Spring Boot from auto-registering JwtAuthenticationFilter
+     * as a raw Servlet filter (it is @Component so Boot would do this by default).
+     * We want it only inside the Spring Security filter chain, not outside it.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false); // ← disables auto-registration; Security chain manages it
+        return reg;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

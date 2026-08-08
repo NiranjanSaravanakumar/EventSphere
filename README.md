@@ -21,36 +21,41 @@
 
 ## 📖 What is EventSphere?
 
-**EventSphere** is a production-ready, full-stack event management system built to showcase advanced JavaScript/React and Java/Spring Boot engineering. It handles the complete lifecycle of an event — from creation and attendee registration all the way through to real-time QR-code-based check-in and analytics reporting.
+**EventSphere** is a production-ready, full-stack event management platform built to showcase advanced JavaScript/React and Java/Spring Boot engineering. It handles the complete lifecycle of an event — from creation and attendee registration through to real-time QR-code-based check-in and analytics reporting.
 
-The frontend is built with a premium **"Liquid Glass"** design language — an Apple-inspired aesthetic using heavy backdrop blur, monochrome palettes, translucent borders, and physics-based Framer Motion animations throughout.
+The frontend uses a premium **"Liquid Glass"** design language — Apple-inspired heavy backdrop blur, monochrome palette, translucent borders, and Framer Motion physics-based animations.
 
 ---
 
 ## ✨ Feature Overview
 
-### 🔐 Authentication & Roles
-- Stateless JWT authentication (Bearer tokens)
-- Three RBAC roles: **Admin**, **Organizer**, **Attendee**
-- Secure registration, login, and token rehydration from `localStorage`
-- Role-based routing — each role lands on their own dashboard after login
+### 🔐 Authentication & Role-Based Access (RBAC)
+- Stateless JWT authentication (Bearer tokens) via Spring Security
+- Three roles with strict access control:
+  - **Admin** — global platform oversight (all events, all users, global analytics)
+  - **Organizer** — scoped to own events (CRUD, scanner, analytics, guest lists)
+  - **Attendee** — register/cancel for events, personal QR ticket passbook
+- Secure registration and login; token rehydrated from `localStorage` on refresh
+- Role-based routing — each role lands on its own dashboard
 
 ### 📅 Event Management (Organizer)
-- Full CRUD: create, edit, delete events with title, description, date, location, and capacity
-- Staggered-animation event card grid with animated capacity progress bars
-- Organizer owns their events — only they can edit/delete them
+- Full CRUD: create, edit, delete events with title, description, date, location, capacity
+- Staggered-animation event card grid with live capacity progress bars
+- Organizer owns their events — only they (or an Admin) can edit/delete
 - Stats row: Total Events · Total Registered · Total Capacity · Nearly Full count
+- **Guest List:** View all attendees registered for any of your events
 
-### 🎟️ Attendee Registration
+### 🎟️ Attendee Portal
 - Browse all upcoming events with a live search filter
 - One-click registration with real-time capacity and duplicate-registration checks
+- **Cancel Registration** — free up your spot at any time (before check-in)
 - Auto-switches to "My Tickets" tab after successful registration
 
 ### 📱 QR Ticketing (Apple Wallet Style)
 - **ZXing** generates a `300×300` PNG QR code on the backend
-- Encoded as a `data:image/png;base64,…` URI — no file storage needed
+- Encoded as `data:image/png;base64,…` — no file storage needed
 - Rendered inside a **3D magnetic hover Wallet Pass** (`TicketPass.jsx`)
-  - Physics-based tilt using `useSpring` + `useTransform`
+  - Physics-based tilt with `useSpring` + `useTransform`
   - Cursor-chasing specular glare overlay
   - Apple Wallet perforated divider (notched circles + dashed line)
   - `CHECKED_IN` green state variant
@@ -64,12 +69,18 @@ The frontend is built with a premium **"Liquid Glass"** design language — an A
 - Animated count-up stat cards (`useSpring` from 0 → value)
 - SVG ring charts for **fill rate** and **attendance rate**
 - Animated funnel bar: Capacity → Registered → Checked In
-- Per-event breakdown rows with dual-layer progress bars (fill + check-in)
-- Organizer-scoped or Admin-global depending on role
+- Per-event breakdown rows with dual-layer progress bars
+- **Admin** sees global metrics; **Organizer** sees only their own events
+
+### 🛡️ Admin Portal
+- Dedicated login at `/adminlogin` (not accessible via regular sign-up)
+- Auto-seeded admin account via `DataSeeder.java` on first boot
+- `GET /api/admin/users` — view all platform users
+- `GET /api/admin/events` — view every event across all organizers
 
 ### ⚙️ DevOps / Production
 - Multi-stage **Dockerfile** (JDK build → JRE runtime, non-root user)
-- **GitHub Actions CI** — Maven tests with MySQL service, Vite build, Docker image
+- **GitHub Actions CI** — Maven build + tests with MySQL service, Vite build, Docker image
 - Environment-aware API URL via `VITE_API_BASE_URL`
 - Deploy-ready for **Render** (backend) + **Vercel** (frontend)
 
@@ -79,51 +90,81 @@ The frontend is built with a premium **"Liquid Glass"** design language — an A
 
 ```
 Eventsphere/
-├── backend/                    # Spring Boot 3 API
+├── backend/                         # Spring Boot 3 API
 │   ├── src/main/java/com/eventsphere/
-│   │   ├── controllers/        # REST controllers
-│   │   ├── services/           # Business logic
-│   │   ├── entities/           # JPA entities
-│   │   ├── repositories/       # Spring Data JPA
-│   │   ├── dto/                # Request/Response records
-│   │   ├── security/           # JWT filter + config
-│   │   └── config/             # CORS, beans
+│   │   ├── config/
+│   │   │   ├── DataSeeder.java      # Seeds default admin on first boot
+│   │   │   ├── SecurityConfig.java  # JWT filter chain, CORS, RBAC rules
+│   │   │   └── WebConfig.java       # CORS bean
+│   │   ├── controllers/
+│   │   │   ├── AdminController.java         # /api/admin/** (ADMIN only)
+│   │   │   ├── AnalyticsController.java     # /api/analytics/**
+│   │   │   ├── AuthController.java          # /api/auth/**
+│   │   │   ├── CheckInController.java       # /api/check-in
+│   │   │   ├── EventController.java         # /api/events/**
+│   │   │   └── RegistrationController.java  # /api/registrations/**
+│   │   ├── services/
+│   │   │   ├── AnalyticsService.java
+│   │   │   ├── AuthService.java
+│   │   │   ├── CheckInService.java
+│   │   │   ├── EventService.java     # Admin bypasses ownership checks
+│   │   │   ├── QRCodeService.java    # ZXing Base64 generator
+│   │   │   └── RegistrationService.java  # Register, cancel, guest list
+│   │   ├── entities/
+│   │   │   ├── Event.java
+│   │   │   ├── Registration.java     # Status: REGISTERED / CHECKED_IN / CANCELLED
+│   │   │   ├── Role.java
+│   │   │   ├── Ticket.java           # qr_token (unique UUID-based)
+│   │   │   └── User.java
+│   │   ├── repositories/             # Spring Data JPA interfaces
+│   │   ├── dto/                      # Java records for request/response
+│   │   └── security/
+│   │       ├── CustomUserDetailsService.java
+│   │       ├── JwtAuthenticationFilter.java  # @Component, reads Bearer header
+│   │       └── JwtTokenProvider.java
 │   ├── src/main/resources/
 │   │   ├── application.properties
-│   │   └── schema.sql          # Auto-run DDL
-│   ├── Dockerfile              # Multi-stage container build
+│   │   └── schema.sql                # Auto-run DDL (6 tables)
+│   ├── Dockerfile                    # Multi-stage container build
+│   ├── mvnw / mvnw.cmd               # Maven wrapper (no Maven install needed)
 │   └── pom.xml
 │
-├── frontend/                   # React 19 + Vite 8 (JSX)
+├── frontend/                         # React 19 + Vite 8 (JSX only)
 │   ├── src/
-│   │   ├── pages/
-│   │   │   ├── AuthPage.jsx          # Liquid Glass login/register
-│   │   │   ├── OrganizerDashboard.jsx
-│   │   │   ├── AttendeePortal.jsx
-│   │   │   └── AnalyticsDashboard.jsx
-│   │   ├── components/
-│   │   │   ├── shared/
-│   │   │   │   ├── Navbar.jsx
-│   │   │   │   ├── TicketPass.jsx    # Apple Wallet QR card
-│   │   │   │   └── ScannerPanel.jsx
-│   │   │   └── ui/
-│   │   │       ├── GlassButton.jsx
-│   │   │       ├── GlassInput.jsx
-│   │   │       ├── GlassCard.jsx
-│   │   │       └── AnimatedCounter.jsx
+│   │   ├── App.jsx                   # Root router + role-based route guards
+│   │   ├── main.jsx                  # React DOM entry point
+│   │   ├── assets/
+│   │   │   └── index.css             # Global styles, @keyframes, font imports
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx       # Global JWT state
+│   │   │   └── AuthContext.jsx       # JWT state (login/register/logout/rehydrate)
 │   │   ├── services/
-│   │   │   └── api.js                # Axios + interceptors
-│   │   ├── App.jsx                   # Role-based router
-│   │   └── assets/index.css          # Global styles + @keyframes
+│   │   │   └── api.js                # Axios instance + all API calls
+│   │   ├── pages/
+│   │   │   ├── AdminLoginPage.jsx    # Dedicated admin login at /adminlogin
+│   │   │   ├── AnalyticsDashboard.jsx
+│   │   │   ├── AttendeePortal.jsx    # Discover + My Tickets + Cancel
+│   │   │   ├── AuthPage.jsx          # Liquid Glass login / register
+│   │   │   └── OrganizerDashboard.jsx
+│   │   └── components/
+│   │       ├── shared/
+│   │       │   ├── Navbar.jsx
+│   │       │   ├── ScannerPanel.jsx  # QR check-in modal
+│   │       │   └── TicketPass.jsx    # Apple Wallet-style QR card
+│   │       └── ui/
+│   │           ├── AnimatedCounter.jsx
+│   │           ├── GlassButton.jsx
+│   │           ├── GlassCard.jsx
+│   │           └── GlassInput.jsx
 │   ├── .env                          # VITE_API_BASE_URL (local)
-│   ├── .env.production               # VITE_API_BASE_URL (Render)
+│   ├── .env.production               # VITE_API_BASE_URL (Render) — gitignored
 │   └── vite.config.js
 │
-└── .github/
-    └── workflows/
-        └── ci.yml              # GitHub Actions pipeline
+├── .github/
+│   └── workflows/
+│       └── ci.yml                    # GitHub Actions CI pipeline
+├── .gitignore                        # Covers Java, Node, IDE, OS, secrets
+├── TEST_CREDENTIALS.env              # Local test accounts — gitignored
+└── README.md
 ```
 
 ---
@@ -131,16 +172,21 @@ Eventsphere/
 ## 🗄️ Database Schema
 
 ```
-users              events               registrations          tickets
-──────────         ──────────           ──────────────────     ───────────
-id (PK)            id (PK)              id (PK)                id (PK)
-name               title                event_id (FK)          registration_id (FK)
-email (unique)     description          attendee_id (FK)       qr_token (unique)
-password_hash      date                 status (enum)          created_at
-role (enum)        location             registered_at
-created_at         capacity
-                   organizer_id (FK)
-                   created_at
+users                events               registrations        tickets
+──────────           ──────────           ──────────────────   ───────────
+id (PK)              id (PK)              id (PK)              id (PK)
+name                 title                event_id (FK)        registration_id (FK)
+email (unique)       description          attendee_id (FK)     qr_token (unique TEXT)
+password_hash        date                 status (enum)        issued_at
+created_at           location             registered_at
+                     capacity
+                     organizer_id (FK)
+                     created_at
+
+roles                user_roles
+──────────           ──────────────────
+id (PK)              user_id (FK)
+name (unique)        role_id (FK)
 ```
 
 ---
@@ -148,38 +194,45 @@ created_at         capacity
 ## 🔌 API Reference
 
 ### Auth  `POST /api/auth/...`
-| Endpoint | Auth | Description |
-|---|---|---|
-| `POST /register` | Public | Register with name, email, password, role |
-| `POST /login` | Public | Returns `{ accessToken, userId, name, email, role }` |
-| `GET /me` | Bearer | Returns current user info |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | Register (name, email, password, role) |
+| `POST` | `/api/auth/login` | Public | Returns `{ accessToken, userId, name, email, role }` |
+| `GET`  | `/api/auth/me` | Bearer | Returns current user info |
 
-### Events  `GET /api/events/...`
-| Endpoint | Auth | Description |
-|---|---|---|
-| `GET /` | Public | All upcoming events |
-| `GET /{id}` | Public | Single event |
-| `GET /organizer` | ORGANIZER | Events created by current user |
-| `POST /` | ORGANIZER | Create event |
-| `PUT /{id}` | ORGANIZER | Update event (owner only) |
-| `DELETE /{id}` | ORGANIZER | Delete event (owner only) |
+### Events  `/api/events/...`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET`    | `/api/events` | Public | All upcoming events |
+| `GET`    | `/api/events/{id}` | Public | Single event |
+| `GET`    | `/api/events/organizer` | ORGANIZER, ADMIN | Events by current user |
+| `POST`   | `/api/events` | ORGANIZER, ADMIN | Create event |
+| `PUT`    | `/api/events/{id}` | ORGANIZER (own), ADMIN (any) | Update event |
+| `DELETE` | `/api/events/{id}` | ORGANIZER (own), ADMIN (any) | Delete event |
 
-### Registrations  `POST /api/registrations/...`
-| Endpoint | Auth | Description |
-|---|---|---|
-| `POST /event/{id}` | ATTENDEE | Register + generate QR ticket |
-| `GET /my-tickets` | ATTENDEE | All tickets with `qrBase64` image |
+### Registrations  `/api/registrations/...`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST`   | `/api/registrations/event/{id}` | Authenticated | Register + generate QR ticket |
+| `GET`    | `/api/registrations/my-tickets` | Authenticated | All tickets with `qrBase64` |
+| `DELETE` | `/api/registrations/{id}` | Authenticated (own) | Cancel registration |
+| `GET`    | `/api/registrations/event/{id}/guests` | ORGANIZER (own), ADMIN (any) | Guest list |
 
 ### Check-In  `/api/check-in`
-| Endpoint | Auth | Description |
-|---|---|---|
-| `POST /` | ORGANIZER | Validate QR token, mark CHECKED_IN |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/api/check-in` | ORGANIZER, ADMIN | Validate QR token, mark CHECKED_IN |
 
-### Analytics  `/api/analytics`
-| Endpoint | Auth | Description |
-|---|---|---|
-| `GET /dashboard` | ORGANIZER | Scoped metrics + event breakdown |
-| `GET /dashboard` | ADMIN | Global metrics across all events |
+### Analytics  `/api/analytics/...`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/analytics/dashboard` | ORGANIZER (own), ADMIN (global) | Metrics + event breakdown |
+
+### Admin  `/api/admin/...`
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/admin/users` | ADMIN only | All platform users |
+| `GET` | `/api/admin/events` | ADMIN only | All events (all organizers) |
 
 ---
 
@@ -188,25 +241,30 @@ created_at         capacity
 > See [`backend/README.md`](./backend/README.md) and [`frontend/README.md`](./frontend/README.md) for full setup details.
 
 ### Prerequisites
-| Tool | Version |
-|---|---|
-| Java | 17+ |
-| Maven | 3.8+ |
-| Node.js | 20+ |
-| MySQL | 8.0+ |
+| Tool | Version | Notes |
+|---|---|---|
+| Java | 17+ | [Temurin](https://adoptium.net/) recommended |
+| Maven | — | Bundled via `mvnw` wrapper — **no install needed** |
+| Node.js | 20+ | [nodejs.org](https://nodejs.org/) |
+| MySQL | 8.0+ | Running locally on port 3306 |
 
 ### 1 — Database
 ```sql
+-- Run once in your MySQL shell or Workbench
 CREATE DATABASE eventsphere;
 ```
+Tables are created automatically from `schema.sql` on first startup.
 
 ### 2 — Backend
-```bash
+```powershell
 cd backend
-# Edit src/main/resources/application.properties if needed
-mvn spring-boot:run
+# Windows
+.\mvnw.cmd spring-boot:run
+# Linux / macOS
+./mvnw spring-boot:run
 # API ready at http://localhost:8080
 ```
+On first boot, `DataSeeder.java` auto-creates the Admin account.
 
 ### 3 — Frontend
 ```bash
@@ -216,18 +274,61 @@ npm run dev
 # App at http://localhost:5173
 ```
 
-### Default Credentials (after first register)
-Create accounts via the UI:
-- **Attendee** → logs into Event Portal
-- **Organizer** → logs into Organizer Dashboard + Analytics
+### Test Accounts
+See `TEST_CREDENTIALS.env` at the project root (gitignored).
+
+| Role | Login URL | Default Email | Password |
+|---|---|---|---|
+| **Admin** | `/adminlogin` | `admin@eventsphere.com` | `admin123` |
+| **Organizer** | `/auth` → Sign Up | Register via UI | your choice |
+| **Attendee** | `/auth` → Sign Up | Register via UI | your choice |
+
+---
+
+## 🛑 Stopping Servers / Managing Processes
+
+If you see **"Port already in use"** when restarting, an old process is still running. Kill it first, then start again.
+
+### Kill by port (Windows — PowerShell)
+
+```powershell
+# Kill the backend (port 8080)
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue).OwningProcess -Force
+
+# Kill the frontend dev server (port 5173)
+Stop-Process -Id (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue).OwningProcess -Force
+```
+
+### Kill all at once (nuclear option)
+
+```powershell
+# Windows — kills all Java + Node processes
+Get-Process java, node -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+```bash
+# Linux / macOS
+kill -9 $(lsof -t -i:8080)   # backend
+kill -9 $(lsof -t -i:5173)   # frontend
+```
+
+### Find PID manually, then kill
+
+```powershell
+# Windows
+netstat -ano | findstr ":8080 :5173"
+Stop-Process -Id <PID> -Force
+```
+
+### In VS Code terminal
+Press **Ctrl + C** to stop the running process first, then click the **🗑️ trash icon** on the terminal tab to close it completely.
 
 ---
 
 ## 🐳 Docker
 
 ```bash
-# Build the backend image
-cd backend
+# Build backend image (from /backend)
 docker build -t eventsphere-api .
 
 # Run with your DB config
@@ -235,6 +336,7 @@ docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/eventsphere \
   -e SPRING_DATASOURCE_USERNAME=root \
   -e SPRING_DATASOURCE_PASSWORD=root \
+  -e APP_JWT_SECRET=change-me-in-production \
   eventsphere-api
 ```
 
@@ -242,13 +344,24 @@ docker run -p 8080:8080 \
 
 ## ☁️ Production Deployment
 
-| Service | Where |
-|---|---|
-| Backend | [Render](https://render.com) — Docker Web Service, Root Dir: `backend/` |
-| Frontend | [Vercel](https://vercel.com) — Vite preset, Root Dir: `frontend/` |
-| Database | [Aiven](https://aiven.io) or AWS RDS MySQL 8.0 |
+| Service | Platform | Config |
+|---|---|---|
+| Backend | [Render](https://render.com) | Docker Web Service, Root Dir: `backend/` |
+| Frontend | [Vercel](https://vercel.com) | Vite preset, Root Dir: `frontend/` |
+| Database | [Aiven](https://aiven.io) or AWS RDS | MySQL 8.0 |
 
-After deployment, set `VITE_API_BASE_URL` in Vercel to your Render API URL.
+Set these environment variables on Render:
+```
+SPRING_DATASOURCE_URL=jdbc:mysql://<host>:<port>/eventsphere
+SPRING_DATASOURCE_USERNAME=<user>
+SPRING_DATASOURCE_PASSWORD=<password>
+APP_JWT_SECRET=<long-random-string>
+```
+
+Set on Vercel:
+```
+VITE_API_BASE_URL=https://your-app.onrender.com/api
+```
 
 ---
 
@@ -257,10 +370,10 @@ After deployment, set `VITE_API_BASE_URL` in Vercel to your Render API URL.
 | Layer | Technology |
 |---|---|
 | Backend Framework | Spring Boot 3.x |
-| Security | Spring Security + jjwt |
-| Persistence | Spring Data JPA + Hibernate |
+| Security | Spring Security 6 + JJWT 0.12 |
+| Persistence | Spring Data JPA (Hibernate 6) |
 | Database | MySQL 8.0 |
-| QR Code | ZXing 3.5.2 (Google) |
+| QR Code | ZXing 3.5.3 (Google) |
 | Frontend Framework | React 19 + Vite 8 |
 | Animations | Framer Motion 13 |
 | Icons | Lucide React |
