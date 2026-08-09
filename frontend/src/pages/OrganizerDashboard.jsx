@@ -238,6 +238,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       </div>
     </motion.div>
   );
+};
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => (
