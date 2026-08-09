@@ -53,7 +53,7 @@ export const eventsApi = {
 
 // ── Registrations endpoints ────────────────────────────────────────────────
 export const registrationsApi = {
-  register:  (eventId)        => api.post(`/registrations/event/${eventId}`),
+  register:  (eventId, eventCode) => api.post(`/registrations/event/${eventId}`, { eventCode }),
   myTickets: ()               => api.get('/registrations/my-tickets'),
   cancel:    (registrationId) => api.delete(`/registrations/${registrationId}`),
   guestList: (eventId)        => api.get(`/registrations/event/${eventId}/guests`),

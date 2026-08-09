@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -19,27 +20,44 @@ public class RegistrationService {
     @Autowired private QRCodeService           qrCodeService;
 
     /**
-     * Register an attendee for an event with capacity and duplicate checks.
+     * Register an attendee for an event, enforcing three sequential gates:
+     *  1. Event code must match.
+     *  2. Current time must fall within the registration window.
+     *  3. Active (non-cancelled) seat count must be below capacity.
+     *  4. No duplicate registrations.
      */
     @Transactional
-    public Registration registerAttendee(Long eventId, String attendeeEmail) {
+    public Registration registerAttendee(Long eventId, String attendeeEmail, String providedEventCode) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found: " + eventId));
 
         User attendee = userRepository.findByEmail(attendeeEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + attendeeEmail));
 
-        // Duplicate registration check
+        // ── Gate 1: Event Code ───────────────────────────────────────────────
+        if (!event.getEventCode().equalsIgnoreCase(providedEventCode)) {
+            throw new IllegalStateException("Invalid event code. Please check with the organizer.");
+        }
+
+        // ── Gate 2: Registration Time Window ─────────────────────────────────
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(event.getRegistrationStart()) || now.isAfter(event.getRegistrationEnd())) {
+            throw new IllegalStateException("Registration is not currently open for this event.");
+        }
+
+        // ── Gate 3: Capacity (only count active + checked-in, ignore cancelled) ──
+        long activeSeatsTaken = registrationRepository
+                .countByEventAndStatusNot(event, Registration.Status.CANCELLED);
+        if (activeSeatsTaken >= event.getCapacity()) {
+            throw new IllegalStateException("This event is fully booked.");
+        }
+
+        // ── Gate 4: Duplicate registration check ──────────────────────────────
         if (registrationRepository.existsByEventAndAttendee(event, attendee)) {
             throw new IllegalStateException("You are already registered for this event.");
         }
 
-        // Capacity check
-        long currentCount = registrationRepository.countByEvent(event);
-        if (currentCount >= event.getCapacity()) {
-            throw new IllegalStateException("This event is fully booked.");
-        }
-
+        // ── All gates passed — create registration ───────────────────────────
         Registration registration = Registration.builder()
                 .event(event)
                 .attendee(attendee)
@@ -90,6 +108,7 @@ public class RegistrationService {
 
     /**
      * Attendee cancels their own registration, freeing capacity.
+     * Setting status to CANCELLED means countByEventAndStatusNot will exclude this seat.
      */
     @Transactional
     public void cancelRegistration(Long registrationId, String attendeeEmail) {

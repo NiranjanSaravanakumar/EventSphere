@@ -15,4 +15,6 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     boolean existsByEventAndAttendee(Event event, User attendee);
     long countByEvent(Event event);
     long countByEventAndStatus(Event event, Registration.Status status);
+    /** Count only non-cancelled registrations — used for accurate capacity checks. */
+    long countByEventAndStatusNot(Event event, Registration.Status status);
 }

@@ -18,6 +18,7 @@ public record AnalyticsDashboardDTO(
         long   capacity,
         long   registered,
         long   checkedIn,
-        double fillRate        // registered / capacity %
+        double fillRate,       // registered / capacity %
+        String eventCode       // invite code — visible to admin
     ) {}
 }

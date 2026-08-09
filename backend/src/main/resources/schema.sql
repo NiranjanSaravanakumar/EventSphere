@@ -33,14 +33,17 @@ CREATE TABLE IF NOT EXISTS user_roles (
 
 -- 4. Events
 CREATE TABLE IF NOT EXISTS events (
-    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title        VARCHAR(255) NOT NULL,
-    description  TEXT,
-    date         DATETIME     NOT NULL,
-    location     VARCHAR(255) NOT NULL,
-    capacity     INT          NOT NULL,
-    organizer_id BIGINT       NOT NULL,
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id                 BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title              VARCHAR(255) NOT NULL,
+    description        TEXT,
+    date               DATETIME     NOT NULL,
+    location           VARCHAR(255) NOT NULL,
+    capacity           INT          NOT NULL,
+    organizer_id       BIGINT       NOT NULL,
+    event_code         VARCHAR(50)  NOT NULL UNIQUE,
+    registration_start DATETIME     NOT NULL,
+    registration_end   DATETIME     NOT NULL,
+    created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (organizer_id) REFERENCES users (id) ON DELETE CASCADE,
     INDEX idx_organizer (organizer_id),
     INDEX idx_date (date)

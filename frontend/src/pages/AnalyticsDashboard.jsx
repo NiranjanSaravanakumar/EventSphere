@@ -1,220 +1,177 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3, Users, CheckSquare, Percent,
-  Calendar, TrendingUp, ArrowLeft, RefreshCw, Layers
+  BarChart3, Users, CheckSquare, Percent, Calendar,
+  TrendingUp, RefreshCw, Layers, Activity, Shield,
+  ChevronRight, LogOut, Globe
 } from 'lucide-react';
-import Navbar from '../components/shared/Navbar.jsx';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedCounter from '../components/ui/AnimatedCounter.jsx';
 import { analyticsApi } from '../services/api.js';
-import { useNavigate } from 'react-router-dom';
 
-// ── Animation variants ─────────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show:   { opacity: 1, transition: { staggerChildren: 0.09, delayChildren: 0.1 } },
-};
+// ── Spring config ──────────────────────────────────────────────────────────────
+const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
-  show:   { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 280, damping: 22 } },
-};
-
-const SPRING = { type: 'spring', stiffness: 380, damping: 28 };
-
-// ── Stat card ──────────────────────────────────────────────────────────────────
-const StatCard = ({ icon: Icon, label, value, suffix = '', decimals = 0, accent }) => (
-  <motion.div
-    variants={itemVariants}
-    whileHover={{ y: -6, scale: 1.02 }}
+// ── Sidebar nav item ───────────────────────────────────────────────────────────
+const NavItem = ({ icon: Icon, label, active, onClick }) => (
+  <motion.button
+    onClick={onClick}
+    whileHover={{ x: 3 }}
     transition={SPRING}
     style={{
-      position: 'relative', padding: '1.75rem',
-      borderRadius: '1.5rem', overflow: 'hidden',
-      background: 'rgba(255,255,255,0.04)',
-      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10)',
-      display: 'flex', flexDirection: 'column', gap: '0.75rem',
-      cursor: 'default',
+      width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+      padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none',
+      background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
+      borderLeft: active ? '2px solid rgba(255,255,255,0.5)' : '2px solid transparent',
+      color: active ? '#FAFAFA' : '#52525b',
+      fontSize: '0.8125rem', fontWeight: active ? 600 : 400,
+      cursor: 'pointer', textAlign: 'left', transition: 'color 0.15s',
     }}
   >
-    {/* Top specular */}
-    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)' }} />
+    <Icon style={{ width: '0.875rem', height: '0.875rem', flexShrink: 0 }} />
+    {label}
+  </motion.button>
+);
 
-    {/* Ghost icon in corner */}
-    <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', opacity: 0.07 }}>
-      <Icon style={{ width: '3.5rem', height: '3.5rem', color: '#FAFAFA' }} />
+// ── Bento stat block ───────────────────────────────────────────────────────────
+const BentoStat = ({ icon: Icon, label, value, suffix = '', decimals = 0, style: extraStyle = {} }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.97 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={SPRING}
+    style={{
+      position: 'relative', padding: '1.5rem',
+      background: 'rgba(255,255,255,0.02)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: '0.875rem', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      ...extraStyle,
+    }}
+  >
+    {/* Top specular line */}
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
+
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>
+        {label}
+      </p>
+      <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '0.4rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon style={{ width: '0.75rem', height: '0.75rem', color: '#71717A' }} />
+      </div>
     </div>
 
-    {/* Label */}
-    <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#71717A', position: 'relative', zIndex: 1 }}>
-      {label}
-    </p>
-
-    {/* Value */}
-    <div style={{ fontSize: '3rem', fontWeight: 700, color: '#FAFAFA', lineHeight: 1, position: 'relative', zIndex: 1 }}>
+    <div style={{ fontSize: '2.5rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, letterSpacing: '-0.02em', marginTop: '1.5rem' }}>
       <AnimatedCounter value={value} suffix={suffix} decimals={decimals} />
     </div>
-
-    {/* Accent bar at bottom */}
-    <motion.div
-      initial={{ width: 0 }}
-      animate={{ width: '40%' }}
-      transition={{ duration: 1.2, ease: 'easeOut', delay: 0.4 }}
-      style={{
-        position: 'absolute', bottom: 0, left: 0, height: '2px',
-        background: accent || 'rgba(255,255,255,0.3)',
-        borderRadius: '0 2px 0 0',
-      }}
-    />
   </motion.div>
 );
 
-// ── Event breakdown row ────────────────────────────────────────────────────────
-const EventRow = ({ stat, index }) => {
-  const fillPct     = Math.min(100, stat.fillRate);
-  const checkinPct  = stat.registered > 0 ? Math.round((stat.checkedIn / stat.registered) * 100) : 0;
-  const fillColor   = fillPct >= 90 ? '#f87171' : fillPct >= 70 ? '#fbbf24' : '#34d399';
+const TableRow = ({ stat, index }) => {
+  const fill = Math.min(100, Math.round(stat.fillRate));
+  const status = fill >= 90 ? 'FULL' : fill >= 60 ? 'BUSY' : 'OPEN';
+  const statusColor = fill >= 90 ? '#f87171' : fill >= 60 ? '#fbbf24' : '#34d399';
 
   return (
     <motion.div
-      variants={itemVariants}
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ ...SPRING, delay: index * 0.04 }}
       style={{
-        padding: '1.25rem 1.5rem',
-        borderRadius: '1rem',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        display: 'grid',
-        gridTemplateColumns: '1fr auto',
-        gap: '1rem',
-        alignItems: 'center',
+        display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
+        alignItems: 'center', gap: '1.5rem',
+        padding: '0.875rem 1.25rem',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}
     >
       <div style={{ minWidth: 0 }}>
-        {/* Title + date */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#FAFAFA', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {stat.title}
-          </p>
-          <span style={{ fontSize: '0.6875rem', color: '#71717A', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {stat.date}
-          </span>
-        </div>
-
-        {/* Fill bar */}
-        <div style={{ marginTop: '0.625rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '0.6875rem', color: '#71717A' }}>
-              {stat.registered.toLocaleString()} / {stat.capacity.toLocaleString()} registered
-            </span>
-            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: fillColor }}>
-              {fillPct}%
-            </span>
-          </div>
-          <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${fillPct}%` }}
-              transition={{ duration: 1.4, ease: 'easeOut', delay: 0.15 + index * 0.05 }}
-              style={{ height: '100%', background: fillColor, borderRadius: '4px' }}
-            />
-          </div>
-        </div>
-
-        {/* Check-in sub-bar */}
-        {stat.checkedIn > 0 && (
-          <div style={{ marginTop: '0.375rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-              <span style={{ fontSize: '0.625rem', color: '#52525b' }}>
-                {stat.checkedIn.toLocaleString()} checked in
-              </span>
-              <span style={{ fontSize: '0.625rem', color: '#52525b' }}>
-                {checkinPct}% attendance
-              </span>
-            </div>
-            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.04)', borderRadius: '2px', overflow: 'hidden' }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${checkinPct}%` }}
-                transition={{ duration: 1.4, ease: 'easeOut', delay: 0.35 + index * 0.05 }}
-                style={{ height: '100%', background: 'rgba(255,255,255,0.25)', borderRadius: '2px' }}
-              />
-            </div>
-          </div>
-        )}
+        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#D4D4D8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stat.title}</p>
+        <p style={{ fontSize: '0.6875rem', color: '#3f3f46', marginTop: '0.125rem' }}>{stat.date}</p>
       </div>
 
-      {/* Badge column */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.375rem', flexShrink: 0 }}>
-        <span style={{
-          padding: '0.2rem 0.625rem', borderRadius: '999px',
-          background: fillPct >= 90 ? 'rgba(248,113,113,0.12)' : 'rgba(52,211,153,0.10)',
-          border: `1px solid ${fillPct >= 90 ? 'rgba(248,113,113,0.25)' : 'rgba(52,211,153,0.20)'}`,
-          fontSize: '0.6875rem', fontWeight: 700,
-          color: fillPct >= 90 ? '#f87171' : '#34d399',
-          letterSpacing: '0.04em',
-        }}>
-          {fillPct >= 90 ? 'FULL' : fillPct >= 70 ? 'BUSY' : 'OPEN'}
-        </span>
-        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>
-          {stat.capacity.toLocaleString()} cap
-        </span>
+      {/* Fill bar */}
+      <div style={{ width: '80px' }}>
+        <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${fill}%` }}
+            transition={{ duration: 1.2, ease: 'easeOut', delay: 0.1 + index * 0.04 }}
+            style={{ height: '100%', background: statusColor, borderRadius: '3px' }}
+          />
+        </div>
       </div>
+
+      {/* Registered count */}
+      <span style={{ fontSize: '0.75rem', color: '#71717A', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        {stat.registered.toLocaleString()} / {stat.capacity.toLocaleString()}
+      </span>
+
+      {/* Event code */}
+      <span style={{
+        fontFamily: '"SF Mono", "Fira Code", "Courier New", monospace',
+        fontSize: '0.6875rem', fontWeight: 700,
+        color: '#71717A', letterSpacing: '0.10em',
+        padding: '0.2rem 0.5rem', borderRadius: '0.3rem',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        whiteSpace: 'nowrap',
+      }}>
+        {stat.eventCode ?? '—'}
+      </span>
+
+      {/* Status badge */}
+      <span style={{
+        padding: '0.2rem 0.5rem', borderRadius: '0.3rem',
+        background: `${statusColor}15`,
+        border: `1px solid ${statusColor}30`,
+        color: statusColor, fontSize: '0.625rem', fontWeight: 700,
+        letterSpacing: '0.06em',
+      }}>
+        {status}
+      </span>
     </motion.div>
   );
 };
 
-// ── Ring chart (CSS-only) ──────────────────────────────────────────────────────
-const RingChart = ({ value, max, label, sublabel }) => {
+
+// ── Ring chart ─────────────────────────────────────────────────────────────────
+const RingChart = ({ value, max, label }) => {
   const pct    = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-  const radius = 42;
+  const radius = 32;
   const circ   = 2 * Math.PI * radius;
-  const dash   = (pct / 100) * circ;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-      <div style={{ position: 'relative', width: '110px', height: '110px' }}>
-        <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
-          {/* Track */}
-          <circle cx="55" cy="55" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-          {/* Progress */}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+      <div style={{ position: 'relative', width: '80px', height: '80px' }}>
+        <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
           <motion.circle
-            cx="55" cy="55" r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.7)"
-            strokeWidth="8"
-            strokeLinecap="round"
+            cx="40" cy="40" r={radius}
+            fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="5" strokeLinecap="round"
             strokeDasharray={circ}
             initial={{ strokeDashoffset: circ }}
-            animate={{ strokeDashoffset: circ - dash }}
-            transition={{ duration: 1.6, ease: 'easeOut', delay: 0.3 }}
+            animate={{ strokeDashoffset: circ - (pct / 100) * circ }}
+            transition={{ duration: 1.4, ease: 'easeOut', delay: 0.4 }}
           />
         </svg>
-        <div style={{
-          position: 'absolute', inset: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FAFAFA', lineHeight: 1 }}>
-            {Math.round(pct)}%
-          </span>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#FAFAFA' }}>{Math.round(pct)}%</span>
         </div>
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#D4D4D8' }}>{label}</p>
-        <p style={{ fontSize: '0.6875rem', color: '#71717A', marginTop: '0.125rem' }}>{sublabel}</p>
-      </div>
+      <p style={{ fontSize: '0.6875rem', color: '#52525b', textAlign: 'center', letterSpacing: '0.04em' }}>{label}</p>
     </div>
   );
 };
 
-// ── Main AnalyticsDashboard ────────────────────────────────────────────────────
+// ── Main Admin Dashboard ───────────────────────────────────────────────────────
 const AnalyticsDashboard = () => {
-  const navigate  = useNavigate();
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const navigate   = useNavigate();
+  const { logout } = useAuth();
+  const [data, setData]         = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [activeNav, setActiveNav]   = useState('overview');
 
   const fetchData = useCallback(async (isRefresh = false) => {
     isRefresh ? setRefreshing(true) : setLoading(true);
@@ -232,240 +189,239 @@ const AnalyticsDashboard = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleLogout = () => { logout(); navigate('/auth'); };
+
   return (
-    <div style={{ minHeight: '100vh', background: '#050505', color: '#FAFAFA', fontFamily: 'Inter, sans-serif' }}>
-      <Navbar />
+    <div style={{
+      minHeight: '100vh', background: '#050505', color: '#FAFAFA',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      display: 'flex',
+    }}>
 
-      <div style={{ position: 'relative', padding: '2.5rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
-
-        {/* Ambient orbs */}
-        <div style={{ position: 'absolute', top: '5%', left: '25%', width: 600, height: 600, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', filter: 'blur(120px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: 350, height: 350, borderRadius: '50%', background: 'rgba(255,255,255,0.015)', filter: 'blur(90px)', pointerEvents: 'none' }} />
-
-        {/* Page header */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={SPRING}
-          style={{
-            display: 'flex', alignItems: 'flex-end',
-            justifyContent: 'space-between', marginBottom: '2.5rem',
-            flexWrap: 'wrap', gap: '1rem', position: 'relative', zIndex: 10,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            {/* Back button */}
-            <motion.button
-              whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} transition={SPRING}
-              onClick={() => navigate('/dashboard')}
-              style={{
-                width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem',
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: '#D4D4D8',
-              }}
-            >
-              <ArrowLeft style={{ width: '1rem', height: '1rem' }} />
-            </motion.button>
-            <div>
-              <h1 style={{ fontSize: '1.875rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#FAFAFA' }}>
-                Analytics
-              </h1>
-              <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.25rem' }}>
-                Real-time performance metrics across your events.
-              </p>
-            </div>
+      {/* ── FIXED LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      <aside style={{
+        width: '220px', flexShrink: 0,
+        borderRight: '1px solid rgba(255,255,255,0.05)',
+        background: 'rgba(255,255,255,0.01)',
+        display: 'flex', flexDirection: 'column',
+        padding: '1.75rem 1rem',
+        position: 'sticky', top: 0, height: '100vh',
+      }}>
+        {/* Logo */}
+        <div style={{ paddingLeft: '0.875rem', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Shield style={{ width: '1rem', height: '1rem', color: '#52525b' }} />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.01em' }}>
+              EventSphere
+            </span>
           </div>
+          <p style={{ fontSize: '0.6875rem', color: '#27272a', marginTop: '0.2rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Admin Console
+          </p>
+        </div>
 
-          {/* Refresh */}
+        {/* Nav */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+          <p style={{ fontSize: '0.625rem', fontWeight: 600, color: '#27272a', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 0.875rem', marginBottom: '0.5rem' }}>
+            System
+          </p>
+          <NavItem icon={Activity}  label="Overview"       active={activeNav === 'overview'}  onClick={() => setActiveNav('overview')} />
+          <NavItem icon={Globe}     label="All Events"     active={activeNav === 'events'}    onClick={() => setActiveNav('events')} />
+          <NavItem icon={Users}     label="User Directory" active={activeNav === 'users'}     onClick={() => setActiveNav('users')} />
+          <NavItem icon={BarChart3} label="Analytics"      active={activeNav === 'analytics'} onClick={() => setActiveNav('analytics')} />
+        </nav>
+
+        {/* Bottom actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
           <motion.button
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} transition={SPRING}
+            whileHover={{ x: 3 }} transition={SPRING}
             onClick={() => fetchData(true)}
-            disabled={refreshing}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 1.125rem', borderRadius: '0.75rem',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              color: '#D4D4D8', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none',
+              background: 'transparent', color: '#52525b',
+              fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left',
             }}
           >
-            <motion.div animate={{ rotate: refreshing ? 360 : 0 }} transition={{ duration: 0.8, ease: 'linear', repeat: refreshing ? Infinity : 0 }}>
+            <motion.div animate={{ rotate: refreshing ? 360 : 0 }} transition={{ duration: 0.8, repeat: refreshing ? Infinity : 0, ease: 'linear' }}>
               <RefreshCw style={{ width: '0.875rem', height: '0.875rem' }} />
             </motion.div>
             Refresh
           </motion.button>
-        </motion.div>
+
+          <motion.button
+            whileHover={{ x: 3 }} transition={SPRING}
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
+              padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none',
+              background: 'transparent', color: '#52525b',
+              fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
+            Sign Out
+          </motion.button>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ───────────────────────────────────────────────────────── */}
+      <main style={{ flex: 1, padding: '2rem 2.5rem', minWidth: 0, overflowY: 'auto' }}>
+
+        {/* Page header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.025em' }}>
+              System Overview
+            </h1>
+            <p style={{ fontSize: '0.75rem', color: '#3f3f46', marginTop: '0.25rem' }}>
+              Global platform metrics · All events · All organizers
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.875rem', background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '0.5rem' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
+            <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: '#34d399' }}>System Online</span>
+          </div>
+        </div>
 
         {/* States */}
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '6rem' }}>
-            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(255,255,255,0.12)', borderTopColor: 'rgba(255,255,255,0.6)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
+            <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
           </div>
         )}
 
         {error && !loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{
-              textAlign: 'center', paddingTop: '4rem', color: '#f87171',
-              fontSize: '0.875rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-            }}
-          >
-            <BarChart3 style={{ width: '2.5rem', height: '2.5rem', opacity: 0.5 }} />
-            <p>{error}</p>
-            <button onClick={() => fetchData()} style={{ padding: '0.5rem 1.25rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.09)', color: '#D4D4D8', cursor: 'pointer' }}>
-              Try Again
-            </button>
-          </motion.div>
+          <div style={{ padding: '1.5rem', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '0.75rem', color: '#f87171', fontSize: '0.875rem' }}>
+            {error} — <button onClick={() => fetchData()} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer' }}>retry</button>
+          </div>
         )}
 
         {!loading && !error && data && (
           <>
-            {/* ── Stat cards grid ── */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '1.25rem', marginBottom: '2.5rem',
-                position: 'relative', zIndex: 10,
-              }}
-            >
-              <StatCard icon={Layers}     label="Total Events"        value={data.totalEvents}           accent="rgba(255,255,255,0.5)" />
-              <StatCard icon={TrendingUp} label="Total Capacity"       value={data.totalCapacity}         accent="rgba(255,255,255,0.35)" />
-              <StatCard icon={Users}      label="Total Registrations"  value={data.totalRegistrations}    accent="rgba(255,255,255,0.45)" />
-              <StatCard icon={CheckSquare} label="Total Check-Ins"     value={data.totalCheckIns}         accent="rgba(52,211,153,0.6)" />
-              <StatCard icon={Percent}    label="Attendance Rate"      value={data.overallAttendanceRate} suffix="%" decimals={1} accent="rgba(251,191,36,0.6)" />
-            </motion.div>
-
-            {/* ── Overview rings + capacity flow ── */}
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '1.25rem', marginBottom: '2.5rem',
-                position: 'relative', zIndex: 10,
-              }}
-            >
-              {/* Capacity Utilisation ring panel */}
-              <motion.div
-                variants={itemVariants}
-                style={{
-                  padding: '2rem', borderRadius: '1.5rem',
-                  background: 'rgba(255,255,255,0.04)',
-                  backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-                }}
-              >
-                <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#71717A', marginBottom: '1.5rem' }}>
-                  Capacity Utilisation
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '1.5rem' }}>
-                  <RingChart
-                    value={data.totalRegistrations}
-                    max={data.totalCapacity}
-                    label="Fill Rate"
-                    sublabel={`${data.totalRegistrations.toLocaleString()} registered`}
-                  />
-                  <RingChart
-                    value={data.totalCheckIns}
-                    max={data.totalRegistrations}
-                    label="Attendance"
-                    sublabel={`${data.totalCheckIns.toLocaleString()} checked in`}
-                  />
-                </div>
-              </motion.div>
-
-              {/* Funnel panel */}
-              <motion.div
-                variants={itemVariants}
-                style={{
-                  padding: '2rem', borderRadius: '1.5rem',
-                  background: 'rgba(255,255,255,0.04)',
-                  backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-                }}
-              >
-                <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#71717A', marginBottom: '1.5rem' }}>
+            {/* ── BENTO GRID ─────────────────────────────────────────────────── */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateRows: 'auto auto auto',
+              gap: '0.875rem',
+              marginBottom: '2rem',
+            }}>
+              {/* Large: Attendance Funnel — col-span-2 row-span-2 */}
+              <div style={{
+                gridColumn: '1 / 3', gridRow: '1 / 3',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '0.875rem', padding: '1.75rem',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
+                <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46', marginBottom: '1.75rem' }}>
                   Attendee Funnel
                 </p>
+
                 {[
-                  { label: 'Total Capacity',   value: data.totalCapacity,       max: data.totalCapacity,       color: 'rgba(255,255,255,0.15)' },
-                  { label: 'Registered',        value: data.totalRegistrations,  max: data.totalCapacity,       color: 'rgba(255,255,255,0.45)' },
-                  { label: 'Checked In',        value: data.totalCheckIns,       max: data.totalCapacity,       color: 'rgba(52,211,153,0.7)' },
-                ].map(({ label, value, max, color }, i) => {
+                  { label: 'Total Capacity',   value: data.totalCapacity,      max: data.totalCapacity,      dim: false },
+                  { label: 'Registered',        value: data.totalRegistrations, max: data.totalCapacity,      dim: false },
+                  { label: 'Checked In',        value: data.totalCheckIns,      max: data.totalCapacity,      dim: false },
+                ].map(({ label, value, max }, i) => {
                   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
                   return (
-                    <div key={label} style={{ marginBottom: i < 2 ? '1.25rem' : 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-                        <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{label}</span>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#FAFAFA' }}>
+                    <div key={label} style={{ marginBottom: i < 2 ? '1.5rem' : 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>{label}</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 300, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
                           {value.toLocaleString()}
                         </span>
                       </div>
-                      <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: '3px', overflow: 'hidden' }}>
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
-                          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 + i * 0.15 }}
-                          style={{ height: '100%', background: color, borderRadius: '6px' }}
+                          transition={{ duration: 1.4, ease: 'easeOut', delay: 0.2 + i * 0.15 }}
+                          style={{ height: '100%', background: `rgba(255,255,255,${0.15 + i * 0.15})`, borderRadius: '3px' }}
                         />
                       </div>
                     </div>
                   );
                 })}
-              </motion.div>
-            </motion.div>
 
-            {/* ── Event breakdown table ── */}
-            {data.eventBreakdown?.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ ...SPRING, delay: 0.3 }}
-                style={{ position: 'relative', zIndex: 10 }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                  <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#71717A' }}>
-                    Event Breakdown  ·  {data.eventBreakdown.length} event{data.eventBreakdown.length !== 1 ? 's' : ''}
+                {/* Ring charts at bottom */}
+                <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                  <RingChart value={data.totalRegistrations} max={data.totalCapacity}      label="Fill Rate" />
+                  <RingChart value={data.totalCheckIns}      max={data.totalRegistrations} label="Attendance" />
+                </div>
+              </div>
+
+              {/* Small stat blocks — col 3-4, row 1 */}
+              <BentoStat icon={Layers}     label="Active Events"    value={data.totalEvents}           style={{ gridColumn: '3', gridRow: '1' }} />
+              <BentoStat icon={Users}      label="Registrations"    value={data.totalRegistrations}    style={{ gridColumn: '4', gridRow: '1' }} />
+              <BentoStat icon={CheckSquare} label="Checked In"      value={data.totalCheckIns}         style={{ gridColumn: '3', gridRow: '2' }} />
+              <BentoStat icon={Percent}    label="Attendance Rate"  value={data.overallAttendanceRate} suffix="%" decimals={1} style={{ gridColumn: '4', gridRow: '2' }} />
+
+              {/* Wide bottom: capacity total */}
+              <div style={{
+                gridColumn: '1 / 5', gridRow: '3',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '0.875rem',
+                padding: '1rem 1.5rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                gap: '2rem', flexWrap: 'wrap',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+                <div>
+                  <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>Total Platform Capacity</p>
+                  <p style={{ fontSize: '2rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, marginTop: '0.25rem', letterSpacing: '-0.02em' }}>
+                    <AnimatedCounter value={data.totalCapacity} />
                   </p>
-                  <p style={{ fontSize: '0.6875rem', color: '#3f3f46' }}>sorted by fill rate</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3f3f46', fontSize: '0.75rem' }}>
+                  <TrendingUp style={{ width: '1rem', height: '1rem' }} />
+                  {data.totalEvents} event{data.totalEvents !== 1 ? 's' : ''} tracked
+                </div>
+              </div>
+            </div>
+
+            {/* ── EVENT BREAKDOWN TABLE ──────────────────────────────────────── */}
+            {data.eventBreakdown?.length > 0 && (
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '0.875rem', overflow: 'hidden',
+              }}>
+                {/* Table header */}
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
+                  gap: '1.5rem', padding: '0.75rem 1.25rem',
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  background: 'rgba(255,255,255,0.01)',
+                }}>
+                  {['Event', 'Fill', 'Registered / Cap', 'Code', 'Status'].map(h => (
+                    <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
+                  ))}
                 </div>
 
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}
-                >
-                  {data.eventBreakdown.map((stat, i) => (
-                    <EventRow key={stat.id} stat={stat} index={i} />
-                  ))}
-                </motion.div>
-              </motion.div>
+                {data.eventBreakdown.map((stat, i) => (
+                  <TableRow key={stat.id} stat={stat} index={i} />
+                ))}
+              </div>
             )}
 
-            {/* Empty state */}
+            {/* Empty */}
             {(!data.eventBreakdown || data.eventBreakdown.length === 0) && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                style={{ textAlign: 'center', paddingTop: '3rem', color: '#71717A' }}
-              >
-                <Calendar style={{ width: '2.5rem', height: '2.5rem', margin: '0 auto 1rem', opacity: 0.4 }} />
-                <p>No event data to display yet.</p>
-              </motion.div>
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#3f3f46', fontSize: '0.8125rem' }}>
+                <Calendar style={{ width: '2rem', height: '2rem', margin: '0 auto 0.75rem', opacity: 0.3 }} />
+                No event data yet.
+              </div>
             )}
           </>
         )}
-      </div>
+      </main>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

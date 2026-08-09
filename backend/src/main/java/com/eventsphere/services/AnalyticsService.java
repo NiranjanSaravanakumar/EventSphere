@@ -59,7 +59,8 @@ public class AnalyticsService {
                 cap,
                 registered,
                 checkedIn,
-                Math.round(fillRate * 10.0) / 10.0
+                Math.round(fillRate * 10.0) / 10.0,
+                event.getEventCode()
             ));
         }
 

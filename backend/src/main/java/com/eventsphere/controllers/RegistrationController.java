@@ -20,16 +20,21 @@ public class RegistrationController {
     @Autowired
     private RegistrationService registrationService;
 
+    /** Simple body record for the event-code payload. */
+    record RegisterRequest(String eventCode) {}
+
     /**
      * POST /api/registrations/event/{eventId}
-     * Authenticated — register the current user for an event.
+     * Body: { "eventCode": "XXXXXX" }
+     * Authenticated — register the current user for an event (code-gated).
      */
     @PostMapping("/event/{eventId}")
     public ResponseEntity<?> register(
             @PathVariable Long eventId,
+            @RequestBody RegisterRequest body,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            registrationService.registerAttendee(eventId, userDetails.getUsername());
+            registrationService.registerAttendee(eventId, userDetails.getUsername(), body.eventCode());
             return ResponseEntity.ok(Map.of("message", "Successfully registered for the event."));
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

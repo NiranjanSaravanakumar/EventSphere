@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Search, Ticket } from 'lucide-react';
+import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Search, Ticket, Clock } from 'lucide-react';
 import Navbar from '../components/shared/Navbar.jsx';
 import TicketPass from '../components/shared/TicketPass.jsx';
+import EventAccessModal from '../components/ui/EventAccessModal.jsx';
 import { eventsApi, registrationsApi } from '../services/api.js';
 
 // ── Animation variants ─────────────────────────────────────────────────────────
@@ -80,11 +81,14 @@ const CapacityBar = ({ registered, capacity }) => {
 };
 
 // ── Event card (Discover tab) ──────────────────────────────────────────────────
-const EventCard = ({ event, isRegistered, registering, onRegister }) => {
-  const full = (event.registeredCount ?? 0) >= event.capacity;
+const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
+  const isSoldOut = (event.availableSeats ?? (event.capacity - (event.registeredCount ?? 0))) <= 0;
   const fmtDate = (iso) => iso
     ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
+  const fmtShort = (iso) => iso
+    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '';
 
   return (
     <motion.div
@@ -147,22 +151,32 @@ const EventCard = ({ event, isRegistered, registering, onRegister }) => {
 
       <CapacityBar registered={event.registeredCount ?? 0} capacity={event.capacity} />
 
+      {/* Registration window indicator */}
+      {event.registrationEnd && !isRegistered && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <Clock style={{ width: '0.75rem', height: '0.75rem', color: '#52525b', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.6875rem', color: '#52525b' }}>
+            Registration closes {fmtShort(event.registrationEnd)}
+          </span>
+        </div>
+      )}
+
       <motion.button
-        whileHover={!isRegistered && !full ? { scale: 1.02 } : undefined}
-        whileTap={!isRegistered && !full ? { scale: 0.97 } : undefined}
+        whileHover={!isRegistered && !isSoldOut ? { scale: 1.02 } : undefined}
+        whileTap={!isRegistered && !isSoldOut ? { scale: 0.97 } : undefined}
         transition={SPRING}
-        onClick={() => !isRegistered && !full && onRegister(event.id)}
-        disabled={isRegistered || full || registering}
+        onClick={() => !isRegistered && !isSoldOut && onOpenModal(event)}
+        disabled={isRegistered || isSoldOut || registering}
         style={{
           width: '100%', height: '2.5rem', borderRadius: '0.75rem', border: 'none',
-          background: isRegistered ? 'rgba(16,185,129,0.10)' : full ? 'rgba(255,255,255,0.04)' : '#FAFAFA',
-          color: isRegistered ? '#6ee7b7' : full ? '#71717A' : '#050505',
+          background: isRegistered ? 'rgba(16,185,129,0.10)' : isSoldOut ? 'rgba(255,255,255,0.04)' : '#FAFAFA',
+          color: isRegistered ? '#6ee7b7' : isSoldOut ? '#71717A' : '#050505',
           fontSize: '0.875rem', fontWeight: 600,
-          cursor: isRegistered || full ? 'default' : 'pointer',
+          cursor: isRegistered || isSoldOut ? 'default' : 'pointer',
           opacity: registering ? 0.7 : 1, transition: 'all 0.2s',
         }}
       >
-        {registering ? 'Registering…' : isRegistered ? '✓ Registered' : full ? 'Fully Booked' : 'Register'}
+        {registering ? 'Registering…' : isRegistered ? '✓ Registered' : isSoldOut ? 'Sold Out' : 'Enter Code to Register'}
       </motion.button>
     </motion.div>
   );
@@ -185,6 +199,7 @@ const AttendeePortal = () => {
   const [search, setSearch]       = useState('');
   const [registering, setRegistering] = useState(null);
   const [toast, setToast]         = useState(null);
+  const [modalEvent, setModalEvent]   = useState(null); // event shown in EventAccessModal
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -209,18 +224,22 @@ const AttendeePortal = () => {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleRegister = async (eventId) => {
-    setRegistering(eventId);
+  // Opens the code modal for a specific event
+  const handleOpenModal = (event) => setModalEvent(event);
+
+  // Called by EventAccessModal when the attendee submits a code
+  const handleSubmitCode = async (code) => {
+    if (!modalEvent) return;
+    setRegistering(modalEvent.id);
     try {
-      await registrationsApi.register(eventId);
+      await registrationsApi.register(modalEvent.id, code);
       showToast('Successfully registered! Your ticket is ready.');
       await fetchAll();
-      setTab('tickets'); // auto-switch to show the new ticket
-    } catch (err) {
-      showToast(err?.response?.data?.message || 'Registration failed.', 'error');
+      setTab('tickets');
     } finally {
       setRegistering(null);
     }
+    // Errors bubble up to EventAccessModal via the thrown exception
   };
 
   const handleCancel = async (registrationId) => {
@@ -335,7 +354,7 @@ const AttendeePortal = () => {
                     event={event}
                     isRegistered={registeredEventIds.has(event.id)}
                     registering={registering === event.id}
-                    onRegister={handleRegister}
+                    onOpenModal={handleOpenModal}
                   />
                 ))}
               </motion.div>
@@ -432,6 +451,14 @@ const AttendeePortal = () => {
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} />}
       </AnimatePresence>
+
+      {/* Event access code modal */}
+      <EventAccessModal
+        isOpen={!!modalEvent}
+        onClose={() => setModalEvent(null)}
+        event={modalEvent}
+        onSubmitCode={handleSubmitCode}
+      />
     </div>
   );
 };

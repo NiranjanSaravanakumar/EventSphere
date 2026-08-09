@@ -2,6 +2,7 @@ package com.eventsphere.services;
 
 import com.eventsphere.dto.EventDTOs.*;
 import com.eventsphere.entities.Event;
+import com.eventsphere.entities.Registration;
 import com.eventsphere.entities.User;
 import com.eventsphere.repositories.EventRepository;
 import com.eventsphere.repositories.RegistrationRepository;
@@ -63,6 +64,10 @@ public class EventService {
                 .location(request.location())
                 .capacity(request.capacity())
                 .organizer(organizer)
+                // eventCode — use provided value or let @PrePersist auto-generate
+                .eventCode(request.eventCode())
+                .registrationStart(request.registrationStart())
+                .registrationEnd(request.registrationEnd())
                 .build();
 
         return toResponse(eventRepository.save(event));
@@ -84,6 +89,12 @@ public class EventService {
         event.setDate(request.date());
         event.setLocation(request.location());
         event.setCapacity(request.capacity());
+        event.setRegistrationStart(request.registrationStart());
+        event.setRegistrationEnd(request.registrationEnd());
+        // Allow manual override of the code; keep existing code if not supplied
+        if (request.eventCode() != null && !request.eventCode().isBlank()) {
+            event.setEventCode(request.eventCode().toUpperCase());
+        }
 
         return toResponse(eventRepository.save(event));
     }
@@ -104,7 +115,10 @@ public class EventService {
 
     // ── Mapper ────────────────────────────────────────────────────────────────
     private EventResponse toResponse(Event e) {
-        long registered = registrationRepository.countByEvent(e);
+        long registered    = registrationRepository.countByEvent(e);
+        long activeSeatsTaken = registrationRepository
+                .countByEventAndStatusNot(e, Registration.Status.CANCELLED);
+        long availableSeats = Math.max(0, e.getCapacity() - activeSeatsTaken);
         return new EventResponse(
                 e.getId(),
                 e.getTitle(),
@@ -115,7 +129,11 @@ public class EventService {
                 e.getOrganizer().getId(),
                 e.getOrganizer().getName(),
                 registered,
-                e.getCreatedAt()
+                e.getCreatedAt(),
+                e.getEventCode(),
+                e.getRegistrationStart(),
+                e.getRegistrationEnd(),
+                availableSeats
         );
     }
 
