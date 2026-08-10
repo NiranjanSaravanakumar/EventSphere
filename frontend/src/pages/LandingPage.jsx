@@ -109,52 +109,67 @@ const TopNav = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1, ...SPRING }}
       style={{
-        position: 'fixed', top: '1.25rem', left: '50%', transform: 'translateX(-50%)',
+        position: 'fixed',
+        top: '1.25rem',
+        /* left:0 + right:0 + margin:auto is the browser-native
+           way to centre a fixed element — no transform math,
+           no interaction with Framer Motion's own transforms. */
+        left: 0,
+        right: 0,
+        marginLeft: 'auto',
+        marginRight: 'auto',
         zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        gap: '2rem',
-        padding: '0.75rem 1.5rem',
+        width: 'min(760px, calc(100vw - 2rem))',
+        boxSizing: 'border-box',
+        /* CSS Grid 1fr | auto | 1fr keeps badges at dead-centre */
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        gap: '0.75rem',
+        padding: '0.625rem 1.25rem',
         borderRadius: '2rem',
-        background: 'rgba(5,5,5,0.75)',
+        background: 'rgba(8,8,8,0.82)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         border: '1px solid rgba(255,255,255,0.08)',
         boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
-        width: 'min(780px, calc(100vw - 2rem))',
       }}
     >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Sparkles style={{ width: '1rem', height: '1rem', color: '#71717A' }} />
-        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
+      {/* Col 1 — Logo (left-aligned) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+        <Sparkles style={{ width: '1rem', height: '1rem', color: '#71717A', flexShrink: 0 }} />
+        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
           Event<span style={{ color: '#52525b' }}>Sphere</span>
         </span>
       </div>
 
-      {/* Role badges */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      {/* Col 2 — Role badges (always at geometric centre) */}
+      <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'center' }}>
         <RoleBadge icon={ShieldCheck} label="Admin"     color="#a78bfa" />
         <RoleBadge icon={Calendar}   label="Organizer" color="#60a5fa" />
         <RoleBadge icon={Users}      label="Attendee"  color="#34d399" />
       </div>
 
-      {/* CTA */}
-      <motion.button
-        id="landing-signin-btn"
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.97 }}
-        transition={SPRING}
-        onClick={() => navigate('/login')}
-        style={{
-          height: '2.25rem', padding: '0 1.25rem',
-          borderRadius: '999px', border: 'none',
-          background: '#FAFAFA', color: '#050505',
-          fontSize: '0.875rem', fontWeight: 600,
-          cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        Sign In
-      </motion.button>
+      {/* Col 3 — Sign In (right-aligned) */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <motion.button
+          id="landing-signin-btn"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          transition={SPRING}
+          onClick={() => navigate('/login')}
+          style={{
+            height: '2.125rem', padding: '0 1.125rem',
+            borderRadius: '999px', border: 'none',
+            background: '#FAFAFA', color: '#050505',
+            fontSize: '0.875rem', fontWeight: 600,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          Sign In
+        </motion.button>
+      </div>
     </motion.nav>
   );
 };
@@ -474,15 +489,7 @@ const LandingPage = () => {
         <p style={{ fontSize: '0.75rem', color: '#27272a' }}>
           © 2026 EventSphere · Enterprise Event Platform
         </p>
-        <Link
-          to="/login"
-          id="landing-footer-signin"
-          style={{ fontSize: '0.75rem', color: '#3f3f46', textDecoration: 'none', transition: 'color 0.2s' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#71717A')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
-        >
-          Sign In →
-        </Link>
+        
       </footer>
     </div>
   );
