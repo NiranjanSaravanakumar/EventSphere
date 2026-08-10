@@ -4,10 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   Plus, Calendar, MapPin, Users, Trash2, Edit3, X,
   CheckCircle, AlertCircle, ScanLine, BarChart3, Layers, TrendingUp,
-  Key, Copy, Check
+  Key, Copy, Check, LogOut
 } from 'lucide-react';
 import ScannerPanel from '../components/shared/ScannerPanel.jsx';
 import { eventsApi, organizerApi } from '../services/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
 
@@ -275,7 +276,6 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
     date:              editingEvent?.date ? editingEvent.date.slice(0, 16) : '',
     location:          editingEvent?.location          || '',
     capacity:          editingEvent?.capacity          || '',
-    eventCode:         editingEvent?.eventCode         || '',
     registrationStart: editingEvent?.registrationStart ? editingEvent.registrationStart.slice(0, 16) : '',
     registrationEnd:   editingEvent?.registrationEnd   ? editingEvent.registrationEnd.slice(0, 16)   : '',
   });
@@ -294,8 +294,8 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
         registrationStart: form.registrationStart + ':00',
         registrationEnd:   form.registrationEnd   + ':00',
         capacity: parseInt(form.capacity, 10),
-        // Pass eventCode only if non-empty (null triggers auto-gen on create)
-        eventCode: form.eventCode.trim() || null,
+        // Always auto-generate the access code on create; preserve on edit
+        eventCode: isEditing ? (editingEvent.eventCode || null) : null,
       };
       if (isEditing) await eventsApi.update(editingEvent.id, payload);
       else           await eventsApi.create(payload);
@@ -304,6 +304,13 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
       setError(err?.response?.data?.message || err?.message || 'Failed to save.');
     } finally { setSaving(false); }
   };
+
+  // Lock body scroll while modal is open so the page behind never scrolls
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
   return (
     <motion.div
@@ -326,7 +333,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
         }}
       >
         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }} />
-        <div style={{ padding: '2rem' }}>
+        <div style={{ padding: '2rem', overflowY: 'auto', maxHeight: 'calc(100vh - 4rem)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
@@ -354,20 +361,13 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
             </div>
             <FieldInput label="Location" value={form.location} onChange={set('location')} placeholder="e.g. Cupertino, CA" required />
 
-            {/* Registration window */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            {/* Registration window — stacked so inputs never clip */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <FieldInput label="Reg. Opens" type="datetime-local" value={form.registrationStart} onChange={set('registrationStart')} required />
               <FieldInput label="Reg. Closes" type="datetime-local" value={form.registrationEnd}   onChange={set('registrationEnd')}   required />
             </div>
 
-            {/* Optional code override */}
-            <FieldInput
-              label="Access Code (optional — auto-generated if blank)"
-              value={form.eventCode}
-              onChange={set('eventCode')}
-              placeholder="Leave blank to auto-generate"
-              maxLength={50}
-            />
+            {/* Access code is always auto-generated — shown on the event card after creation */}
 
             <AnimatePresence>
               {error && (
@@ -406,6 +406,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
 // ── Main Organizer Dashboard ───────────────────────────────────────────────────
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [events, setEvents]             = useState([]);
   const [loading, setLoading]           = useState(true);
   const [modalOpen, setModalOpen]       = useState(false);
@@ -515,7 +516,28 @@ const OrganizerDashboard = () => {
             ))}
           </nav>
 
-          {/* CTA */}
+          {/* Logout */}
+          <motion.button
+            id="organizer-logout-btn"
+            whileHover={{ scale: 1.08, background: 'rgba(239,68,68,0.12)' }}
+            whileTap={{ scale: 0.94 }}
+            transition={SPRING}
+            onClick={() => { logout(); navigate('/login'); }}
+            title="Sign out"
+            style={{
+              width: '2.25rem', height: '2.25rem',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: '#71717A',
+              flexShrink: 0,
+            }}
+          >
+            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
+          </motion.button>
+
+          {/* New Event CTA */}
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} transition={SPRING}
             onClick={() => { setEditingEvent(null); setModalOpen(true); }}

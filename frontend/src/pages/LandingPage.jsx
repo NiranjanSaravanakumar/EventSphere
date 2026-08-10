@@ -292,24 +292,7 @@ const LandingPage = () => {
               <ArrowRight style={{ width: '1rem', height: '1rem' }} />
             </motion.button>
 
-            <motion.button
-              id="landing-signin-hero"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              transition={SPRING}
-              onClick={() => navigate('/login')}
-              style={{
-                height: '3rem', padding: '0 1.75rem',
-                borderRadius: '999px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                color: '#D4D4D8',
-                fontSize: '0.9375rem', fontWeight: 500,
-                cursor: 'pointer',
-              }}
-            >
-              Sign In
-            </motion.button>
+           
           </motion.div>
         </motion.div>
 
@@ -320,7 +303,6 @@ const LandingPage = () => {
           transition={{ delay: 1.2 }}
           style={{ position: 'absolute', bottom: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}
         >
-          <span style={{ fontSize: '0.6875rem', color: '#3f3f46', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Explore</span>
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
@@ -439,40 +421,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── CTA strip ─────────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '8rem 1.5rem', textAlign: 'center' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 32, filter: 'blur(12px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 300, letterSpacing: '-0.03em', color: '#FAFAFA', marginBottom: '1rem' }}>
-            Ready to run your<br /><strong>first event?</strong>
-          </h2>
-          <p style={{ color: '#52525b', marginBottom: '2.5rem', fontSize: '1rem' }}>
-            Create an account in seconds. No credit card required.
-          </p>
-          <motion.button
-            id="landing-cta-bottom"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-            transition={SPRING}
-            onClick={() => navigate('/login')}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              height: '3.25rem', padding: '0 2.25rem',
-              borderRadius: '999px', border: 'none',
-              background: '#FAFAFA', color: '#050505',
-              fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 0 48px rgba(255,255,255,0.10)',
-            }}
-          >
-            Get Started Free
-            <ArrowRight style={{ width: '1rem', height: '1rem' }} />
-          </motion.button>
-        </motion.div>
-      </section>
+      
 
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer style={{
