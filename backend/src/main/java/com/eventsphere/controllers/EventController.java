@@ -20,10 +20,11 @@ public class EventController {
     private EventService eventService;
 
     /**
-     * GET /api/events
-     * Public — list all upcoming events.
+     * GET /api/events/available
+     * Public — list all upcoming events (attendee-facing; eventCode is present in DTO
+     * but the Attendee UI simply never renders it).
      */
-    @GetMapping
+    @GetMapping("/available")
     public ResponseEntity<List<EventResponse>> getAllUpcoming() {
         return ResponseEntity.ok(eventService.getAllFutureEvents());
     }
@@ -62,10 +63,11 @@ public class EventController {
 
     /**
      * PUT /api/events/{id}
-     * Organizer/Admin — update an existing event.
+     * Admin (master override) OR the owning organizer — update an existing event.
+     * Spring Security evaluates hasRole('ADMIN') first; on true the isOwner call is skipped.
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @eventSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<EventResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody EventRequest request,
@@ -75,10 +77,15 @@ public class EventController {
 
     /**
      * DELETE /api/events/{id}
-     * Organizer/Admin — delete an event.
+     * Admin (master override) OR the owning organizer — delete an event.
+     *
+     * @PreAuthorize logic:
+     *  1. hasRole('ADMIN')  → TRUE  → access granted immediately (Master Override).
+     *  2. isOwner(...)      → TRUE  → organizer owns this event → allowed.
+     *  3. Both FALSE        → Spring Security emits 403 Forbidden.
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @eventSecurity.isOwner(#id, authentication.name)")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

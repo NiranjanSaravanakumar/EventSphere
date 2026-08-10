@@ -7,6 +7,10 @@ const AuthContext = createContext(undefined);
 const TOKEN_KEY = 'eventsphere_token';
 const USER_KEY  = 'eventsphere_user';
 
+/** Derives a URL-safe slug from an email address: alice@acme.com → alice */
+export const emailToSlug = (email = '') =>
+  email.split('@')[0].toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
 // ── Provider ───────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }) => {
   const [user, setUser]         = useState(null);
@@ -71,6 +75,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        emailToSlug,
       }}
     >
       {children}

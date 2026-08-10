@@ -35,6 +35,8 @@ The frontend uses a premium **"Liquid Glass"** design language — Apple-inspire
   - **Admin** — global platform oversight (all events, all users, global analytics)
   - **Organizer** — scoped to own events (CRUD, scanner, analytics, guest lists)
   - **Attendee** — register/cancel for events, personal QR ticket passbook
+- **Portal Selection screen** — users choose "Attendee Portal" or "Creator Studio" *before* entering credentials; role is locked in at step 1 so registration always sends the correct `ROLE_ATTENDEE` / `ROLE_ORGANIZER` payload
+- Dedicated admin login at `/adminlogin` (hidden from regular sign-up flow)
 - Secure registration and login; token rehydrated from `localStorage` on refresh
 - Role-based routing — each role lands on its own dashboard
 
@@ -93,23 +95,26 @@ Eventsphere/
 ├── backend/                         # Spring Boot 3 API
 │   ├── src/main/java/com/eventsphere/
 │   │   ├── config/
-│   │   │   ├── DataSeeder.java      # Seeds default admin on first boot
-│   │   │   ├── SecurityConfig.java  # JWT filter chain, CORS, RBAC rules
-│   │   │   └── WebConfig.java       # CORS bean
+│   │   │   ├── DataSeeder.java          # Seeds default admin on first boot
+│   │   │   ├── SecurityConfig.java      # JWT filter chain, CORS, RBAC rules
+│   │   │   └── WebConfig.java           # CORS bean
 │   │   ├── controllers/
 │   │   │   ├── AdminController.java         # /api/admin/** (ADMIN only)
 │   │   │   ├── AnalyticsController.java     # /api/analytics/**
-│   │   │   ├── AuthController.java          # /api/auth/**
-│   │   │   ├── CheckInController.java       # /api/check-in
+│   │   │   ├── AttendeeController.java      # /api/attendee/** (ATTENDEE)
+│   │   │   ├── AuthController.java          # /api/auth/** (public)
+│   │   │   ├── CheckInController.java       # /api/check-in (ORGANIZER, ADMIN)
 │   │   │   ├── EventController.java         # /api/events/**
+│   │   │   ├── OrganizerController.java     # /api/organizer/** (ORGANIZER, ADMIN)
 │   │   │   └── RegistrationController.java  # /api/registrations/**
 │   │   ├── services/
 │   │   │   ├── AnalyticsService.java
 │   │   │   ├── AuthService.java
 │   │   │   ├── CheckInService.java
-│   │   │   ├── EventService.java     # Admin bypasses ownership checks
-│   │   │   ├── QRCodeService.java    # ZXing Base64 generator
-│   │   │   └── RegistrationService.java  # Register, cancel, guest list
+│   │   │   ├── EventSecurityService.java    # Ownership checks (ORGANIZER vs ADMIN)
+│   │   │   ├── EventService.java            # Admin bypasses ownership checks
+│   │   │   ├── QRCodeService.java           # ZXing Base64 QR generator
+│   │   │   └── RegistrationService.java     # Register, cancel, guest list
 │   │   ├── entities/
 │   │   │   ├── Event.java
 │   │   │   ├── Registration.java     # Status: REGISTERED / CHECKED_IN / CANCELLED
@@ -117,15 +122,24 @@ Eventsphere/
 │   │   │   ├── Ticket.java           # qr_token (unique UUID-based)
 │   │   │   └── User.java
 │   │   ├── repositories/             # Spring Data JPA interfaces
-│   │   ├── dto/                      # Java records for request/response
+│   │   │   ├── EventRepository.java
+│   │   │   ├── RegistrationRepository.java
+│   │   │   ├── RoleRepository.java
+│   │   │   ├── TicketRepository.java
+│   │   │   └── UserRepository.java
+│   │   ├── dto/                      # Java records for request/response shapes
+│   │   │   ├── AnalyticsDashboardDTO.java
+│   │   │   ├── AuthDTOs.java
+│   │   │   ├── CheckInDTOs.java
+│   │   │   └── EventDTOs.java
 │   │   └── security/
 │   │       ├── CustomUserDetailsService.java
 │   │       ├── JwtAuthenticationFilter.java  # @Component, reads Bearer header
-│   │       └── JwtTokenProvider.java
+│   │       └── JwtTokenProvider.java         # HS256 sign / validate
 │   ├── src/main/resources/
 │   │   ├── application.properties
 │   │   └── schema.sql                # Auto-run DDL (6 tables)
-│   ├── Dockerfile                    # Multi-stage container build
+│   ├── Dockerfile                    # Multi-stage JDK build → JRE runtime
 │   ├── mvnw / mvnw.cmd               # Maven wrapper (no Maven install needed)
 │   └── pom.xml
 │
@@ -143,27 +157,32 @@ Eventsphere/
 │   │   │   ├── AdminLoginPage.jsx    # Dedicated admin login at /adminlogin
 │   │   │   ├── AnalyticsDashboard.jsx
 │   │   │   ├── AttendeePortal.jsx    # Discover + My Tickets + Cancel
-│   │   │   ├── AuthPage.jsx          # Liquid Glass login / register
+│   │   │   ├── AuthPage.jsx          # Portal selection → Liquid Glass login/register
+│   │   │   ├── LandingPage.jsx       # Public marketing page at /
 │   │   │   └── OrganizerDashboard.jsx
 │   │   └── components/
 │   │       ├── shared/
-│   │       │   ├── Navbar.jsx
-│   │       │   ├── ScannerPanel.jsx  # QR check-in modal
-│   │       │   └── TicketPass.jsx    # Apple Wallet-style QR card
+│   │       │   ├── Navbar.jsx        # Sticky nav for authenticated dashboards
+│   │       │   ├── ScannerPanel.jsx  # QR check-in modal (ORGANIZER)
+│   │       │   └── TicketPass.jsx    # Apple Wallet-style 3D QR card
 │   │       └── ui/
-│   │           ├── AnimatedCounter.jsx
+│   │           ├── AnimatedCounter.jsx   # Count-up stat numbers
+│   │           ├── EventAccessModal.jsx  # Invite-code entry dialog
 │   │           ├── GlassButton.jsx
 │   │           ├── GlassCard.jsx
 │   │           └── GlassInput.jsx
-│   ├── .env                          # VITE_API_BASE_URL (local)
-│   ├── .env.production               # VITE_API_BASE_URL (Render) — gitignored
-│   └── vite.config.js
+│   ├── .env                          # VITE_API_BASE_URL=http://localhost:8080/api
+│   ├── .env.production               # VITE_API_BASE_URL (Render URL) — gitignored
+│   ├── index.html
+│   ├── vite.config.js
+│   └── package.json
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                    # GitHub Actions CI pipeline
+│       └── ci.yml                    # GitHub Actions CI (Maven + Vite + Docker)
 ├── .gitignore                        # Covers Java, Node, IDE, OS, secrets
 ├── TEST_CREDENTIALS.env              # Local test accounts — gitignored
+├── TROUBLESHOOTING.md                # Real bugs encountered + fixes applied
 └── README.md
 ```
 
@@ -277,11 +296,11 @@ npm run dev
 ### Test Accounts
 See `TEST_CREDENTIALS.env` at the project root (gitignored).
 
-| Role | Login URL | Default Email | Password |
-|---|---|---|---|
-| **Admin** | `/adminlogin` | `admin@eventsphere.com` | `admin123` |
-| **Organizer** | `/auth` → Sign Up | Register via UI | your choice |
-| **Attendee** | `/auth` → Sign Up | Register via UI | your choice |
+| Role | Login URL | Portal | Default Email | Password |
+|---|---|---|---|---|
+| **Admin** | `/adminlogin` | Admin-only portal | `admin@eventsphere.com` | `admin123` |
+| **Organizer** | `/login` → Creator Studio | Select "Creator Studio" | Register via UI | your choice |
+| **Attendee** | `/login` → Attendee Portal | Select "Attendee Portal" | Register via UI | your choice |
 
 ---
 

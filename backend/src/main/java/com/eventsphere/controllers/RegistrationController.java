@@ -42,11 +42,11 @@ public class RegistrationController {
     }
 
     /**
-     * GET /api/registrations/my-tickets
-     * Authenticated — fetch all tickets with QR tokens for the current user.
+     * GET /api/registrations/my-tickets  (legacy alias — kept for backwards compatibility)
+     * Prefer GET /api/attendees/me/tickets (served by AttendeeController).
      */
     @GetMapping("/my-tickets")
-    public ResponseEntity<List<TicketView>> myTickets(
+    public ResponseEntity<List<TicketView>> myTicketsAlias(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(registrationService.getMyTickets(userDetails.getUsername()));
     }

@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext.jsx';
-import AuthPage           from './pages/AuthPage.jsx';
-import AdminLoginPage     from './pages/AdminLoginPage.jsx';
-import OrganizerDashboard from './pages/OrganizerDashboard.jsx';
-import AttendeePortal     from './pages/AttendeePortal.jsx';
-import AnalyticsDashboard from './pages/AnalyticsDashboard.jsx';
+import { AuthProvider, useAuth, emailToSlug } from './context/AuthContext.jsx';
 
-// ── Loading screen ──────────────────────────────────────────────────────────
+// ── Lazy-loaded pages ────────────────────────────────────────────────────────
+const LandingPage        = lazy(() => import('./pages/LandingPage.jsx'));
+const AuthPage           = lazy(() => import('./pages/AuthPage.jsx'));
+const AdminLoginPage     = lazy(() => import('./pages/AdminLoginPage.jsx'));
+const OrganizerDashboard = lazy(() => import('./pages/OrganizerDashboard.jsx'));
+const AttendeePortal     = lazy(() => import('./pages/AttendeePortal.jsx'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard.jsx'));
+
+// ── Loading screen ───────────────────────────────────────────────────────────
 const LoadingScreen = () => (
   <div style={{
     minHeight: '100vh', background: '#050505',
@@ -23,92 +26,134 @@ const LoadingScreen = () => (
   </div>
 );
 
-// ── Protected route ─────────────────────────────────────────────────────────
+// ── Route guard ──────────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children, roles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
-  if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  // Role guard — if roles specified, check membership
   if (roles && user && !roles.includes(user.role)) {
-    return <Navigate to="/portal" replace />;
+    // Redirect mismatch-role users to their own home
+    const slug = emailToSlug(user.email);
+    if (user.role === 'ROLE_ATTENDEE') return <Navigate to={`/attendee/${slug}/dashboard`} replace />;
+    if (user.role === 'ROLE_ORGANIZER') return <Navigate to={`/organizer/${slug}/dashboard`} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 };
 
-// ── Role-based default redirect ─────────────────────────────────────────────
+// ── Role-aware home redirect ─────────────────────────────────────────────────
 const HomeRedirect = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   if (isLoading) return <LoadingScreen />;
-  if (!isAuthenticated) return <Navigate to="/auth" replace />;
-  if (user?.role === 'ROLE_ORGANIZER' || user?.role === 'ROLE_ADMIN') {
-    return <Navigate to="/dashboard" replace />;
+
+  if (!isAuthenticated) {
+    // Show landing page to unauthenticated visitors
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <LandingPage />
+      </Suspense>
+    );
   }
-  return <Navigate to="/portal" replace />;
+
+  const slug = emailToSlug(user.email);
+  if (user.role === 'ROLE_ADMIN')     return <Navigate to="/admin/dashboard"                   replace />;
+  if (user.role === 'ROLE_ORGANIZER') return <Navigate to={`/organizer/${slug}/dashboard`}     replace />;
+  return                                     <Navigate to={`/attendee/${slug}/dashboard`}      replace />;
 };
 
-// ── App routes ──────────────────────────────────────────────────────────────
+// ── App routes ───────────────────────────────────────────────────────────────
 const AppRoutes = () => {
   const { isAuthenticated, user } = useAuth();
 
   return (
     <Routes>
-      {/* Public — regular auth page */}
+      {/* ── Public ──────────────────────────────────────────────────────── */}
+      <Route path="/" element={<HomeRedirect />} />
+
       <Route
-        path="/auth"
-        element={isAuthenticated ? <HomeRedirect /> : <AuthPage />}
+        path="/login"
+        element={
+          isAuthenticated
+            ? <HomeRedirect />
+            : (
+              <Suspense fallback={<LoadingScreen />}>
+                <AuthPage />
+              </Suspense>
+            )
+        }
       />
 
       {/* Admin-only login portal */}
       <Route
         path="/adminlogin"
-        element={isAuthenticated && user?.role === 'ROLE_ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <AdminLoginPage />}
+        element={
+          isAuthenticated && user?.role === 'ROLE_ADMIN'
+            ? <Navigate to="/admin/dashboard" replace />
+            : (
+              <Suspense fallback={<LoadingScreen />}>
+                <AdminLoginPage />
+              </Suspense>
+            )
+        }
       />
 
-      {/* Admin dashboard — analytics scoped to all events */}
+      {/* ── Admin ───────────────────────────────────────────────────────── */}
       <Route
         path="/admin/dashboard"
         element={
           <ProtectedRoute roles={['ROLE_ADMIN']}>
-            <AnalyticsDashboard />
+            <Suspense fallback={<LoadingScreen />}>
+              <AnalyticsDashboard />
+            </Suspense>
           </ProtectedRoute>
         }
       />
 
-      {/* Organizer / Admin dashboard */}
+      {/* ── Organizer ───────────────────────────────────────────────────── */}
       <Route
-        path="/dashboard"
+        path="/organizer/:username/dashboard"
         element={
           <ProtectedRoute roles={['ROLE_ORGANIZER', 'ROLE_ADMIN']}>
-            <OrganizerDashboard />
+            <Suspense fallback={<LoadingScreen />}>
+              <OrganizerDashboard />
+            </Suspense>
           </ProtectedRoute>
         }
       />
 
-      {/* Attendee portal (all authenticated users can see events) */}
+      {/* ── Attendee ────────────────────────────────────────────────────── */}
       <Route
-        path="/portal"
+        path="/attendee/:username/dashboard"
         element={
-          <ProtectedRoute>
-            <AttendeePortal />
+          <ProtectedRoute roles={['ROLE_ATTENDEE']}>
+            <Suspense fallback={<LoadingScreen />}>
+              <AttendeePortal initialTab="discover" />
+            </Suspense>
           </ProtectedRoute>
         }
       />
 
-      {/* Analytics — organizer/admin only */}
       <Route
-        path="/analytics"
+        path="/attendee/:username/tickets"
         element={
-          <ProtectedRoute roles={['ROLE_ORGANIZER', 'ROLE_ADMIN']}>
-            <AnalyticsDashboard />
+          <ProtectedRoute roles={['ROLE_ATTENDEE']}>
+            <Suspense fallback={<LoadingScreen />}>
+              <AttendeePortal initialTab="tickets" />
+            </Suspense>
           </ProtectedRoute>
         }
       />
 
-      {/* Root → smart redirect based on role */}
-      <Route path="/" element={<HomeRedirect />} />
+      {/* ── Legacy alias redirects (keep old bookmarks working) ─────────── */}
+      <Route path="/auth"      element={<Navigate to="/login" replace />} />
+      <Route path="/portal"    element={<Navigate to="/login" replace />} />
+      <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+      <Route path="/analytics" element={<Navigate to="/login" replace />} />
+
+      {/* ── Catch-all ───────────────────────────────────────────────────── */}
       <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );

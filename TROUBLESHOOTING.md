@@ -18,6 +18,7 @@
 9. [Admin account does not exist on first boot](#9-admin-account-does-not-exist-on-first-boot)
 10. [mvnw: Permission denied / not recognised](#10-mvnw-permission-denied--not-recognised)
 11. [CORS errors in browser console](#11-cors-errors-in-browser-console)
+12. [Single login form breaking role immersion — redesigned to portal selection](#12-single-login-form-breaking-role-immersion)
 
 ---
 
@@ -337,6 +338,47 @@ from origin 'http://localhost:5173' has been blocked by CORS policy
 ```
 
 `WebConfig.java` allows `http://localhost:5173` for all methods with credentials.
+
+---
+
+---
+
+## 12. Single login form breaking role immersion
+
+**Symptom / Problem**  
+Organizers and Attendees landed on the exact same login/register form at `/login`. The form had a small "I am joining as" pill toggle buried inside the registration step. This caused two issues:
+1. **UX immersion broken** — an Organizer opening a "Workspace" and an Attendee opening a "Consumer App" were forced through the same door with no visual distinction.
+2. **Registration role error-prone** — users could accidentally register with the wrong role if they didn't notice the small pill toggle.
+
+**Root Cause**  
+There was no step to differentiate the user's intent *before* showing credentials. The backend correctly stores the role, but the frontend gave no meaningful context to help the user understand which role they were signing up for.
+
+**Fix applied in:** [`AuthPage.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/pages/AuthPage.jsx)
+
+The page now implements a **3-step portal-selection flow**:
+
+```
+Step 1 — Portal Selection
+  ┌─────────────────────────────┐
+  │  🎫 Attendee Portal         │  → sets role = ROLE_ATTENDEE
+  │  🎤 Creator Studio          │  → sets role = ROLE_ORGANIZER
+  │  (Admin portal link below)  │  → navigates to /adminlogin
+  └─────────────────────────────┘
+
+Step 2 — Login / Register (role-aware)
+  ← Back button + coloured portal badge (e.g. 🎫 Attendee Portal)
+  Heading and subtext are contextual per portal
+  register() always sends the correct role payload
+```
+
+**Key UX details:**
+- The ambient background orb smoothly animates its tint colour (emerald for Attendee, violet for Organizer) when a portal is chosen, providing instant visual feedback
+- `PortalCard` components have per-card accent hover states
+- Framer Motion `AnimatePresence mode="wait"` handles the step transition with blur + slide animations
+- The glass card height layout-animates automatically via `motion.div layout`
+- All existing `useAuth` wiring, `GlassInput`/`GlassButton` components, and post-auth navigation slugs are preserved unchanged
+
+**Login flow is unchanged** — the backend resolves the actual role from the JWT token. Selecting a portal before login is purely UX; if a user already has an account and picks the "wrong" portal card, login succeeds and they are redirected to their correct dashboard anyway.
 
 ---
 

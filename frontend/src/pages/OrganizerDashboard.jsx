@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useSpring, useTransform, useMotionValue } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Plus, Calendar, MapPin, Users, Trash2, Edit3, X,
   CheckCircle, AlertCircle, ScanLine, BarChart3, Layers, TrendingUp,
   Key, Copy, Check
 } from 'lucide-react';
 import ScannerPanel from '../components/shared/ScannerPanel.jsx';
-import { eventsApi } from '../services/api.js';
+import { eventsApi, organizerApi } from '../services/api.js';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
 
@@ -422,7 +422,7 @@ const OrganizerDashboard = () => {
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await eventsApi.getMyEvents();
+      const { data } = await organizerApi.myEvents();
       setEvents(data);
     } catch { showToast('Failed to load events.', 'error'); }
     finally { setLoading(false); }

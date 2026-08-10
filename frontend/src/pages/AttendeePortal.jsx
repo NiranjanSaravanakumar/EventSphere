@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useParams } from 'react-router-dom';
 import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Search, Ticket, Clock } from 'lucide-react';
 import Navbar from '../components/shared/Navbar.jsx';
 import TicketPass from '../components/shared/TicketPass.jsx';
 import EventAccessModal from '../components/ui/EventAccessModal.jsx';
-import { eventsApi, registrationsApi } from '../services/api.js';
+import { eventsApi, attendeeApi, registrationsApi } from '../services/api.js';
 
 // ── Animation variants ─────────────────────────────────────────────────────────
 const containerVariants = {
@@ -191,8 +192,9 @@ const fmtTime = (iso) => iso
   : '—';
 
 // ── Main AttendeePortal ────────────────────────────────────────────────────────
-const AttendeePortal = () => {
-  const [tab, setTab]             = useState('discover');
+const AttendeePortal = ({ initialTab = 'discover' }) => {
+  const { username } = useParams(); // display-only; security from JWT
+  const [tab, setTab]             = useState(initialTab);
   const [events, setEvents]       = useState([]);
   const [tickets, setTickets]     = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -210,8 +212,8 @@ const AttendeePortal = () => {
     setLoading(true);
     try {
       const [evRes, tkRes] = await Promise.all([
-        eventsApi.getAll(),
-        registrationsApi.myTickets(),
+        eventsApi.available(),
+        attendeeApi.myTickets(),
       ]);
       setEvents(evRes.data);
       setTickets(tkRes.data);

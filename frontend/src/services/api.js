@@ -28,51 +28,56 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('eventsphere_token');
       localStorage.removeItem('eventsphere_user');
-      window.location.href = '/auth';
+      window.location.href = '/login';   // Updated: /auth → /login
     }
     return Promise.reject(error);
   }
 );
 
-// ── Auth endpoints ─────────────────────────────────────────────────────────
+// ── Auth ───────────────────────────────────────────────────────────────────
 export const authApi = {
   register: (data) => api.post('/auth/register', data),
   login:    (data) => api.post('/auth/login', data),
   me:       ()     => api.get('/auth/me'),
 };
 
-// ── Events endpoints ───────────────────────────────────────────────────────
+// ── Events — public listing (attendee-facing, no eventCode rendered by UI) ─
 export const eventsApi = {
-  getAll:     ()           => api.get('/events'),
-  getById:    (id)         => api.get(`/events/${id}`),
-  getMyEvents:()           => api.get('/events/organizer'),
-  create:     (data)       => api.post('/events', data),
-  update:     (id, data)   => api.put(`/events/${id}`, data),
-  delete:     (id)         => api.delete(`/events/${id}`),
+  available:  ()         => api.get('/events/available'),
+  getById:    (id)       => api.get(`/events/${id}`),
+  create:     (data)     => api.post('/events', data),
+  update:     (id, data) => api.put(`/events/${id}`, data),
+  delete:     (id)       => api.delete(`/events/${id}`),
 };
 
-// ── Registrations endpoints ────────────────────────────────────────────────
+// ── Organizer — scoped to the JWT token holder (me) ───────────────────────
+export const organizerApi = {
+  myEvents:    () => api.get('/organizers/me/events'),
+  myDashboard: () => api.get('/organizers/me/dashboard'),
+};
+
+// ── Attendee — scoped to the JWT token holder (me) ────────────────────────
+export const attendeeApi = {
+  myTickets: () => api.get('/attendees/me/tickets'),
+};
+
+// ── Registrations ──────────────────────────────────────────────────────────
 export const registrationsApi = {
   register:  (eventId, eventCode) => api.post(`/registrations/event/${eventId}`, { eventCode }),
-  myTickets: ()               => api.get('/registrations/my-tickets'),
-  cancel:    (registrationId) => api.delete(`/registrations/${registrationId}`),
-  guestList: (eventId)        => api.get(`/registrations/event/${eventId}/guests`),
+  cancel:    (registrationId)     => api.delete(`/registrations/${registrationId}`),
+  guestList: (eventId)            => api.get(`/registrations/event/${eventId}/guests`),
 };
 
-// ── Admin endpoints ────────────────────────────────────────────────
+// ── Admin ──────────────────────────────────────────────────────────────────
 export const adminApi = {
-  getUsers:  () => api.get('/admin/users'),
-  getEvents: () => api.get('/admin/events'),
+  getUsers:   () => api.get('/admin/users'),
+  getEvents:  () => api.get('/admin/events'),
+  analytics:  () => api.get('/admin/analytics'),
 };
 
-// ── Check-in endpoint ──────────────────────────────────────────────────────
+// ── Check-in ───────────────────────────────────────────────────────────────
 export const checkInApi = {
-  validate: (qrToken) => api.post('/check-in', { qrToken }),
-};
-
-// ── Analytics endpoint ─────────────────────────────────────────────────────
-export const analyticsApi = {
-  dashboard: () => api.get('/analytics/dashboard'),
+  validate: (qrToken) => api.post('/events/check-in', { qrToken }),
 };
 
 export default api;
