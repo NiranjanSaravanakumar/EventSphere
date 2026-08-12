@@ -39,17 +39,6 @@ public class EventController {
     }
 
     /**
-     * GET /api/events/organizer
-     * Organizer/Admin — list events created by the current user.
-     */
-    @GetMapping("/organizer")
-    @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
-    public ResponseEntity<List<EventResponse>> getMyEvents(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(eventService.getEventsByOrganizerEmail(userDetails.getUsername()));
-    }
-
-    /**
      * POST /api/events
      * Organizer/Admin — create a new event.
      */

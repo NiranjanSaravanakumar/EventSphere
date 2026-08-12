@@ -28,7 +28,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('eventsphere_token');
       localStorage.removeItem('eventsphere_user');
-      window.location.href = '/login';   // Updated: /auth → /login
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

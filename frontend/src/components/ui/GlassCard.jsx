@@ -11,15 +11,20 @@ const glassStyle = {
   boxShadow: '0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.10)',
 };
 
-const GlassCard = ({ children, className = '', hoverable = false, onClick }) => {
+const GlassCard = ({ children, hoverable = false, onClick }) => {
   return (
     <motion.div
       onClick={onClick}
       whileHover={hoverable ? { scale: 1.01 } : undefined}
       whileTap={onClick ? { scale: 0.99 } : undefined}
       transition={SPRING}
-      className={`relative rounded-2xl overflow-hidden ${hoverable ? 'cursor-pointer' : ''} ${className}`}
-      style={glassStyle}
+      style={{
+        position: 'relative',
+        borderRadius: '1rem',
+        overflow: 'hidden',
+        cursor: hoverable ? 'pointer' : 'default',
+        ...glassStyle,
+      }}
     >
       {/* Top-edge specular highlight */}
       <div style={{

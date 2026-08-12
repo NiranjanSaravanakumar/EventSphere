@@ -5,8 +5,7 @@ import {
   Mail, Lock, User, ArrowRight, ArrowLeft,
   Sparkles, Ticket, Mic2, ShieldCheck,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext.jsx';
-import { emailToSlug } from '../context/AuthContext.jsx';
+import { useAuth, emailToSlug } from '../context/AuthContext.jsx';
 import GlassInput from '../components/ui/GlassInput.jsx';
 import GlassButton from '../components/ui/GlassButton.jsx';
 

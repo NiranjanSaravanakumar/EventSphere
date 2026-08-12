@@ -199,21 +199,6 @@ const AdminLoginPage = () => {
               )}
             </AnimatePresence>
 
-            {/* Hint box */}
-            <div style={{
-              padding: '0.75rem 1rem',
-              borderRadius: '0.75rem',
-              background: 'rgba(99,102,241,0.06)',
-              border: '1px solid rgba(99,102,241,0.12)',
-              fontSize: '0.75rem',
-              color: '#6366f1',
-              lineHeight: 1.6,
-            }}>
-              <strong>Default credentials:</strong><br />
-              Email: <code>admin@eventsphere.com</code><br />
-              Password: <code>admin123</code>
-            </div>
-
             {/* Submit */}
             <div style={{ paddingTop: '0.5rem' }}>
               <GlassButton
@@ -233,7 +218,7 @@ const AdminLoginPage = () => {
           <div style={{ marginTop: '1.75rem', textAlign: 'center' }}>
             <button
               type="button"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/login')}
               style={{
                 fontSize: '0.875rem', color: '#71717A',
                 background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s',

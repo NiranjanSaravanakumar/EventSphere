@@ -2,8 +2,10 @@ package com.eventsphere.services;
 
 import com.eventsphere.entities.*;
 import com.eventsphere.repositories.*;
-import com.eventsphere.services.QRCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,13 +141,12 @@ public class RegistrationService {
         com.eventsphere.entities.Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found: " + eventId));
 
-        // Ownership check — unless admin
-        boolean isAdmin = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication().getAuthorities()
-                .contains(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"));
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
         if (!isAdmin && !event.getOrganizer().getEmail().equals(requesterEmail)) {
-            throw new org.springframework.security.access.AccessDeniedException("You are not the organizer of this event.");
+            throw new AccessDeniedException("You are not the organizer of this event.");
         }
 
         return registrationRepository.findByEvent(event)

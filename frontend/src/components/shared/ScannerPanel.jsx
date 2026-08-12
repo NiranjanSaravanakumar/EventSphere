@@ -8,7 +8,6 @@ const SPRING = { type: 'spring', stiffness: 380, damping: 28 };
 /**
  * ScannerPanel — Organizer tool to manually enter or paste a QR token
  * and validate it against the backend check-in endpoint.
- * Phase 5 will extend this with a real camera-based QR scanner.
  */
 const ScannerPanel = ({ onClose }) => {
   const [token, setToken]     = useState('');

@@ -42,16 +42,6 @@ public class RegistrationController {
     }
 
     /**
-     * GET /api/registrations/my-tickets  (legacy alias — kept for backwards compatibility)
-     * Prefer GET /api/attendees/me/tickets (served by AttendeeController).
-     */
-    @GetMapping("/my-tickets")
-    public ResponseEntity<List<TicketView>> myTicketsAlias(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(registrationService.getMyTickets(userDetails.getUsername()));
-    }
-
-    /**
      * DELETE /api/registrations/{id}
      * Attendee — cancel their own registration (frees up capacity slot).
      */

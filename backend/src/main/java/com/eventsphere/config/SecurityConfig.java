@@ -63,11 +63,9 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/events").permitAll()
+                .requestMatchers("/api/events/available").permitAll()
                 .requestMatchers("/api/events/{id}").permitAll()
-                .requestMatchers("/api/events/organizer/**").hasAnyRole("ORGANIZER", "ADMIN")
                 .requestMatchers("/api/check-in/**").hasAnyRole("ORGANIZER", "ADMIN")
-                .requestMatchers("/api/analytics/**").hasAnyRole("ORGANIZER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
