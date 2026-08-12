@@ -8,6 +8,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
-    List<Event> findByOrganizer(User organizer);
-    List<Event> findByDateAfterOrderByDateAsc(LocalDateTime now);
+    List<Event> findByOrganizerAndIsDeletedFalse(User organizer);
+    List<Event> findByDateAfterAndIsDeletedFalseOrderByDateAsc(LocalDateTime now);
 }

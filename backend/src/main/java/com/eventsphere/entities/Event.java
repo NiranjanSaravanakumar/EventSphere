@@ -57,6 +57,10 @@ public class Event {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

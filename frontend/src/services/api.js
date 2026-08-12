@@ -21,11 +21,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor — handle 401 globally ─────────────────────────────
+// ── Response interceptor — handle 401/403 globally ─────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('eventsphere_token');
       localStorage.removeItem('eventsphere_user');
       window.location.href = '/login';

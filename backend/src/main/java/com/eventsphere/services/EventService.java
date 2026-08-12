@@ -28,7 +28,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public List<EventResponse> getAllFutureEvents() {
         return eventRepository
-                .findByDateAfterOrderByDateAsc(LocalDateTime.now())
+                .findByDateAfterAndIsDeletedFalseOrderByDateAsc(LocalDateTime.now())
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -38,7 +38,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public List<EventResponse> getEventsByOrganizerEmail(String email) {
         User organizer = findUser(email);
-        return eventRepository.findByOrganizer(organizer)
+        return eventRepository.findByOrganizerAndIsDeletedFalse(organizer)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -110,7 +110,8 @@ public class EventService {
             throw new AccessDeniedException("You are not the organizer of this event.");
         }
 
-        eventRepository.delete(event);
+        event.setDeleted(true);
+        eventRepository.save(event);
     }
 
     // ── Mapper ────────────────────────────────────────────────────────────────
@@ -133,7 +134,8 @@ public class EventService {
                 e.getEventCode(),
                 e.getRegistrationStart(),
                 e.getRegistrationEnd(),
-                availableSeats
+                availableSeats,
+                e.isDeleted()
         );
     }
 

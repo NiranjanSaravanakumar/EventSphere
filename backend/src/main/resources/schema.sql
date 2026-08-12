@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_code         VARCHAR(50)  NOT NULL UNIQUE,
     registration_start DATETIME     NOT NULL,
     registration_end   DATETIME     NOT NULL,
+    is_deleted         BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (organizer_id) REFERENCES users (id) ON DELETE CASCADE,
     INDEX idx_organizer (organizer_id),

@@ -148,6 +148,97 @@ const RoleBadge = ({ role }) => {
   );
 };
 
+// ── Drilldown Card (Accordion) ────────────────────────────────────────────────
+const DrilldownCard = ({ title, icon: Icon, items, type }) => {
+  const [expanded, setExpanded] = useState(null);
+
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon style={{ width: '1rem', height: '1rem', color: '#a5b4fc' }} />
+        </div>
+        <div>
+          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#FAFAFA' }}>{title}</h3>
+          <p style={{ fontSize: '0.6875rem', color: '#71717A' }}>{items.length} total</p>
+        </div>
+      </div>
+      <div style={{ padding: '0.5rem' }}>
+        {items.map((item, idx) => {
+          const isExpanded = expanded === item.id;
+          return (
+            <div key={item.id} style={{ marginBottom: idx === items.length - 1 ? 0 : '0.25rem' }}>
+              <motion.button
+                onClick={() => setExpanded(isExpanded ? null : item.id)}
+                style={{
+                  width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: 'none',
+                  background: isExpanded ? 'rgba(255,255,255,0.04)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  cursor: 'pointer', textAlign: 'left'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: isExpanded ? '#FAFAFA' : '#D4D4D8' }}>{item.name}</span>
+                  <span style={{ fontSize: '0.6875rem', color: '#52525b' }}>{item.email}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#71717A', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.5rem', borderRadius: '99px' }}>
+                    {type === 'organizer' ? `${item.eventTitles.length} events` : `${item.registeredEvents.length} registrations`}
+                  </span>
+                  <motion.div animate={{ rotate: isExpanded ? 90 : 0 }}>
+                    <ChevronRight style={{ width: '1rem', height: '1rem', color: '#71717A' }} />
+                  </motion.div>
+                </div>
+              </motion.button>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={{ padding: '0.5rem 1rem 1rem 2.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                      {type === 'organizer' && item.eventTitles.map((title, i) => (
+                        <div key={i} style={{ fontSize: '0.75rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#a5b4fc' }} />
+                          {title}
+                        </div>
+                      ))}
+                      {type === 'organizer' && item.eventTitles.length === 0 && (
+                        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>No events created yet.</span>
+                      )}
+                      
+                      {type === 'attendee' && item.registeredEvents.map((evt, i) => (
+                        <div key={i} style={{ fontSize: '0.75rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: evt.status === 'CHECKED_IN' ? '#34d399' : '#60a5fa' }} />
+                            {evt.title}
+                          </div>
+                          <span style={{ fontSize: '0.625rem', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', background: evt.status === 'CHECKED_IN' ? 'rgba(52,211,153,0.1)' : 'rgba(96,165,250,0.1)', color: evt.status === 'CHECKED_IN' ? '#34d399' : '#60a5fa' }}>
+                            {evt.status}
+                          </span>
+                        </div>
+                      ))}
+                      {type === 'attendee' && item.registeredEvents.length === 0 && (
+                        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>No registrations.</span>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+        {items.length === 0 && (
+          <div style={{ padding: '1rem', textAlign: 'center', color: '#52525b', fontSize: '0.75rem' }}>None found.</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 // ── Toast ──────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => (
   <motion.div
@@ -357,8 +448,8 @@ const AnalyticsDashboard = () => {
         {/* ── TAB CONTENT with AnimatePresence ──────────────────────────────── */}
         <AnimatePresence mode="wait">
 
-          {/* ── OVERVIEW / ANALYTICS ─────────────────────────────────────────── */}
-          {(activeNav === 'overview' || activeNav === 'analytics') && (
+          {/* ── OVERVIEW ─────────────────────────────────────────── */}
+          {activeNav === 'overview' && (
             <motion.div key="overview" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
               {loading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
@@ -373,9 +464,43 @@ const AnalyticsDashboard = () => {
               )}
               {!loading && !error && data && (
                 <>
-                  {/* Bento grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'auto auto auto', gap: '0.875rem', marginBottom: '2rem' }}>
-                    <div style={{ gridColumn: '1 / 3', gridRow: '1 / 3', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
+                  {/* Overview Stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
+                    <BentoStat icon={Layers}      label="Active Events"   value={data.activeEventsCount} />
+                    <BentoStat icon={Calendar}    label="Completed"       value={data.completedEventsCount} />
+                    <BentoStat icon={Users}       label="Registrations"   value={data.totalRegistrations} />
+                    <BentoStat icon={CheckSquare} label="Checked In"      value={data.totalCheckIns} />
+                  </div>
+
+                  {/* Drilldown Grids */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                    <DrilldownCard title="Organizers" icon={Shield} items={data.organizers || []} type="organizer" />
+                    <DrilldownCard title="Attendees" icon={Users} items={data.attendees || []} type="attendee" />
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── ANALYTICS ─────────────────────────────────────────── */}
+          {activeNav === 'analytics' && (
+            <motion.div key="analytics" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+              {loading && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
+                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
+                </div>
+              )}
+              {error && !loading && (
+                <div style={{ padding: '1.5rem', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '0.75rem', color: '#f87171', fontSize: '0.875rem' }}>
+                  {error} — <button onClick={() => fetchData()} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer' }}>retry</button>
+                </div>
+              )}
+              {!loading && !error && data && (
+                <>
+                  {/* Analytics Funnel */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
+                    <div style={{ gridColumn: '1 / 3', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
                       <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46', marginBottom: '1.75rem' }}>Attendee Funnel</p>
                       {[
@@ -401,20 +526,17 @@ const AnalyticsDashboard = () => {
                         <RingChart value={data.totalCheckIns}      max={data.totalRegistrations} label="Attendance" />
                       </div>
                     </div>
-                    <BentoStat icon={Layers}      label="Active Events"   value={data.totalEvents}           style={{ gridColumn: '3', gridRow: '1' }} />
-                    <BentoStat icon={Users}       label="Registrations"   value={data.totalRegistrations}    style={{ gridColumn: '4', gridRow: '1' }} />
-                    <BentoStat icon={CheckSquare} label="Checked In"      value={data.totalCheckIns}         style={{ gridColumn: '3', gridRow: '2' }} />
-                    <BentoStat icon={Percent}     label="Attendance Rate" value={data.overallAttendanceRate} suffix="%" decimals={1} style={{ gridColumn: '4', gridRow: '2' }} />
-                    <div style={{ gridColumn: '1 / 5', gridRow: '3', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem', flexWrap: 'wrap', position: 'relative', overflow: 'hidden' }}>
+                    
+                    <div style={{ gridColumn: '3 / 5', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
-                      <div>
+                      <div style={{ textAlign: 'center' }}>
                         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>Total Platform Capacity</p>
-                        <p style={{ fontSize: '2rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, marginTop: '0.25rem', letterSpacing: '-0.02em' }}>
+                        <p style={{ fontSize: '3rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, marginTop: '1rem', letterSpacing: '-0.02em' }}>
                           <AnimatedCounter value={data.totalCapacity} />
                         </p>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3f3f46', fontSize: '0.75rem' }}>
-                        <TrendingUp style={{ width: '1rem', height: '1rem' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3f3f46', fontSize: '0.875rem' }}>
+                        <TrendingUp style={{ width: '1.25rem', height: '1.25rem' }} />
                         {data.totalEvents} event{data.totalEvents !== 1 ? 's' : ''} tracked
                       </div>
                     </div>

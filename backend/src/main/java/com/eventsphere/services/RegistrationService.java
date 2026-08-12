@@ -102,7 +102,8 @@ public class RegistrationService {
                             r.getEvent().getLocation(),
                             r.getStatus().name(),
                             qrToken,
-                            qrBase64
+                            qrBase64,
+                            r.getEvent().isDeleted()
                     );
                 })
                 .toList();
@@ -181,6 +182,7 @@ public class RegistrationService {
         String        eventLocation,
         String        status,
         String        qrToken,
-        String        qrBase64   // data:image/png;base64,... ready for <img src=""/>
+        String        qrBase64,   // data:image/png;base64,... ready for <img src=""/>
+        boolean       isDeleted
     ) {}
 }

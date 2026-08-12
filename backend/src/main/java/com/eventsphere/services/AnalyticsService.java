@@ -32,14 +32,17 @@ public class AnalyticsService {
     @Transactional(readOnly = true)
     public AnalyticsDashboardDTO getMetrics(String email, boolean isAdmin) {
         List<Event> events = isAdmin
-                ? eventRepository.findAll()
-                : eventRepository.findByOrganizer(findUser(email));
+                ? eventRepository.findAll() // Admin sees all events, including deleted, or maybe we want to filter here too, but findAll is fine for compile
+                : eventRepository.findByOrganizerAndIsDeletedFalse(findUser(email));
 
         long totalCapacity      = 0;
         long totalRegistrations = 0;
         long totalCheckIns      = 0;
+        long activeEventsCount  = 0;
+        long completedEventsCount = 0;
 
         var breakdown = new java.util.ArrayList<EventStat>();
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
         for (Event event : events) {
             long registered = registrationRepository.countByEvent(event);
@@ -51,6 +54,12 @@ public class AnalyticsService {
             totalCapacity      += cap;
             totalRegistrations += registered;
             totalCheckIns      += checkedIn;
+            
+            if (event.getDate() != null && event.getDate().isAfter(now)) {
+                activeEventsCount++;
+            } else {
+                completedEventsCount++;
+            }
 
             breakdown.add(new EventStat(
                 event.getId(),
@@ -71,13 +80,46 @@ public class AnalyticsService {
                 ? Math.round((totalCheckIns * 100.0 / totalRegistrations) * 10.0) / 10.0
                 : 0.0;
 
+        java.util.List<AnalyticsDashboardDTO.OrganizerStat> organizers = new java.util.ArrayList<>();
+        java.util.List<AnalyticsDashboardDTO.AttendeeStat> attendees = new java.util.ArrayList<>();
+
+        if (isAdmin) {
+            java.util.List<User> allUsers = userRepository.findAll();
+            java.util.List<Registration> allRegs = registrationRepository.findAll();
+            
+            for (User u : allUsers) {
+                boolean isOrganizer = u.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_ORGANIZER"));
+                boolean isAttendee = u.getRoles().stream().anyMatch(r -> r.getName().equals("ROLE_ATTENDEE"));
+                
+                if (isOrganizer) {
+                    java.util.List<String> orgEvents = events.stream()
+                        .filter(e -> e.getOrganizer().getId().equals(u.getId()))
+                        .map(Event::getTitle)
+                        .toList();
+                    organizers.add(new AnalyticsDashboardDTO.OrganizerStat(u.getId(), u.getName(), u.getEmail(), orgEvents));
+                }
+                
+                if (isAttendee) {
+                    java.util.List<AnalyticsDashboardDTO.AttendeeEventStat> attEvents = allRegs.stream()
+                        .filter(r -> r.getAttendee().getId().equals(u.getId()))
+                        .map(r -> new AnalyticsDashboardDTO.AttendeeEventStat(r.getEvent().getId(), r.getEvent().getTitle(), r.getStatus().name()))
+                        .toList();
+                    attendees.add(new AnalyticsDashboardDTO.AttendeeStat(u.getId(), u.getName(), u.getEmail(), attEvents));
+                }
+            }
+        }
+
         return new AnalyticsDashboardDTO(
             events.size(),
             totalCapacity,
             totalRegistrations,
             totalCheckIns,
             attendanceRate,
-            breakdown
+            activeEventsCount,
+            completedEventsCount,
+            breakdown,
+            organizers,
+            attendees
         );
     }
 

@@ -413,31 +413,47 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
                           transition={{ type: 'spring', stiffness: 280, damping: 24, delay: i * 0.08 }}
                           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}
                         >
-                          <TicketPass
-                            eventName={ticket.eventTitle}
-                            date={fmtDate(ticket.eventDate)}
-                            time={fmtTime(ticket.eventDate)}
-                            location={ticket.eventLocation}
-                            attendeeName="Your Ticket"
-                            qrBase64={ticket.qrBase64}
-                            qrToken={ticket.qrToken}
-                            status={ticket.status}
-                          />
-                          {/* Cancel button — only for REGISTERED tickets */}
-                          {ticket.status === 'REGISTERED' && (
-                            <motion.button
-                              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                              onClick={() => handleCancel(ticket.registrationId)}
-                              style={{
-                                padding: '0.4rem 1.25rem', borderRadius: '0.625rem',
-                                background: 'rgba(239,68,68,0.08)',
-                                border: '1px solid rgba(239,68,68,0.2)',
-                                color: '#f87171', fontSize: '0.75rem',
-                                fontWeight: 600, cursor: 'pointer',
-                              }}
-                            >
-                              Cancel Registration
-                            </motion.button>
+                          {ticket.isDeleted ? (
+                            <div style={{
+                              padding: '1.5rem', borderRadius: '1.25rem',
+                              background: 'rgba(239,68,68,0.08)',
+                              border: '1px solid rgba(239,68,68,0.2)',
+                              color: '#f87171', fontSize: '0.875rem',
+                              textAlign: 'center', width: '280px', height: '100%',
+                              display: 'flex', flexDirection: 'column', justifyContent: 'center'
+                            }}>
+                              <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{ticket.eventTitle}</h4>
+                              <p>Sorry, this event was deleted by the organizer.</p>
+                            </div>
+                          ) : (
+                            <>
+                              <TicketPass
+                                eventName={ticket.eventTitle}
+                                date={fmtDate(ticket.eventDate)}
+                                time={fmtTime(ticket.eventDate)}
+                                location={ticket.eventLocation}
+                                attendeeName="Your Ticket"
+                                qrBase64={ticket.qrBase64}
+                                qrToken={ticket.qrToken}
+                                status={ticket.status}
+                              />
+                              {/* Cancel button — only for REGISTERED tickets */}
+                              {ticket.status === 'REGISTERED' && (
+                                <motion.button
+                                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                                  onClick={() => handleCancel(ticket.registrationId)}
+                                  style={{
+                                    padding: '0.4rem 1.25rem', borderRadius: '0.625rem',
+                                    background: 'rgba(239,68,68,0.08)',
+                                    border: '1px solid rgba(239,68,68,0.2)',
+                                    color: '#f87171', fontSize: '0.75rem',
+                                    fontWeight: 600, cursor: 'pointer',
+                                  }}
+                                >
+                                  Cancel Registration
+                                </motion.button>
+                              )}
+                            </>
                           )}
                         </motion.div>
                       ))}

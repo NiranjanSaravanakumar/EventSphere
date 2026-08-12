@@ -38,6 +38,7 @@ public class EventDTOs {
         LocalDateTime registrationStart,
         LocalDateTime registrationEnd,
         /** capacity − active (non-cancelled) registrations. */
-        long          availableSeats
+        long          availableSeats,
+        boolean       isDeleted
     ) {}
 }
