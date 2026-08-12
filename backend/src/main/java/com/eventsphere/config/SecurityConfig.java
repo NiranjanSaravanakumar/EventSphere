@@ -65,6 +65,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/events/available").permitAll()
                 .requestMatchers("/api/events/{id}").permitAll()
+                .requestMatchers("/error").permitAll()
                 .requestMatchers("/api/check-in/**").hasAnyRole("ORGANIZER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
