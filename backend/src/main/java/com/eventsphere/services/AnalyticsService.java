@@ -26,8 +26,14 @@ public class AnalyticsService {
     @Autowired private UserRepository         userRepository;
 
     /**
-     * Aggregates metrics scoped to the requesting organizer,
-     * or globally for admins.
+     * Aggregates and calculates analytics metrics for the dashboard.
+     * The metrics are scoped depending on the role of the requesting user:
+     * - Admins receive global metrics across all events and users.
+     * - Organizers receive metrics scoped strictly to the events they own.
+     *
+     * @param email The email address of the requesting user.
+     * @param isAdmin True if the user has the ADMIN role, granting global visibility.
+     * @return AnalyticsDashboardDTO containing aggregated metrics, event breakdown, and user stats.
      */
     @Transactional(readOnly = true)
     public AnalyticsDashboardDTO getMetrics(String email, boolean isAdmin) {

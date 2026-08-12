@@ -191,6 +191,17 @@ const fmtTime = (iso) => iso
   ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   : '—';
 
+/**
+ * AttendeePortal Component
+ * 
+ * Serves as the primary dashboard for users with the ATTENDEE role. 
+ * Allows users to discover available events, register via an access code, 
+ * view their digital ticket passes, and cancel registrations.
+ * 
+ * @param {Object} props - Component properties.
+ * @param {string} props.initialTab - The default tab to open ('discover' or 'tickets').
+ * @returns {JSX.Element} The rendered Attendee Portal view.
+ */
 // ── Main AttendeePortal ────────────────────────────────────────────────────────
 const AttendeePortal = ({ initialTab = 'discover' }) => {
   const { username } = useParams(); // display-only; security from JWT

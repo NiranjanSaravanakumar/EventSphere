@@ -6,6 +6,11 @@ import lombok.*;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
+/**
+ * Entity representing an Event within the EventSphere platform.
+ * Contains all details required for an event, including its capacity, 
+ * location, date, and registration windows. Events are owned by an Organizer.
+ */
 @Entity
 @Table(name = "events")
 @Getter
