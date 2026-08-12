@@ -7,6 +7,7 @@ import {
 import ReactECharts from 'echarts-for-react';
 import ScannerPanel from '../components/shared/ScannerPanel.jsx';
 import { eventsApi, registrationsApi } from '../services/api.js';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
 
@@ -161,7 +162,11 @@ const OrganizerEventDetails = () => {
               border: '1px solid rgba(255,255,255,0.08)', marginBottom: '2rem'
             }}
           >
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem', letterSpacing: '-0.02em' }}>{event.title}</h1>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+              <ScrollBounceText as="span" intensity={1.0} maxSkewDeg={2.5} maxTranslateY={5} stiffness={340} damping={32}>
+                {event.title}
+              </ScrollBounceText>
+            </h1>
             <p style={{ color: '#A1A1AA', lineHeight: 1.6, marginBottom: '2rem' }}>{event.description || 'No description provided.'}</p>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -187,7 +192,11 @@ const OrganizerEventDetails = () => {
               border: '1px solid rgba(255,255,255,0.08)'
             }}
           >
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Guest List</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+              <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
+                Guest List
+              </ScrollBounceText>
+            </h2>
             {guests.length === 0 ? (
               <p style={{ color: '#71717A' }}>No guests registered yet.</p>
             ) : (
@@ -225,7 +234,11 @@ const OrganizerEventDetails = () => {
               border: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: '2rem'
             }}
           >
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', textAlign: 'center' }}>Event Stats</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', textAlign: 'center' }}>
+              <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
+                Event Stats
+              </ScrollBounceText>
+            </h2>
             
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
               <div style={{ textAlign: 'center' }}>
@@ -234,12 +247,20 @@ const OrganizerEventDetails = () => {
               </div>
             </div>
 
-            <h3 style={{ fontSize: '0.875rem', fontWeight: 600, textAlign: 'center', color: '#D4D4D8', marginTop: '2rem' }}>Registration Status</h3>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 600, textAlign: 'center', color: '#D4D4D8', marginTop: '2rem' }}>
+              <ScrollBounceText as="span" intensity={0.7} maxSkewDeg={1.5} maxTranslateY={2} stiffness={380} damping={38}>
+                Registration Status
+              </ScrollBounceText>
+            </h3>
             <div style={{ height: '240px', width: '100%', marginBottom: '1rem' }}>
               <ReactECharts option={registrationPieOption} style={{ height: '100%', width: '100%' }} />
             </div>
 
-            <h3 style={{ fontSize: '0.875rem', fontWeight: 600, textAlign: 'center', color: '#D4D4D8', marginTop: '1rem' }}>Attendance Breakdown</h3>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 600, textAlign: 'center', color: '#D4D4D8', marginTop: '1rem' }}>
+              <ScrollBounceText as="span" intensity={0.7} maxSkewDeg={1.5} maxTranslateY={2} stiffness={380} damping={38}>
+                Attendance Breakdown
+              </ScrollBounceText>
+            </h3>
             <div style={{ height: '240px', width: '100%' }}>
               <ReactECharts option={attendancePieOption} style={{ height: '100%', width: '100%' }} />
             </div>

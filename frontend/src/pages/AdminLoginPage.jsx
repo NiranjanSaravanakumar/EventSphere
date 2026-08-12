@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import GlassInput from '../components/ui/GlassInput.jsx';
 import GlassButton from '../components/ui/GlassButton.jsx';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 const SPRING = { type: 'spring', stiffness: 400, damping: 30 };
 
@@ -146,7 +147,9 @@ const AdminLoginPage = () => {
           {/* Header */}
           <div style={{ marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: '#FAFAFA' }}>
-              Administrator Login
+              <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
+                Administrator Login
+              </ScrollBounceText>
             </h1>
             <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem', lineHeight: 1.6 }}>
               Restricted access — System Administrators only.

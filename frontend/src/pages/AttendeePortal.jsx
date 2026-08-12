@@ -6,6 +6,7 @@ import Navbar from '../components/shared/Navbar.jsx';
 import TicketPass from '../components/shared/TicketPass.jsx';
 import EventAccessModal from '../components/ui/EventAccessModal.jsx';
 import { eventsApi, attendeeApi, registrationsApi } from '../services/api.js';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 // ── Animation variants ─────────────────────────────────────────────────────────
 const containerVariants = {
@@ -290,7 +291,9 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
           style={{ marginBottom: '2rem', position: 'relative', zIndex: 10 }}
         >
           <h1 style={{ fontSize: '1.875rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#FAFAFA' }}>
-            Event Portal
+            <ScrollBounceText as="span" intensity={1} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={34}>
+              Event Portal
+            </ScrollBounceText>
           </h1>
           <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem' }}>
             Discover events and access your tickets.

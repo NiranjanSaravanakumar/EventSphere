@@ -435,7 +435,11 @@ const AnalyticsDashboard = () => {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.025em' }}>{header.title}</h1>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.025em' }}>
+                <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
+                  {header.title}
+                </ScrollBounceText>
+              </h1>
               <p style={{ fontSize: '0.75rem', color: '#3f3f46', marginTop: '0.25rem' }}>{header.sub}</p>
             </motion.div>
           </AnimatePresence>

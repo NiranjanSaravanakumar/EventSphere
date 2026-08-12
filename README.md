@@ -46,6 +46,7 @@ The frontend uses a premium **"Liquid Glass"** design language — Apple-inspire
 - Organizer owns their events — only they (or an Admin) can edit/delete
 - Stats row: Total Events · Total Registered · Total Capacity · Nearly Full count
 - **Guest List:** View all attendees registered for any of your events
+- **Event Details Page:** Deep-dive view per event with ECharts pie charts (Registration Status + Attendance Breakdown), live guest list, and inline scanner button
 
 ### 🎟️ Attendee Portal
 - Browse all upcoming events with a live search filter
@@ -79,6 +80,7 @@ The frontend uses a premium **"Liquid Glass"** design language — Apple-inspire
 - Auto-seeded admin account via `DataSeeder.java` on first boot
 - `GET /api/admin/users` — view all platform users
 - `GET /api/admin/events` — view every event across all organizers
+- `GET /api/admin/analytics` — global platform metrics (all registrations)
 
 ### ⚙️ DevOps / Production
 - Multi-stage **Dockerfile** (JDK build → JRE runtime, non-root user)
@@ -97,10 +99,9 @@ Eventsphere/
 │   │   ├── config/
 │   │   │   ├── DataSeeder.java          # Seeds default admin on first boot
 │   │   │   ├── SecurityConfig.java      # JWT filter chain, CORS, RBAC rules
-│   │   │   └── WebConfig.java           # CORS bean
+│   │   │   └── WebConfig.java           # CORS bean (allows localhost:5173)
 │   │   ├── controllers/
-│   │   │   ├── AdminController.java         # /api/admin/** (ADMIN only)
-│   │   │   ├── AnalyticsController.java     # /api/analytics/**
+│   │   │   ├── AdminController.java         # /api/admin/** (ADMIN only) — users, events, analytics
 │   │   │   ├── AttendeeController.java      # /api/attendee/** (ATTENDEE)
 │   │   │   ├── AuthController.java          # /api/auth/** (public)
 │   │   │   ├── CheckInController.java       # /api/check-in (ORGANIZER, ADMIN)
@@ -108,11 +109,11 @@ Eventsphere/
 │   │   │   ├── OrganizerController.java     # /api/organizer/** (ORGANIZER, ADMIN)
 │   │   │   └── RegistrationController.java  # /api/registrations/**
 │   │   ├── services/
-│   │   │   ├── AnalyticsService.java
-│   │   │   ├── AuthService.java
-│   │   │   ├── CheckInService.java
+│   │   │   ├── AnalyticsService.java        # Aggregates metrics for Organizer and Admin views
+│   │   │   ├── AuthService.java             # Register, login, JWT issuance
+│   │   │   ├── CheckInService.java          # QR token validation + CHECKED_IN state change
 │   │   │   ├── EventSecurityService.java    # Ownership checks (ORGANIZER vs ADMIN)
-│   │   │   ├── EventService.java            # Admin bypasses ownership checks
+│   │   │   ├── EventService.java            # CRUD; Admin bypasses ownership checks
 │   │   │   ├── QRCodeService.java           # ZXing Base64 QR generator
 │   │   │   └── RegistrationService.java     # Register, cancel, guest list
 │   │   ├── entities/
@@ -154,23 +155,24 @@ Eventsphere/
 │   │   ├── services/
 │   │   │   └── api.js                # Axios instance + all API calls
 │   │   ├── pages/
-│   │   │   ├── AdminLoginPage.jsx    # Dedicated admin login at /adminlogin
-│   │   │   ├── AnalyticsDashboard.jsx
-│   │   │   ├── AttendeePortal.jsx    # Discover + My Tickets + Cancel
-│   │   │   ├── AuthPage.jsx          # Portal selection → Liquid Glass login/register
-│   │   │   ├── LandingPage.jsx       # Public marketing page at /
-│   │   │   └── OrganizerDashboard.jsx
+│   │   │   ├── AdminLoginPage.jsx        # Dedicated admin login at /adminlogin
+│   │   │   ├── AnalyticsDashboard.jsx    # SVG ring charts, funnel, per-event rows
+│   │   │   ├── AttendeePortal.jsx        # Discover + My Tickets + Cancel Registration
+│   │   │   ├── AuthPage.jsx              # 3-step portal selection → Liquid Glass login/register
+│   │   │   ├── LandingPage.jsx           # Public marketing page at /
+│   │   │   ├── OrganizerDashboard.jsx    # Event CRUD grid + stats row + guest list modal
+│   │   │   └── OrganizerEventDetails.jsx # Per-event deep-dive: guest list + ECharts + scanner
 │   │   └── components/
 │   │       ├── shared/
 │   │       │   ├── Navbar.jsx        # Sticky nav for authenticated dashboards
 │   │       │   ├── ScannerPanel.jsx  # QR check-in modal (ORGANIZER)
 │   │       │   └── TicketPass.jsx    # Apple Wallet-style 3D QR card
 │   │       └── ui/
-│   │           ├── AnimatedCounter.jsx   # Count-up stat numbers
+│   │           ├── AnimatedCounter.jsx   # Count-up stat numbers (Framer Motion useSpring)
 │   │           ├── EventAccessModal.jsx  # Invite-code entry dialog
-│   │           ├── GlassButton.jsx
-│   │           ├── GlassCard.jsx
-│   │           └── GlassInput.jsx
+│   │           ├── GlassButton.jsx       # Reusable glass-morphism button
+│   │           ├── GlassCard.jsx         # Reusable glass-morphism card container
+│   │           └── GlassInput.jsx        # Reusable glass-morphism text input
 │   ├── .env                          # VITE_API_BASE_URL=http://localhost:8080/api
 │   ├── .env.production               # VITE_API_BASE_URL (Render URL) — gitignored
 │   ├── index.html
@@ -184,6 +186,72 @@ Eventsphere/
 ├── TEST_CREDENTIALS.env              # Local test accounts — gitignored
 ├── TROUBLESHOOTING.md                # Real bugs encountered + fixes applied
 └── README.md
+```
+
+---
+
+## 🧩 How It All Works — Function Flow
+
+```
+Browser
+  │
+  ├── LandingPage (/)          → Public marketing, links to /login
+  │
+  ├── AuthPage (/login)        → 3-step portal selection → JWT issued by backend
+  │     Step 1: Pick "Attendee Portal" or "Creator Studio"
+  │     Step 2: Login / Register (role pre-selected)
+  │     Step 3: Redirect to role-specific dashboard
+  │
+  ├── AdminLoginPage (/adminlogin) → Admin-only credentials → /admin dashboard
+  │
+  ├── OrganizerDashboard (/dashboard/organizer)
+  │     ├── Create / Edit / Delete events (EventController)
+  │     ├── Stats row (total events, capacity, near-full count)
+  │     ├── Click event card → OrganizerEventDetails (/dashboard/organizer/event/:id)
+  │     │     ├── Guest list (RegistrationController → guestList)
+  │     │     ├── ECharts pie: Registration Status + Attendance Breakdown
+  │     │     └── Open Scanner button → ScannerPanel overlay
+  │     └── Guest List modal (per event, inline)
+  │
+  ├── AttendeePortal (/dashboard/attendee)
+  │     ├── "Discover" tab — browse all upcoming events (EventController)
+  │     ├── Register for event (RegistrationController → register)
+  │     ├── "My Tickets" tab — list tickets with QR codes (RegistrationController → myTickets)
+  │     │     └── TicketPass card (3D hover + specular glare + Apple Wallet style)
+  │     └── Cancel registration (RegistrationController → cancel)
+  │
+  └── AnalyticsDashboard (/dashboard/analytics)
+        ├── Animated count-up stat cards
+        ├── SVG ring charts (fill rate + attendance rate)
+        ├── Funnel bar: Capacity → Registered → Checked In
+        └── Per-event breakdown rows
+              └── Organizer: own events only | Admin: all events globally
+```
+
+### Backend Request Lifecycle
+
+```
+HTTP Request
+  → JwtAuthenticationFilter (validates Bearer token, sets SecurityContext)
+  → Spring Security filter chain (RBAC rules from SecurityConfig)
+  → Controller (@PreAuthorize / URL-level)
+  → Service (business logic + ownership checks)
+  → Repository (Spring Data JPA → MySQL)
+  → Response DTO → JSON
+```
+
+### Key Data Relationships
+
+```
+User ──(ORGANIZER)──> Event
+User ──(ATTENDEE)──> Registration ──> Ticket (qr_token UUID)
+Registration.status: REGISTERED | CHECKED_IN | CANCELLED
+
+CheckIn flow:
+  ScannerPanel sends qr_token
+  → CheckInController → CheckInService
+  → Finds Ticket by token → validates Registration status
+  → Sets Registration.status = CHECKED_IN
 ```
 
 ---
@@ -252,12 +320,13 @@ name (unique)        role_id (FK)
 |---|---|---|---|
 | `GET` | `/api/admin/users` | ADMIN only | All platform users |
 | `GET` | `/api/admin/events` | ADMIN only | All events (all organizers) |
+| `GET` | `/api/admin/analytics` | ADMIN only | Global platform metrics |
 
 ---
 
 ## 🚀 Quick Start
 
-> See [`backend/README.md`](./backend/README.md) and [`frontend/README.md`](./frontend/README.md) for full setup details.
+> See [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) if you hit any issues during setup.
 
 ### Prerequisites
 | Tool | Version | Notes |
@@ -395,6 +464,7 @@ VITE_API_BASE_URL=https://your-app.onrender.com/api
 | QR Code | ZXing 3.5.3 (Google) |
 | Frontend Framework | React 19 + Vite 8 |
 | Animations | Framer Motion 13 |
+| Charts | Apache ECharts (echarts-for-react) |
 | Icons | Lucide React |
 | HTTP Client | Axios |
 | Routing | React Router DOM v7 |

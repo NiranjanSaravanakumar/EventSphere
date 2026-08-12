@@ -9,6 +9,7 @@ import {
 import ScannerPanel from '../components/shared/ScannerPanel.jsx';
 import { eventsApi, organizerApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
 
@@ -324,7 +325,9 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
-                {isEditing ? 'Edit Event' : 'Draft New Event'}
+                <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
+                  {isEditing ? 'Edit Event' : 'Draft New Event'}
+                </ScrollBounceText>
               </h2>
               <p style={{ fontSize: '0.8125rem', color: '#52525b', marginTop: '0.25rem' }}>
                 {isEditing ? 'Update the event details.' : 'Fill in the details for your event.'}
@@ -511,7 +514,9 @@ const OrganizerDashboard = () => {
           }}
         >
           What are we<br />
-          <span style={{ color: '#FAFAFA' }}>hosting next?</span>
+          <ScrollBounceText as="span" intensity={1.0} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={32}>
+            <span style={{ color: '#FAFAFA' }}>hosting next?</span>
+          </ScrollBounceText>
         </motion.h1>
 
       </div>

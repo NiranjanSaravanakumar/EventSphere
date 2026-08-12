@@ -19,6 +19,14 @@
 10. [mvnw: Permission denied / not recognised](#10-mvnw-permission-denied--not-recognised)
 11. [CORS errors in browser console](#11-cors-errors-in-browser-console)
 12. [Single login form breaking role immersion — redesigned to portal selection](#12-single-login-form-breaking-role-immersion)
+13. [MySQL connection refused on startup](#13-mysql-connection-refused-on-startup)
+14. [QR code not displaying on ticket — blank image area](#14-qr-code-not-displaying-on-ticket--blank-image-area)
+15. [Attendee can register for same event twice](#15-attendee-can-register-for-same-event-twice)
+16. [JWT token lost on browser refresh](#16-jwt-token-lost-on-browser-refresh)
+17. [npm install / Vite build errors — node_modules issues](#17-npm-install--vite-build-errors--node_modules-issues)
+18. [Spring Boot fails to start — schema.sql errors](#18-spring-boot-fails-to-start--schemasql-errors)
+19. [Organizer sees another organizer's events](#19-organizer-sees-another-organizers-events)
+20. [ECharts / echarts-for-react not rendering on first load](#20-echarts--echarts-for-react-not-rendering-on-first-load)
 
 ---
 
@@ -341,8 +349,6 @@ from origin 'http://localhost:5173' has been blocked by CORS policy
 
 ---
 
----
-
 ## 12. Single login form breaking role immersion
 
 **Symptom / Problem**  
@@ -382,6 +388,275 @@ Step 2 — Login / Register (role-aware)
 
 ---
 
+## 13. MySQL connection refused on startup
+
+**Symptom**  
+Backend fails to start with:
+```
+com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+```
+or
+```
+Failed to obtain JDBC Connection; nested exception: java.sql.SQLNonTransientConnectionException
+```
+
+**Possible Causes & Fixes**
+
+**Cause A: MySQL service is not running**
+```powershell
+# Windows — start MySQL service
+net start MySQL80
+# or from Services panel: services.msc → MySQL80 → Start
+```
+```bash
+# Linux / macOS
+sudo systemctl start mysql
+# or
+brew services start mysql
+```
+
+**Cause B: Wrong credentials in `application.properties`**  
+Check `backend/src/main/resources/application.properties`:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/eventsphere
+spring.datasource.username=root
+spring.datasource.password=your_actual_password
+```
+Verify you can connect with those credentials in MySQL Workbench or the CLI.
+
+**Cause C: Database `eventsphere` doesn't exist yet**
+```sql
+-- Run this in MySQL Workbench / CLI before starting the backend
+CREATE DATABASE eventsphere;
+```
+
+**Cause D: MySQL is running on a non-default port**  
+Update the port in `application.properties`:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:YOUR_PORT/eventsphere
+```
+
+---
+
+## 14. QR code not displaying on ticket — blank image area
+
+**Symptom**  
+Ticket cards in the Attendee Portal show a blank white or grey rectangle where the QR code should be. No console error or a broken image icon.
+
+**Possible Causes & Fixes**
+
+**Cause A: `qrBase64` field is null or empty**  
+Call `GET /api/registrations/my-tickets` directly in the browser (with your Bearer token) and check that each ticket object has a non-empty `qrBase64` field. If it's null, the QR generation failed silently on the backend.
+
+Check the backend log for `ZXing` errors:
+```
+WriterException: ...
+```
+
+**Cause B: Corrupt Base64 prefix**  
+The frontend renders the QR with:
+```jsx
+<img src={`data:image/png;base64,${ticket.qrBase64}`} ... />
+```
+If `ticket.qrBase64` already contains the `data:image/png;base64,` prefix (double-prefix), the image breaks. Check `QRCodeService.java` — it should return **raw** Base64 without the prefix.
+
+**Cause C: Registration was cancelled before ticket rendered**  
+Cancelled registrations still appear in the ticket list but with `status: CANCELLED`. The `TicketPass` component dims cancelled tickets. If the QR field is stripped for cancelled tickets by the backend, this is expected behaviour.
+
+**Quick fix — regenerate test data:**  
+Cancel and re-register for an event to get a fresh QR ticket.
+
+---
+
+## 15. Attendee can register for same event twice
+
+**Symptom**  
+An attendee clicks "Register" again for an event they're already registered for and gets a second ticket instead of an error.
+
+**Root Cause**  
+`RegistrationService.register()` was missing a duplicate-registration check.
+
+**Fix applied in:** [`RegistrationService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/RegistrationService.java)
+
+The service now checks for an existing `REGISTERED` or `CHECKED_IN` registration before creating a new one:
+```java
+boolean alreadyRegistered = registrationRepository
+    .findByEventIdAndAttendeeId(eventId, attendee.getId())
+    .stream()
+    .anyMatch(r -> r.getStatus() == RegistrationStatus.REGISTERED
+               || r.getStatus() == RegistrationStatus.CHECKED_IN);
+
+if (alreadyRegistered) {
+    throw new IllegalStateException("You are already registered for this event.");
+}
+```
+
+The frontend shows the server error message inline below the Register button.
+
+---
+
+## 16. JWT token lost on browser refresh
+
+**Symptom**  
+After refreshing the page, the user is logged out and sent back to `/login` even though they had just authenticated. The dashboard was accessible before refresh.
+
+**Root Cause**  
+The JWT was stored only in React state (`useState`) inside `AuthContext`. React state is ephemeral — it resets on every page refresh.
+
+**Fix applied in:** [`AuthContext.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/context/AuthContext.jsx)
+
+On login/register, the token is persisted to `localStorage`:
+```js
+localStorage.setItem('token', accessToken);
+```
+
+On mount, `AuthContext` rehydrates state from `localStorage`:
+```js
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    // decode and restore user state from token payload
+  }
+}, []);
+```
+
+On logout, the token is cleared:
+```js
+localStorage.removeItem('token');
+```
+
+---
+
+## 17. npm install / Vite build errors — node_modules issues
+
+**Symptom**  
+Running `npm install` or `npm run dev` fails with cryptic errors like:
+```
+Cannot find module '...'
+ENOENT: no such file or directory, open 'node_modules/...'
+```
+or the dev server starts but shows white-screen import errors.
+
+**Fix — Clean install**
+```bash
+cd frontend
+
+# Delete existing node_modules and lock file
+rm -rf node_modules
+rm package-lock.json       # Windows: del package-lock.json
+
+# Fresh install
+npm install
+
+# Start dev server
+npm run dev
+```
+
+**Fix — Clear Vite cache**  
+Vite caches pre-bundled dependencies in `node_modules/.vite`. If you're seeing stale module versions:
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+Or use the `--force` flag to bypass cache:
+```bash
+npx vite --force
+```
+
+**If `echarts-for-react` is missing:**
+```bash
+npm install echarts echarts-for-react
+```
+
+---
+
+## 18. Spring Boot fails to start — schema.sql errors
+
+**Symptom**  
+Backend throws during startup:
+```
+org.springframework.jdbc.datasource.init.ScriptStatementFailedException:
+Failed to execute SQL script statement ... from class path resource [schema.sql]
+```
+
+**Possible Causes & Fixes**
+
+**Cause A: Tables already exist with incompatible definitions**  
+`schema.sql` uses `CREATE TABLE IF NOT EXISTS`. If a previous run created tables with a different column structure, the old tables will be silently kept. Drop and recreate:
+```sql
+DROP DATABASE eventsphere;
+CREATE DATABASE eventsphere;
+```
+Then restart the backend — Hibernate will re-run `schema.sql` from scratch.
+
+**Cause B: `spring.sql.init.mode` is set to `never`**  
+Check `application.properties`:
+```properties
+# Should be 'always' (or remove the line — 'always' is default for embedded DBs)
+spring.sql.init.mode=always
+```
+
+**Cause C: Hibernate DDL auto setting conflicts with schema.sql**  
+```properties
+# Use 'none' or 'validate' when schema.sql controls the DDL
+spring.jpa.hibernate.ddl-auto=none
+```
+Setting this to `create` or `create-drop` alongside `schema.sql` can cause conflicts.
+
+---
+
+## 19. Organizer sees another organizer's events
+
+**Symptom**  
+An organizer logs in and can see (or edit/delete) events they didn't create.
+
+**Root Cause**  
+`GET /api/events/organizer` was using a non-scoped query that returned all events instead of filtering by `organizer_id`.
+
+**Fix applied in:** [`EventRepository.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/repositories/EventRepository.java) + [`EventService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/EventService.java)
+
+The repository query is scoped by organizer email:
+```java
+List<Event> findByOrganizerEmail(String email);
+```
+
+The service resolves the email from `SecurityContextHolder` — so the query is always scoped to the **currently authenticated user**, not a URL parameter that could be spoofed.
+
+For edit/delete, `EventSecurityService` performs an additional ownership check using `@PreAuthorize("@eventSecurityService.isOwner(#id, authentication.name) or hasRole('ADMIN')")`.
+
+---
+
+## 20. ECharts / echarts-for-react not rendering on first load
+
+**Symptom**  
+The pie charts in `OrganizerEventDetails.jsx` or `AnalyticsDashboard.jsx` appear as empty boxes on first load. Resizing the browser window makes them appear correctly.
+
+**Root Cause**  
+ECharts measures the container's dimensions on mount. If the parent container has `height: 0` or is hidden during the initial render (e.g., inside a tab that's not active, or a card that hasn't finished animating in), ECharts records `0×0` and renders nothing.
+
+**Fix**
+
+Ensure the chart container has an explicit pixel height:
+```jsx
+<div style={{ height: '240px', width: '100%' }}>
+  <ReactECharts option={option} style={{ height: '100%', width: '100%' }} />
+</div>
+```
+
+If the chart is inside a Framer Motion animated container, add `onAnimationComplete` to trigger a resize after the animation finishes:
+```jsx
+<motion.div
+  onAnimationComplete={() => window.dispatchEvent(new Event('resize'))}
+>
+  ...
+</motion.div>
+```
+
+Dispatching a `resize` event causes ECharts to recalculate its canvas dimensions.
+
+---
+
 ## 🔁 General Restart Checklist
 
 When something is broken after a code change:
@@ -397,3 +672,5 @@ When something is broken after a code change:
 ```
 
 > **Tip:** After any Java change, always do `mvnw clean` — Maven's incremental compiler may miss changes to files with the same timestamp and skip recompilation, leading to stale `.class` files being run.
+
+> **Tip:** After any change to `application.properties` (especially the JWT secret), restart the backend AND log out all active sessions — existing tokens will be invalid.

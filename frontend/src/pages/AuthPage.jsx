@@ -8,6 +8,7 @@ import {
 import { useAuth, emailToSlug } from '../context/AuthContext.jsx';
 import GlassInput from '../components/ui/GlassInput.jsx';
 import GlassButton from '../components/ui/GlassButton.jsx';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 // â”€â”€ Animation configs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
@@ -297,7 +298,9 @@ const AuthPage = () => {
                     letterSpacing: '-0.025em', color: '#FAFAFA',
                     marginBottom: '0.375rem',
                   }}>
-                    Choose your portal
+                    <ScrollBounceText as="span" intensity={0.85} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
+                      Choose your portal
+                    </ScrollBounceText>
                   </h1>
                   <p style={{ fontSize: '0.875rem', color: '#71717A', lineHeight: 1.6 }}>
                     Select how you'd like to use EventSphere.
@@ -396,7 +399,9 @@ const AuthPage = () => {
                 {/* Heading */}
                 <motion.div layout style={{ marginBottom: '1.75rem' }}>
                   <motion.h1 layout style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: '#FAFAFA' }}>
-                    {isLogin ? portal?.loginTitle : portal?.registerTitle}
+                    <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={1.8} maxTranslateY={3} stiffness={340} damping={36}>
+                      {isLogin ? portal?.loginTitle : portal?.registerTitle}
+                    </ScrollBounceText>
                   </motion.h1>
                   <motion.p layout style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem', lineHeight: 1.6 }}>
                     {isLogin ? portal?.loginSub : portal?.registerSub}

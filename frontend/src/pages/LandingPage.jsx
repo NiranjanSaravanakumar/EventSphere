@@ -5,6 +5,7 @@ import {
   Sparkles, Lock, ScanLine, Users, Calendar, ArrowRight,
   Zap, ShieldCheck, BarChart3, Globe
 } from 'lucide-react';
+import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 const SPRING = { type: 'spring', stiffness: 300, damping: 30 };
 
@@ -228,7 +229,7 @@ const LandingPage = () => {
             Enterprise Event Management Platform
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline — wrapped in ScrollBounceText for velocity-driven elastic distortion */}
           <motion.h1
             initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -243,9 +244,11 @@ const LandingPage = () => {
               margin: '0 auto 1.5rem',
             }}
           >
-            Events that run on
-            <br />
-            <span style={{ fontWeight: 700 }}>intelligence.</span>
+            <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2.5} maxTranslateY={5}>
+              Events that run on
+              <br />
+              <span style={{ fontWeight: 700 }}>intelligence.</span>
+            </ScrollBounceText>
           </motion.h1>
 
           {/* Sub */}
@@ -334,7 +337,10 @@ const LandingPage = () => {
             Platform Capabilities
           </p>
           <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 300, letterSpacing: '-0.03em', color: '#FAFAFA', lineHeight: 1.15 }}>
-            Everything you need,<br /><strong>nothing you don't.</strong>
+            {/* ScrollBounceText: block wrap — skews the whole heading as a unit */}
+            <ScrollBounceText intensity={1.1} maxSkewDeg={3} maxTranslateY={4} stiffness={380} damping={32}>
+              Everything you need,<br /><strong>nothing you don't.</strong>
+            </ScrollBounceText>
           </h2>
         </motion.div>
 
@@ -357,7 +363,10 @@ const LandingPage = () => {
           style={{ marginBottom: '3rem' }}
         >
           <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 300, letterSpacing: '-0.03em', color: '#FAFAFA', lineHeight: 1.2 }}>
-            One platform,<br /><strong>three workspaces.</strong>
+            {/* Lighter intensity — this section has more surrounding motion already */}
+            <ScrollBounceText intensity={0.7} maxSkewDeg={2} maxTranslateY={3} stiffness={320} damping={38}>
+              One platform,<br /><strong>three workspaces.</strong>
+            </ScrollBounceText>
           </h2>
         </motion.div>
 
