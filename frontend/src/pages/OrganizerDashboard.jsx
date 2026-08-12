@@ -80,20 +80,6 @@ const CapacityBar = ({ registered, capacity, delay = 0 }) => {
 const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) => {
   const cardRef = useRef(null);
   const [copied, setCopied] = useState(false);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-60, 60], [8, -8]),  { stiffness: 180, damping: 20 });
-  const rotateY = useSpring(useTransform(x, [-60, 60], [-8, 8]),  { stiffness: 180, damping: 20 });
-  const glareX  = useTransform(x, [-60, 60], ['0%',   '100%']);
-  const glareY  = useTransform(y, [-60, 60], ['0%',   '100%']);
-
-  const handleMouseMove = (e) => {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    x.set(e.clientX - rect.left - rect.width  / 2);
-    y.set(e.clientY - rect.top  - rect.height / 2);
-  };
-  const handleMouseLeave = () => { x.set(0); y.set(0); };
 
   const handleCopyCode = (e) => {
     e.stopPropagation();
@@ -114,12 +100,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ ...SPRING, delay: index * 0.07 }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       style={{
-        rotateX, rotateY,
-        transformStyle: 'preserve-3d',
-        perspective: 800,
         position: 'relative',
         borderRadius: '2rem',
         background: 'rgba(255,255,255,0.055)',
@@ -135,12 +116,18 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       {/* Top specular */}
       <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)' }} />
 
-      {/* Cursor-chasing glare */}
-      <motion.div
+      {/* Static subtle glare */}
+      <div
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '2rem',
-          background: `radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.07) 0%, transparent 65%)`,
+          background: `radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 65%)`,
         }}
+      />
+
+      {/* Clickable Overlay */}
+      <div 
+        onClick={() => event.onClickCard && event.onClickCard(event.id)}
+        style={{ position: 'absolute', inset: 0, zIndex: 1, cursor: 'pointer' }}
       />
 
       {/* Status dot */}
@@ -208,10 +195,10 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', position: 'relative', zIndex: 2 }}>
         <motion.button
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={() => onEdit(event)}
+          onClick={(e) => { e.stopPropagation(); onEdit(event); }}
           style={{
             flex: 1, height: '2.5rem', borderRadius: '0.875rem',
             background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.09)',
@@ -224,7 +211,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
         </motion.button>
         <motion.button
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          onClick={() => onDelete(event.id)}
+          onClick={(e) => { e.stopPropagation(); onDelete(event.id); }}
           disabled={deletingId === event.id}
           style={{
             width: '2.5rem', height: '2.5rem', borderRadius: '0.875rem',
@@ -492,55 +479,11 @@ const OrganizerDashboard = () => {
             Studio
           </span>
 
-          {/* Nav links */}
-          <nav style={{ display: 'flex', gap: '0.25rem' }}>
-            {[
-              { label: 'Analytics', icon: BarChart3, action: () => navigate('/analytics') },
-              { label: 'Scanner',   icon: ScanLine,  action: () => setScannerOpen(true) },
-            ].map(({ label, icon: Icon, action }) => (
-              <motion.button
-                key={label}
-                whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.09)' }}
-                whileTap={{ scale: 0.96 }}
-                onClick={action}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.375rem',
-                  padding: '0.375rem 0.875rem', borderRadius: '999px', border: 'none',
-                  background: 'rgba(255,255,255,0.05)', color: '#D4D4D8',
-                  fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
-                }}
-              >
-                <Icon style={{ width: '0.8125rem', height: '0.8125rem' }} />
-                {label}
-              </motion.button>
-            ))}
-          </nav>
-
+          <div style={{ flex: 1 }} />
           {/* Logout */}
           <motion.button
-            id="organizer-logout-btn"
-            whileHover={{ scale: 1.08, background: 'rgba(239,68,68,0.12)' }}
-            whileTap={{ scale: 0.94 }}
-            transition={SPRING}
-            onClick={() => { logout(); navigate('/login'); }}
-            title="Sign out"
-            style={{
-              width: '2.25rem', height: '2.25rem',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#71717A',
-              flexShrink: 0,
-            }}
-          >
-            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
-          </motion.button>
-
-          {/* New Event CTA */}
-          <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} transition={SPRING}
-            onClick={() => { setEditingEvent(null); setModalOpen(true); }}
+            onClick={() => { logout(); navigate('/login'); }}
             style={{
               display: 'flex', alignItems: 'center', gap: '0.375rem',
               padding: '0.5rem 1.25rem', borderRadius: '999px',
@@ -549,8 +492,8 @@ const OrganizerDashboard = () => {
               whiteSpace: 'nowrap',
             }}
           >
-            <Plus style={{ width: '0.875rem', height: '0.875rem' }} />
-            New Event
+            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
+            Log Out
           </motion.button>
         </motion.header>
       </div>
@@ -568,41 +511,9 @@ const OrganizerDashboard = () => {
           }}
         >
           What are we<br />
-          <span style={{ color: '#3f3f46' }}>hosting next?</span>
+          <span style={{ color: '#FAFAFA' }}>hosting next?</span>
         </motion.h1>
 
-        {/* Quick stats pill row */}
-        {!loading && events.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SPRING, delay: 0.22 }}
-            style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginTop: '2rem', flexWrap: 'wrap' }}
-          >
-            {[
-              { icon: Layers,     value: events.length,    label: 'Events' },
-              { icon: Users,      value: totalRegistered,  label: 'Registered' },
-              { icon: TrendingUp, value: totalCapacity,    label: 'Capacity' },
-              { icon: AlertCircle, value: nearlyFull,      label: 'Nearly Full' },
-            ].map(({ icon: Icon, value, label }) => (
-              <motion.div
-                key={label}
-                whileHover={{ y: -2, scale: 1.03 }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.5rem 1rem', borderRadius: '999px',
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(12px)',
-                }}
-              >
-                <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: '#52525b' }} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#FAFAFA' }}>{value}</span>
-                <span style={{ fontSize: '0.75rem', color: '#52525b' }}>{label}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
       </div>
 
       {/* ── EVENTS CANVAS ───────────────────────────────────────────────────── */}
@@ -646,7 +557,10 @@ const OrganizerDashboard = () => {
             {events.map((event, i) => (
               <TactileCard
                 key={event.id}
-                event={event}
+                event={{
+                  ...event,
+                  onClickCard: (id) => navigate(`/organizer/me/event/${id}`)
+                }}
                 index={i}
                 onEdit={(ev) => { setEditingEvent(ev); setModalOpen(true); }}
                 onDelete={handleDelete}

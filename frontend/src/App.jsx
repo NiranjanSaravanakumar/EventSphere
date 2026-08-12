@@ -7,6 +7,7 @@ const LandingPage        = lazy(() => import('./pages/LandingPage.jsx'));
 const AuthPage           = lazy(() => import('./pages/AuthPage.jsx'));
 const AdminLoginPage     = lazy(() => import('./pages/AdminLoginPage.jsx'));
 const OrganizerDashboard = lazy(() => import('./pages/OrganizerDashboard.jsx'));
+const OrganizerEventDetails = lazy(() => import('./pages/OrganizerEventDetails.jsx'));
 const AttendeePortal     = lazy(() => import('./pages/AttendeePortal.jsx'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard.jsx'));
 
@@ -119,6 +120,17 @@ const AppRoutes = () => {
           <ProtectedRoute roles={['ROLE_ORGANIZER', 'ROLE_ADMIN']}>
             <Suspense fallback={<LoadingScreen />}>
               <OrganizerDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/organizer/:username/event/:id"
+        element={
+          <ProtectedRoute roles={['ROLE_ORGANIZER', 'ROLE_ADMIN']}>
+            <Suspense fallback={<LoadingScreen />}>
+              <OrganizerEventDetails />
             </Suspense>
           </ProtectedRoute>
         }
