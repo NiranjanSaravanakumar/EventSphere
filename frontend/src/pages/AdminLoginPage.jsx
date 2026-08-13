@@ -15,17 +15,17 @@ const Background = () => (
     <div style={{
       position: 'absolute', top: '-20%', left: '-10%',
       width: 700, height: 700, borderRadius: '50%',
-      background: 'rgba(99,102,241,0.06)', filter: 'blur(120px)',
+      background: 'rgba(var(--glass-rgb),0.02)', filter: 'blur(120px)',
     }} />
     <div style={{
       position: 'absolute', bottom: '-15%', right: '-5%',
       width: 500, height: 500, borderRadius: '50%',
-      background: 'rgba(139,92,246,0.05)', filter: 'blur(90px)',
+      background: 'rgba(var(--glass-rgb),0.015)', filter: 'blur(90px)',
     }} />
     <div style={{
       position: 'absolute', top: '40%', right: '25%',
       width: 300, height: 300, borderRadius: '50%',
-      background: 'rgba(99,102,241,0.03)', filter: 'blur(60px)',
+      background: 'rgba(var(--glass-rgb),0.01)', filter: 'blur(60px)',
     }} />
     {/* Grid */}
     <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.02 }}>
@@ -104,18 +104,18 @@ const AdminLoginPage = () => {
           marginBottom: '2.5rem',
           padding: '0.375rem 1rem 0.375rem 0.625rem',
           borderRadius: '999px',
-          background: 'rgba(99,102,241,0.08)',
-          border: '1px solid rgba(99,102,241,0.2)',
+          background: 'rgba(var(--glass-rgb),0.08)',
+          border: '1px solid rgba(var(--glass-rgb),0.2)',
         }}
       >
         <div style={{
           width: '2rem', height: '2rem', borderRadius: '50%',
-          background: 'rgba(99,102,241,0.15)',
+          background: 'rgba(var(--glass-rgb),0.15)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Shield style={{ width: '1rem', height: '1rem', color: '#a5b4fc' }} />
+          <Shield style={{ width: '1rem', height: '1rem', color: 'var(--color-text-primary)' }} />
         </div>
-        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#a5b4fc', letterSpacing: '0.02em' }}>
+        <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '0.02em' }}>
           EventSphere · Admin Portal
         </span>
       </motion.div>
@@ -133,14 +133,14 @@ const AdminLoginPage = () => {
           background: 'rgba(var(--glass-rgb),0.04)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
-          border: '1px solid rgba(99,102,241,0.15)',
+          border: '1px solid rgba(var(--glass-rgb),0.15)',
           boxShadow: '0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(var(--glass-rgb),0.10)',
         }}
       >
         {/* Specular highlight */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(165,180,252,0.25), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.25), transparent)',
         }} />
 
         <div style={{ padding: '2rem' }}>

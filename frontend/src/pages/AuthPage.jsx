@@ -26,7 +26,7 @@ const slideRight = {
 };
 
 // â”€â”€ Portal card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => {
+const PortalCard = ({ id, icon: Icon, title, description, onClick }) => {
   const [hovered, setHovered] = useState(false);
   return (
     <motion.button
@@ -42,8 +42,8 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
         width: '100%',
         padding: '1.5rem',
         borderRadius: '1.125rem',
-        border: hovered ? `1px solid ${accent}44` : '1px solid rgba(var(--glass-rgb),0.07)',
-        background: hovered ? `${accent}09` : 'rgba(var(--glass-rgb),0.025)',
+        border: hovered ? '1px solid rgba(var(--glass-rgb),0.20)' : '1px solid rgba(var(--glass-rgb),0.07)',
+        background: hovered ? 'rgba(var(--glass-rgb),0.06)' : 'rgba(var(--glass-rgb),0.025)',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -58,12 +58,12 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
         flexShrink: 0,
         width: '3rem', height: '3rem',
         borderRadius: '0.875rem',
-        background: hovered ? `${accent}18` : 'rgba(var(--glass-rgb),0.06)',
-        border: `1px solid ${hovered ? accent + '33' : 'rgba(var(--glass-rgb),0.08)'}`,
+        background: hovered ? 'rgba(var(--glass-rgb),0.12)' : 'rgba(var(--glass-rgb),0.06)',
+        border: `1px solid ${hovered ? 'rgba(var(--glass-rgb),0.20)' : 'rgba(var(--glass-rgb),0.08)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.25s, border 0.25s',
       }}>
-        <Icon style={{ width: '1.25rem', height: '1.25rem', color: hovered ? accent : '#A1A1AA' }} />
+        <Icon style={{ width: '1.25rem', height: '1.25rem', color: hovered ? 'var(--color-text-primary)' : 'var(--color-text-subtle)' }} />
       </div>
 
       <div>
@@ -76,19 +76,15 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
       </div>
 
       <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-        <ArrowRight style={{ width: '1rem', height: '1rem', color: hovered ? accent : '#3f3f46', transition: 'color 0.2s' }} />
+        <ArrowRight style={{ width: '1rem', height: '1rem', color: hovered ? 'var(--color-text-primary)' : 'var(--color-text-subtle)', transition: 'color 0.2s' }} />
       </div>
     </motion.button>
   );
 };
 
 // â”€â”€ Ambient background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const Background = ({ role }) => {
-  const tint = role === 'ROLE_ORGANIZER'
-    ? 'rgba(139,92,246,0.06)'
-    : role === 'ROLE_ATTENDEE'
-    ? 'rgba(52,211,153,0.06)'
-    : 'rgba(var(--glass-rgb),0.022)';
+const Background = () => {
+  const tint = 'rgba(var(--glass-rgb),0.022)';
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden>
@@ -138,7 +134,6 @@ const AuthPage = () => {
     ROLE_ATTENDEE: {
       icon: Ticket,
       label: 'Attendee Portal',
-      accent: '#34d399',
       loginTitle: 'Welcome back',
       loginSub: 'Sign in to your Attendee Portal.',
       registerTitle: 'Join EventSphere',
@@ -147,7 +142,6 @@ const AuthPage = () => {
     ROLE_ORGANIZER: {
       icon: Mic2,
       label: 'Creator Studio',
-      accent: '#a78bfa',
       loginTitle: 'Welcome back',
       loginSub: 'Sign in to your Creator Studio workspace.',
       registerTitle: 'Launch your Studio',
@@ -228,7 +222,7 @@ const AuthPage = () => {
         overflow: 'hidden',
       }}
     >
-      <Background role={role} />
+      <Background />
 
       {/* Logo */}
       <motion.div
@@ -337,7 +331,6 @@ const AuthPage = () => {
                     icon={Ticket}
                     title="Attendee Portal"
                     description="Discover events, register with invite codes, and manage your QR passes."
-                    accent="#34d399"
                     onClick={() => selectPortal('ROLE_ATTENDEE')}
                   />
                   <PortalCard
@@ -345,7 +338,6 @@ const AuthPage = () => {
                     icon={Mic2}
                     title="Creator Studio"
                     description="Host events, manage capacity, track check-ins, and scan tickets."
-                    accent="#a78bfa"
                     onClick={() => selectPortal('ROLE_ORGANIZER')}
                   />
                 </div>
@@ -409,10 +401,10 @@ const AuthPage = () => {
                       display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
                       padding: '0.3rem 0.75rem',
                       borderRadius: '999px',
-                      background: `${portal.accent}12`,
-                      border: `1px solid ${portal.accent}28`,
+                      background: 'rgba(var(--glass-rgb),0.06)',
+                      border: '1px solid rgba(var(--glass-rgb),0.15)',
                       fontSize: '0.75rem', fontWeight: 600,
-                      color: portal.accent,
+                      color: 'var(--color-text-primary)',
                     }}>
                       <portal.icon style={{ width: '0.75rem', height: '0.75rem' }} />
                       {portal.label}
