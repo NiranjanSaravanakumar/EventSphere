@@ -87,7 +87,7 @@ const AdminLoginPage = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#050505',
+        background: 'var(--color-bg-primary)',
         overflow: 'hidden',
       }}
     >
@@ -130,11 +130,11 @@ const AdminLoginPage = () => {
           margin: '0 1rem',
           borderRadius: '1.5rem',
           overflow: 'hidden',
-          background: 'rgba(255,255,255,0.04)',
+          background: 'rgba(var(--glass-rgb),0.04)',
           backdropFilter: 'blur(32px)',
           WebkitBackdropFilter: 'blur(32px)',
           border: '1px solid rgba(99,102,241,0.15)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(255,255,255,0.10)',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.7), inset 0 1px 0 0 rgba(var(--glass-rgb),0.10)',
         }}
       >
         {/* Specular highlight */}
@@ -146,12 +146,12 @@ const AdminLoginPage = () => {
         <div style={{ padding: '2rem' }}>
           {/* Header */}
           <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: '#FAFAFA' }}>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--color-text-primary)' }}>
               <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
                 Administrator Login
               </ScrollBounceText>
             </h1>
-            <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem', lineHeight: 1.6 }}>
               Restricted access — System Administrators only.
             </p>
           </div>
@@ -223,11 +223,11 @@ const AdminLoginPage = () => {
               type="button"
               onClick={() => navigate('/login')}
               style={{
-                fontSize: '0.875rem', color: '#71717A',
+                fontSize: '0.875rem', color: 'var(--color-text-subtle)',
                 background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#FAFAFA')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#71717A')}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-subtle)')}
             >
               ← Back to regular login
             </button>

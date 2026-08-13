@@ -30,9 +30,9 @@ const NavItem = ({ icon: Icon, label, active, onClick }) => (
     style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
       padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none',
-      background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-      borderLeft: active ? '2px solid rgba(255,255,255,0.5)' : '2px solid transparent',
-      color: active ? '#FAFAFA' : '#52525b',
+      background: active ? 'rgba(var(--glass-rgb),0.07)' : 'transparent',
+      borderLeft: active ? '2px solid rgba(var(--glass-rgb),0.5)' : '2px solid transparent',
+      color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
       fontSize: '0.8125rem', fontWeight: active ? 600 : 400,
       cursor: 'pointer', textAlign: 'left', transition: 'color 0.15s',
     }}
@@ -50,23 +50,23 @@ const BentoStat = ({ icon: Icon, label, value, suffix = '', decimals = 0, style:
     transition={SPRING}
     style={{
       position: 'relative', padding: '1.5rem',
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
+      background: 'rgba(var(--glass-rgb),0.02)',
+      border: '1px solid rgba(var(--glass-rgb),0.06)',
       borderRadius: '0.875rem', overflow: 'hidden',
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
       ...extraStyle,
     }}
   >
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.08), transparent)' }} />
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>
         {label}
       </p>
-      <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '0.4rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon style={{ width: '0.75rem', height: '0.75rem', color: '#71717A' }} />
+      <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '0.4rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-subtle)' }} />
       </div>
     </div>
-    <div style={{ fontSize: '2.5rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, letterSpacing: '-0.02em', marginTop: '1.5rem' }}>
+    <div style={{ fontSize: '2.5rem', fontWeight: 300, color: 'var(--color-text-primary)', lineHeight: 1, letterSpacing: '-0.02em', marginTop: '1.5rem' }}>
       <AnimatedCounter value={value} suffix={suffix} decimals={decimals} />
     </div>
   </motion.div>
@@ -87,7 +87,7 @@ const TableRow = ({ stat, index }) => {
         display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
         alignItems: 'center', gap: '1.5rem',
         padding: '0.875rem 1.25rem',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        borderBottom: '1px solid rgba(var(--glass-rgb),0.04)',
       }}
     >
       <div style={{ minWidth: 0 }}>
@@ -95,14 +95,14 @@ const TableRow = ({ stat, index }) => {
         <p style={{ fontSize: '0.6875rem', color: '#3f3f46', marginTop: '0.125rem' }}>{stat.date}</p>
       </div>
       <div style={{ width: '80px' }}>
-        <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.05)', borderRadius: '3px', overflow: 'hidden' }}>
           <motion.div initial={{ width: 0 }} animate={{ width: `${fill}%` }} transition={{ duration: 1.2, ease: 'easeOut', delay: 0.1 + index * 0.04 }} style={{ height: '100%', background: statusColor, borderRadius: '3px' }} />
         </div>
       </div>
-      <span style={{ fontSize: '0.75rem', color: '#71717A', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {stat.registered.toLocaleString()} / {stat.capacity.toLocaleString()}
       </span>
-      <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.6875rem', fontWeight: 700, color: '#71717A', letterSpacing: '0.10em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-subtle)', letterSpacing: '0.10em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', whiteSpace: 'nowrap' }}>
         {stat.eventCode ?? '—'}
       </span>
       <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${statusColor}15`, border: `1px solid ${statusColor}30`, color: statusColor, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em' }}>
@@ -121,14 +121,14 @@ const RingChart = ({ value, max, label }) => {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
       <div style={{ position: 'relative', width: '80px', height: '80px' }}>
         <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
-          <motion.circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="5" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - (pct / 100) * circ }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.4 }} />
+          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(var(--glass-rgb),0.05)" strokeWidth="5" />
+          <motion.circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(var(--glass-rgb),0.55)" strokeWidth="5" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - (pct / 100) * circ }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.4 }} />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#FAFAFA' }}>{Math.round(pct)}%</span>
+          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{Math.round(pct)}%</span>
         </div>
       </div>
-      <p style={{ fontSize: '0.6875rem', color: '#52525b', textAlign: 'center', letterSpacing: '0.04em' }}>{label}</p>
+      <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', textAlign: 'center', letterSpacing: '0.04em' }}>{label}</p>
     </div>
   );
 };
@@ -140,7 +140,7 @@ const RoleBadge = ({ role }) => {
     ROLE_ORGANIZER: { label: 'Organizer', color: '#60a5fa' },
     ROLE_ATTENDEE:  { label: 'Attendee',  color: '#34d399' },
   };
-  const cfg = map[role] ?? { label: role, color: '#71717A' };
+  const cfg = map[role] ?? { label: role, color: 'var(--color-text-subtle)' };
   return (
     <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${cfg.color}15`, border: `1px solid ${cfg.color}30`, color: cfg.color, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.05em' }}>
       {cfg.label}
@@ -153,14 +153,14 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
   const [expanded, setExpanded] = useState(null);
 
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(var(--glass-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon style={{ width: '1rem', height: '1rem', color: '#a5b4fc' }} />
         </div>
         <div>
-          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#FAFAFA' }}>{title}</h3>
-          <p style={{ fontSize: '0.6875rem', color: '#71717A' }}>{items.length} total</p>
+          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{title}</h3>
+          <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{items.length} total</p>
         </div>
       </div>
       <div style={{ padding: '0.5rem' }}>
@@ -172,21 +172,21 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
                 onClick={() => setExpanded(isExpanded ? null : item.id)}
                 style={{
                   width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: 'none',
-                  background: isExpanded ? 'rgba(255,255,255,0.04)' : 'transparent',
+                  background: isExpanded ? 'rgba(var(--glass-rgb),0.04)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   cursor: 'pointer', textAlign: 'left'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: isExpanded ? '#FAFAFA' : '#D4D4D8' }}>{item.name}</span>
-                  <span style={{ fontSize: '0.6875rem', color: '#52525b' }}>{item.email}</span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: isExpanded ? 'var(--color-text-primary)' : '#D4D4D8' }}>{item.name}</span>
+                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>{item.email}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#71717A', background: 'rgba(255,255,255,0.05)', padding: '0.2rem 0.5rem', borderRadius: '99px' }}>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', background: 'rgba(var(--glass-rgb),0.05)', padding: '0.2rem 0.5rem', borderRadius: '99px' }}>
                     {type === 'organizer' ? `${item.eventTitles.length} events` : `${item.registeredEvents.length} registrations`}
                   </span>
                   <motion.div animate={{ rotate: isExpanded ? 90 : 0 }}>
-                    <ChevronRight style={{ width: '1rem', height: '1rem', color: '#71717A' }} />
+                    <ChevronRight style={{ width: '1rem', height: '1rem', color: 'var(--color-text-subtle)' }} />
                   </motion.div>
                 </div>
               </motion.button>
@@ -206,7 +206,7 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
                         </div>
                       ))}
                       {type === 'organizer' && item.eventTitles.length === 0 && (
-                        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>No events created yet.</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No events created yet.</span>
                       )}
                       
                       {type === 'attendee' && item.registeredEvents.map((evt, i) => (
@@ -221,7 +221,7 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
                         </div>
                       ))}
                       {type === 'attendee' && item.registeredEvents.length === 0 && (
-                        <span style={{ fontSize: '0.75rem', color: '#52525b' }}>No registrations.</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No registrations.</span>
                       )}
                     </div>
                   </motion.div>
@@ -231,7 +231,7 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
           );
         })}
         {items.length === 0 && (
-          <div style={{ padding: '1rem', textAlign: 'center', color: '#52525b', fontSize: '0.75rem' }}>None found.</div>
+          <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>None found.</div>
         )}
       </div>
     </div>
@@ -378,13 +378,13 @@ const AnalyticsDashboard = () => {
   const header = headerConfig[activeNav] ?? headerConfig.overview;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050505', color: '#FAFAFA', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex' }}>
 
       {/* ── FIXED LEFT SIDEBAR ────────────────────────────────────────────────── */}
       <aside style={{
         width: '220px', flexShrink: 0,
-        borderRight: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(255,255,255,0.01)',
+        borderRight: '1px solid rgba(var(--glass-rgb),0.05)',
+        background: 'rgba(var(--glass-rgb),0.01)',
         display: 'flex', flexDirection: 'column',
         padding: '1.75rem 1rem',
         position: 'sticky', top: 0, height: '100vh',
@@ -392,8 +392,8 @@ const AnalyticsDashboard = () => {
         {/* Logo */}
         <div style={{ paddingLeft: '0.875rem', marginBottom: '2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Shield style={{ width: '1rem', height: '1rem', color: '#52525b' }} />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.01em' }}>EventSphere</span>
+            <Shield style={{ width: '1rem', height: '1rem', color: 'var(--color-text-muted)' }} />
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>EventSphere</span>
           </div>
           <p style={{ fontSize: '0.6875rem', color: '#27272a', marginTop: '0.2rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Admin Console</p>
         </div>
@@ -408,14 +408,14 @@ const AnalyticsDashboard = () => {
         </nav>
 
         {/* Bottom actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={() => fetchData(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: '#52525b', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', borderTop: '1px solid rgba(var(--glass-rgb),0.05)', paddingTop: '1rem' }}>
+          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={() => fetchData(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
             <motion.div animate={{ rotate: refreshing ? 360 : 0 }} transition={{ duration: 0.8, repeat: refreshing ? Infinity : 0, ease: 'linear' }}>
               <RefreshCw style={{ width: '0.875rem', height: '0.875rem' }} />
             </motion.div>
             Refresh
           </motion.button>
-          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: '#52525b', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
+          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
             <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
             Sign Out
           </motion.button>
@@ -435,7 +435,7 @@ const AnalyticsDashboard = () => {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.025em' }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.025em' }}>
                 <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
                   {header.title}
                 </ScrollBounceText>
@@ -457,7 +457,7 @@ const AnalyticsDashboard = () => {
             <motion.div key="overview" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
               {loading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
                 </div>
               )}
@@ -491,7 +491,7 @@ const AnalyticsDashboard = () => {
             <motion.div key="analytics" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
               {loading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
                 </div>
               )}
@@ -504,8 +504,8 @@ const AnalyticsDashboard = () => {
                 <>
                   {/* Analytics Funnel */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
-                    <div style={{ gridColumn: '1 / 3', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
+                    <div style={{ gridColumn: '1 / 3', background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.10), transparent)' }} />
                       <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46', marginBottom: '1.75rem' }}>Attendee Funnel</p>
                       {[
                         { label: 'Total Capacity',   value: data.totalCapacity,      max: data.totalCapacity },
@@ -516,26 +516,26 @@ const AnalyticsDashboard = () => {
                         return (
                           <div key={label} style={{ marginBottom: i < 2 ? '1.5rem' : 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                              <span style={{ fontSize: '0.75rem', color: '#52525b' }}>{label}</span>
-                              <span style={{ fontSize: '1.25rem', fontWeight: 300, color: '#FAFAFA', letterSpacing: '-0.02em' }}>{value.toLocaleString()}</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{label}</span>
+                              <span style={{ fontSize: '1.25rem', fontWeight: 300, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>{value.toLocaleString()}</span>
                             </div>
-                            <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.2 + i * 0.15 }} style={{ height: '100%', background: `rgba(255,255,255,${0.15 + i * 0.15})`, borderRadius: '3px' }} />
+                            <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.04)', borderRadius: '3px', overflow: 'hidden' }}>
+                              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.2 + i * 0.15 }} style={{ height: '100%', background: `rgba(var(--glass-rgb),${0.15 + i * 0.15})`, borderRadius: '3px' }} />
                             </div>
                           </div>
                         );
                       })}
-                      <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(var(--glass-rgb),0.04)' }}>
                         <RingChart value={data.totalRegistrations} max={data.totalCapacity}      label="Fill Rate" />
                         <RingChart value={data.totalCheckIns}      max={data.totalRegistrations} label="Attendance" />
                       </div>
                     </div>
                     
-                    <div style={{ gridColumn: '3 / 5', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)' }} />
+                    <div style={{ gridColumn: '3 / 5', background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.08), transparent)' }} />
                       <div style={{ textAlign: 'center' }}>
                         <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>Total Platform Capacity</p>
-                        <p style={{ fontSize: '3rem', fontWeight: 300, color: '#FAFAFA', lineHeight: 1, marginTop: '1rem', letterSpacing: '-0.02em' }}>
+                        <p style={{ fontSize: '3rem', fontWeight: 300, color: 'var(--color-text-primary)', lineHeight: 1, marginTop: '1rem', letterSpacing: '-0.02em' }}>
                           <AnimatedCounter value={data.totalCapacity} />
                         </p>
                       </div>
@@ -548,8 +548,8 @@ const AnalyticsDashboard = () => {
 
                   {/* Analytics breakdown table */}
                   {data.eventBreakdown?.length > 0 && (
-                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '1.5rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
+                    <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '1.5rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
                         {['Event', 'Fill', 'Registered / Cap', 'Code', 'Status'].map(h => (
                           <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
                         ))}
@@ -573,12 +573,12 @@ const AnalyticsDashboard = () => {
             <motion.div key="events" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
               {eventsLoading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading all events…</span>
                 </div>
               )}
               {!eventsLoading && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
                   {/* Admin-only warning banner */}
                   <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(239,68,68,0.12)', background: 'rgba(239,68,68,0.04)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                     <AlertTriangle style={{ width: '0.875rem', height: '0.875rem', color: '#f87171', flexShrink: 0 }} />
@@ -588,7 +588,7 @@ const AnalyticsDashboard = () => {
                   </div>
 
                   {/* Table header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
                     {['Event', 'Organizer', 'Code', 'Seats', 'Status', ''].map(h => (
                       <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
                     ))}
@@ -619,7 +619,7 @@ const AnalyticsDashboard = () => {
                           display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto auto',
                           alignItems: 'center', gap: '1rem',
                           padding: '0.875rem 1.25rem',
-                          borderBottom: '1px solid rgba(255,255,255,0.04)',
+                          borderBottom: '1px solid rgba(var(--glass-rgb),0.04)',
                           opacity: isDeleting ? 0.4 : 1,
                           transition: 'opacity 0.2s',
                         }}
@@ -634,21 +634,21 @@ const AnalyticsDashboard = () => {
 
                         {/* Organizer */}
                         <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: '0.75rem', color: '#71717A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {event.organizerName}
                           </p>
                         </div>
 
                         {/* Secret code */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                          <Key style={{ width: '0.625rem', height: '0.625rem', color: '#52525b', flexShrink: 0 }} />
-                          <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.75rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }}>
+                          <Key style={{ width: '0.625rem', height: '0.625rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                          <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.10)' }}>
                             {event.eventCode ?? '—'}
                           </span>
                         </div>
 
                         {/* Seats */}
-                        <span style={{ fontSize: '0.75rem', color: '#71717A', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                           {event.registeredCount ?? 0} / {event.capacity}
                         </span>
 
@@ -692,14 +692,14 @@ const AnalyticsDashboard = () => {
             <motion.div key="users" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
               {usersLoading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(255,255,255,0.10)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                   <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading user directory…</span>
                 </div>
               )}
               {!usersLoading && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
                   {/* Table header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
                     {['#', 'Name', 'Email', 'Role', 'Joined'].map(h => (
                       <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
                     ))}
@@ -718,11 +718,11 @@ const AnalyticsDashboard = () => {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ ...SPRING, delay: i * 0.025 }}
-                      style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.04)' }}
                     >
                       {/* Avatar */}
-                      <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#71717A' }}>
+                      <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)' }}>
                           {(user.name ?? '?').charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -735,7 +735,7 @@ const AnalyticsDashboard = () => {
                       {/* Email */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
                         <Mail style={{ width: '0.625rem', height: '0.625rem', color: '#3f3f46', flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.75rem', color: '#52525b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
                       </div>
 
                       {/* Role */}

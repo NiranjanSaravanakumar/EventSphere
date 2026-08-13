@@ -74,18 +74,18 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
               position: 'relative',
               width: '100%', maxWidth: '420px',
               borderRadius: '2rem',
-              background: 'rgba(255,255,255,0.06)',
+              background: 'rgba(var(--glass-rgb),0.06)',
               backdropFilter: 'blur(48px)',
               WebkitBackdropFilter: 'blur(48px)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.14)',
+              border: '1px solid rgba(var(--glass-rgb),0.12)',
+              boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(var(--glass-rgb),0.14)',
               overflow: 'hidden',
             }}
           >
             {/* Top specular line */}
             <div style={{
               height: '1px',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.22), transparent)',
             }} />
 
             <div style={{ padding: '2rem' }}>
@@ -99,10 +99,10 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                 style={{
                   position: 'absolute', top: '1.5rem', right: '1.5rem',
                   width: '2rem', height: '2rem', borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(var(--glass-rgb),0.07)',
+                  border: '1px solid rgba(var(--glass-rgb),0.08)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: '#71717A',
+                  cursor: 'pointer', color: 'var(--color-text-subtle)',
                 }}
               >
                 <X style={{ width: '0.9rem', height: '0.9rem' }} />
@@ -112,21 +112,21 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
               <div style={{ marginBottom: '1.75rem' }}>
                 <div style={{
                   width: '3rem', height: '3rem', borderRadius: '1rem',
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: 'rgba(var(--glass-rgb),0.08)',
+                  border: '1px solid rgba(var(--glass-rgb),0.10)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   marginBottom: '1.25rem',
                 }}>
-                  <Lock style={{ width: '1.25rem', height: '1.25rem', color: '#FAFAFA' }} />
+                  <Lock style={{ width: '1.25rem', height: '1.25rem', color: 'var(--color-text-primary)' }} />
                 </div>
                 <h2 style={{
                   fontSize: '1.375rem', fontWeight: 600,
-                  color: '#FAFAFA', letterSpacing: '-0.025em',
+                  color: 'var(--color-text-primary)', letterSpacing: '-0.025em',
                   lineHeight: 1.2, marginBottom: '0.5rem',
                 }}>
                   Unlock Access
                 </h2>
-                <p style={{ fontSize: '0.8125rem', color: '#71717A', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', lineHeight: 1.6 }}>
                   Enter the invite code provided by the organizer to register for{' '}
                   <span style={{ color: '#D4D4D8', fontWeight: 500 }}>{event.title}</span>.
                 </p>
@@ -137,8 +137,8 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
                   padding: '0.375rem 0.75rem', borderRadius: '999px',
-                  background: isSoldOut ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${isSoldOut ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.08)'}`,
+                  background: isSoldOut ? 'rgba(239,68,68,0.08)' : 'rgba(var(--glass-rgb),0.05)',
+                  border: `1px solid ${isSoldOut ? 'rgba(239,68,68,0.2)' : 'rgba(var(--glass-rgb),0.08)'}`,
                   fontSize: '0.75rem', fontWeight: 500,
                   color: isSoldOut ? '#f87171' : '#D4D4D8',
                 }}>
@@ -150,8 +150,8 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: '0.4rem',
                     padding: '0.375rem 0.75rem', borderRadius: '999px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(var(--glass-rgb),0.05)',
+                    border: '1px solid rgba(var(--glass-rgb),0.08)',
                     fontSize: '0.75rem', fontWeight: 500, color: '#D4D4D8',
                   }}>
                     <Clock style={{ width: '0.75rem', height: '0.75rem' }} />
@@ -178,7 +178,7 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                       background: 'rgba(0,0,0,0.35)',
                       border: error
                         ? '1px solid rgba(239,68,68,0.45)'
-                        : '1px solid rgba(255,255,255,0.10)',
+                        : '1px solid rgba(var(--glass-rgb),0.10)',
                       borderRadius: '1rem',
                       padding: '0 1.25rem',
                       textAlign: 'center',
@@ -186,13 +186,13 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                       letterSpacing: '0.3em',
                       fontFamily: '"SF Mono", "Fira Code", "Courier New", monospace',
                       fontWeight: 600,
-                      color: '#FAFAFA',
+                      color: 'var(--color-text-primary)',
                       outline: 'none',
                       transition: 'border-color 0.2s',
                       opacity: isSoldOut ? 0.4 : 1,
                     }}
-                    onFocus={(e) => { if (!error) e.target.style.borderColor = 'rgba(255,255,255,0.28)'; }}
-                    onBlur={(e)  => { if (!error) e.target.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+                    onFocus={(e) => { if (!error) e.target.style.borderColor = 'rgba(var(--glass-rgb),0.28)'; }}
+                    onBlur={(e)  => { if (!error) e.target.style.borderColor = 'rgba(var(--glass-rgb),0.10)'; }}
                   />
 
                   <AnimatePresence>
@@ -224,10 +224,10 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                   style={{
                     width: '100%', height: '3rem',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                    background: isSoldOut ? 'rgba(255,255,255,0.05)' : isSubmitting ? 'rgba(255,255,255,0.55)' : '#FAFAFA',
+                    background: isSoldOut ? 'rgba(var(--glass-rgb),0.05)' : isSubmitting ? 'rgba(var(--glass-rgb),0.55)' : 'var(--color-text-primary)',
                     border: 'none',
                     borderRadius: '1rem',
-                    color: isSoldOut ? '#52525b' : '#050505',
+                    color: isSoldOut ? 'var(--color-text-muted)' : 'var(--color-bg-primary)',
                     fontSize: '0.9375rem', fontWeight: 700,
                     cursor: isSoldOut || isSubmitting ? 'not-allowed' : 'pointer',
                     transition: 'background 0.2s',

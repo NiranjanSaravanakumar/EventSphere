@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 const SPRING = { type: 'spring', stiffness: 400, damping: 30 };
 
 const glassStyle = {
-  background: 'rgba(255,255,255,0.04)',
+  background: 'rgba(var(--glass-rgb),0.04)',
   backdropFilter: 'blur(32px)',
   WebkitBackdropFilter: 'blur(32px)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow: '0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.10)',
+  border: '1px solid rgba(var(--glass-rgb),0.08)',
+  boxShadow: '0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(var(--glass-rgb),0.10)',
 };
 
 const GlassCard = ({ children, hoverable = false, onClick }) => {
@@ -31,7 +31,7 @@ const GlassCard = ({ children, hoverable = false, onClick }) => {
         position: 'absolute',
         inset: '0 0 auto 0',
         height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent)',
+        background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.20), transparent)',
       }} />
       {children}
     </motion.div>

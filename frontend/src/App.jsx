@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, emailToSlug } from './context/AuthContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 
 // ── Lazy-loaded pages ────────────────────────────────────────────────────────
 const LandingPage        = lazy(() => import('./pages/LandingPage.jsx'));
@@ -14,13 +15,13 @@ const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard.jsx'));
 // ── Loading screen ───────────────────────────────────────────────────────────
 const LoadingScreen = () => (
   <div style={{
-    minHeight: '100vh', background: '#050505',
+    minHeight: '100vh', background: 'var(--color-bg-primary)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
   }}>
     <div style={{
       width: '2rem', height: '2rem',
-      border: '2px solid rgba(255,255,255,0.12)',
-      borderTopColor: 'rgba(255,255,255,0.6)',
+      border: '2px solid rgba(var(--glass-rgb), 0.12)',
+      borderTopColor: 'rgba(var(--glass-rgb), 0.6)',
       borderRadius: '50%',
       animation: 'spin 1s linear infinite',
     }} />
@@ -172,11 +173,13 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
-  </BrowserRouter>
+  <ThemeProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  </ThemeProvider>
 );
 
 export default App;

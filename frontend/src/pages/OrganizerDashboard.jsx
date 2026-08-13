@@ -4,11 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   Plus, Calendar, MapPin, Users, Trash2, Edit3, X,
   CheckCircle, AlertCircle, ScanLine, BarChart3, Layers, TrendingUp,
-  Key, Copy, Check, LogOut
+  Key, Copy, Check, LogOut, Sun, Moon
 } from 'lucide-react';
 import ScannerPanel from '../components/shared/ScannerPanel.jsx';
 import { eventsApi, organizerApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
@@ -16,7 +17,7 @@ const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
 // ── Glass form field ───────────────────────────────────────────────────────────
 const FieldInput = ({ label, type = 'text', value, onChange, placeholder, required, ...rest }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
       {label}{required && <span style={{ color: '#f87171', marginLeft: '0.25rem' }}>*</span>}
     </label>
     <input
@@ -24,13 +25,13 @@ const FieldInput = ({ label, type = 'text', value, onChange, placeholder, requir
       placeholder={placeholder} required={required}
       style={{
         width: '100%', height: '3rem', padding: '0 1rem',
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '1rem', color: '#FAFAFA', fontSize: '0.9375rem',
+        background: 'rgba(var(--glass-rgb),0.05)',
+        border: '1px solid rgba(var(--glass-rgb),0.08)',
+        borderRadius: '1rem', color: 'var(--color-text-primary)', fontSize: '0.9375rem',
         outline: 'none', transition: 'border-color 0.2s', backdropFilter: 'blur(8px)',
       }}
-      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-      onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+      onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}
+      onBlur={e  => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.08)'; }}
       {...rest}
     />
   </div>
@@ -38,21 +39,21 @@ const FieldInput = ({ label, type = 'text', value, onChange, placeholder, requir
 
 const FieldTextarea = ({ label, value, onChange, placeholder, required }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
       {label}{required && <span style={{ color: '#f87171', marginLeft: '0.25rem' }}>*</span>}
     </label>
     <textarea
       value={value} onChange={onChange} placeholder={placeholder} required={required} rows={3}
       style={{
         width: '100%', padding: '0.75rem 1rem',
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '1rem', color: '#FAFAFA', fontSize: '0.9375rem',
+        background: 'rgba(var(--glass-rgb),0.05)',
+        border: '1px solid rgba(var(--glass-rgb),0.08)',
+        borderRadius: '1rem', color: 'var(--color-text-primary)', fontSize: '0.9375rem',
         outline: 'none', resize: 'vertical', transition: 'border-color 0.2s',
         fontFamily: 'inherit', backdropFilter: 'blur(8px)',
       }}
-      onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-      onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+      onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}
+      onBlur={e  => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.08)'; }}
     />
   </div>
 );
@@ -60,14 +61,14 @@ const FieldTextarea = ({ label, value, onChange, placeholder, required }) => (
 // ── Capacity bar ───────────────────────────────────────────────────────────────
 const CapacityBar = ({ registered, capacity, delay = 0 }) => {
   const pct   = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
-  const color = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'rgba(255,255,255,0.4)';
+  const color = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'rgba(var(--glass-rgb),0.4)';
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-        <span style={{ fontSize: '0.6875rem', color: '#71717A' }}>{registered} / {capacity}</span>
+        <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{registered} / {capacity}</span>
         <span style={{ fontSize: '0.6875rem', fontWeight: 600, color }}>{pct}%</span>
       </div>
-      <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.07)', borderRadius: '2px', overflow: 'hidden' }}>
         <motion.div
           initial={{ width: 0 }} animate={{ width: `${pct}%` }}
           transition={{ duration: 1.3, ease: 'easeOut', delay }}
@@ -104,24 +105,24 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       style={{
         position: 'relative',
         borderRadius: '2rem',
-        background: 'rgba(255,255,255,0.055)',
+        background: 'rgba(var(--glass-rgb),0.055)',
         backdropFilter: 'blur(32px)',
         WebkitBackdropFilter: 'blur(32px)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)',
+        border: '1px solid rgba(var(--glass-rgb),0.10)',
+        boxShadow: '0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
         padding: '1.75rem',
         display: 'flex', flexDirection: 'column', gap: '1.25rem',
         overflow: 'hidden', cursor: 'default',
       }}
     >
       {/* Top specular */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.22), transparent)' }} />
 
       {/* Static subtle glare */}
       <div
         style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '2rem',
-          background: `radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 65%)`,
+          background: `radial-gradient(circle at 50% 0%, rgba(var(--glass-rgb),0.05) 0%, transparent 65%)`,
         }}
       />
 
@@ -137,7 +138,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
       )}
 
       {/* Title */}
-      <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+      <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
         {event.title}
       </h3>
 
@@ -148,8 +149,8 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
           { Icon: MapPin,   text: event.location },
         ].map(({ Icon, text }) => (
           <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: '#52525b', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.8125rem', color: '#71717A' }}>{text}</span>
+            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)' }}>{text}</span>
           </div>
         ))}
       </div>
@@ -166,14 +167,14 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.625rem 0.875rem',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'rgba(var(--glass-rgb),0.04)',
+          border: '1px solid rgba(var(--glass-rgb),0.08)',
           borderRadius: '0.875rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Key style={{ width: '0.75rem', height: '0.75rem', color: '#52525b' }} />
-            <span style={{ fontSize: '0.6875rem', color: '#52525b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Access Code</span>
-            <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.875rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '0.12em' }}>{event.eventCode}</span>
+            <Key style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)' }} />
+            <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Access Code</span>
+            <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em' }}>{event.eventCode}</span>
           </div>
           <motion.button
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -181,10 +182,10 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
             title="Copy code"
             style={{
               width: '1.75rem', height: '1.75rem', borderRadius: '0.5rem',
-              background: copied ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${copied ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              background: copied ? 'rgba(16,185,129,0.12)' : 'rgba(var(--glass-rgb),0.06)',
+              border: `1px solid ${copied ? 'rgba(16,185,129,0.25)' : 'rgba(var(--glass-rgb),0.08)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: copied ? '#6ee7b7' : '#71717A',
+              cursor: 'pointer', color: copied ? '#6ee7b7' : 'var(--color-text-subtle)',
               transition: 'all 0.2s',
             }}
           >
@@ -202,7 +203,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
           onClick={(e) => { e.stopPropagation(); onEdit(event); }}
           style={{
             flex: 1, height: '2.5rem', borderRadius: '0.875rem',
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.09)',
+            background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.09)',
             color: '#D4D4D8', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
           }}
@@ -315,28 +316,28 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
         style={{
           width: '100%', maxWidth: '520px', borderRadius: '2rem',
           background: 'rgba(8,8,8,0.92)', backdropFilter: 'blur(48px)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          boxShadow: '0 48px 120px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.12)',
+          border: '1px solid rgba(var(--glass-rgb),0.10)',
+          boxShadow: '0 48px 120px rgba(0,0,0,0.9), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
           overflow: 'hidden',
         }}
       >
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }} />
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.2), transparent)' }} />
         <div style={{ padding: '2rem', overflowY: 'auto', maxHeight: 'calc(100vh - 4rem)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
                 <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
                   {isEditing ? 'Edit Event' : 'Draft New Event'}
                 </ScrollBounceText>
               </h2>
-              <p style={{ fontSize: '0.8125rem', color: '#52525b', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                 {isEditing ? 'Update the event details.' : 'Fill in the details for your event.'}
               </p>
             </div>
             <motion.button
               whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }} transition={SPRING}
               onClick={onClose}
-              style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#71717A' }}
+              style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-subtle)' }}
             >
               <X style={{ width: '1rem', height: '1rem' }} />
             </motion.button>
@@ -373,7 +374,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
             <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
               <button
                 type="button" onClick={onClose}
-                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#71717A', fontSize: '0.9375rem', cursor: 'pointer' }}
+                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: 'rgba(var(--glass-rgb),0.05)', border: '1px solid rgba(var(--glass-rgb),0.08)', color: 'var(--color-text-subtle)', fontSize: '0.9375rem', cursor: 'pointer' }}
               >
                 Cancel
               </button>
@@ -381,7 +382,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
                 type="submit"
                 whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }} transition={SPRING}
                 disabled={saving}
-                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: saving ? 'rgba(255,255,255,0.3)' : '#FAFAFA', border: 'none', color: '#050505', fontSize: '0.9375rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}
+                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: saving ? 'rgba(var(--glass-rgb),0.3)' : 'var(--color-text-primary)', border: 'none', color: 'var(--color-bg-primary)', fontSize: '0.9375rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}
               >
                 {saving ? 'Saving…' : (isEditing ? 'Update Event' : 'Create Event')}
               </motion.button>
@@ -397,6 +398,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [events, setEvents]             = useState([]);
   const [loading, setLoading]           = useState(true);
   const [modalOpen, setModalOpen]       = useState(false);
@@ -448,13 +450,13 @@ const OrganizerDashboard = () => {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#050505', color: '#FAFAFA',
+      minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)',
       fontFamily: 'Inter, system-ui, sans-serif',
       position: 'relative', overflowX: 'hidden',
     }}>
       {/* Ambient orbs */}
-      <div style={{ position: 'absolute', top: '-5%', left: '30%', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.025) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.015) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '-5%', left: '30%', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(var(--glass-rgb),0.025) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(var(--glass-rgb),0.015) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
 
       {/* ── FLOATING TOP NAV ────────────────────────────────────────────────── */}
       <div style={{ position: 'sticky', top: '1.25rem', zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
@@ -468,21 +470,43 @@ const OrganizerDashboard = () => {
             gap: '2rem',
             padding: '0 1.25rem',
             height: '3.25rem',
-            background: 'rgba(255,255,255,0.055)',
+            background: 'rgba(var(--glass-rgb),0.055)',
             backdropFilter: 'blur(32px)',
             WebkitBackdropFilter: 'blur(32px)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            border: '1px solid rgba(var(--glass-rgb),0.10)',
             borderRadius: '999px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.12)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
             minWidth: 'min(90vw, 680px)',
           }}
         >
           {/* Brand */}
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
             Studio
           </span>
 
           <div style={{ flex: 1 }} />
+
+          {/* Theme toggle */}
+          <motion.button
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={SPRING}
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '2rem', height: '2rem', borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(var(--glass-rgb),0.07)',
+              border: '1px solid rgba(var(--glass-rgb),0.12)',
+              color: 'var(--color-text-subtle)', cursor: 'pointer',
+              transition: 'background 0.2s, color 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.14)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.07)'; e.currentTarget.style.color = 'var(--color-text-subtle)'; }}
+          >
+            {theme === 'dark'
+              ? <Sun  style={{ width: '0.875rem', height: '0.875rem' }} />
+              : <Moon style={{ width: '0.875rem', height: '0.875rem' }} />}
+          </motion.button>
+
           {/* Logout */}
           <motion.button
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} transition={SPRING}
@@ -490,8 +514,8 @@ const OrganizerDashboard = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: '0.375rem',
               padding: '0.5rem 1.25rem', borderRadius: '999px',
-              background: '#FAFAFA', border: 'none',
-              color: '#050505', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
+              background: 'var(--color-text-primary)', border: 'none',
+              color: 'var(--color-bg-primary)', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
               whiteSpace: 'nowrap',
             }}
           >
@@ -510,12 +534,12 @@ const OrganizerDashboard = () => {
           style={{
             fontSize: 'clamp(2.5rem, 6vw, 5rem)',
             fontWeight: 600, letterSpacing: '-0.04em',
-            color: '#FAFAFA', lineHeight: 1.05,
+            color: 'var(--color-text-primary)', lineHeight: 1.05,
           }}
         >
           What are we<br />
           <ScrollBounceText as="span" intensity={1.0} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={32}>
-            <span style={{ color: '#FAFAFA' }}>hosting next?</span>
+            <span style={{ color: 'var(--color-text-primary)' }}>hosting next?</span>
           </ScrollBounceText>
         </motion.h1>
 
@@ -526,7 +550,7 @@ const OrganizerDashboard = () => {
 
         {loading && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '4rem' }}>
-            <div style={{ width: '1.5rem', height: '1.5rem', border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div style={{ width: '1.5rem', height: '1.5rem', border: '2px solid rgba(var(--glass-rgb),0.08)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           </div>
         )}
 
@@ -540,19 +564,24 @@ const OrganizerDashboard = () => {
             <motion.div
               initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
               transition={{ ...SPRING, delay: 0.05 }}
-              whileHover={{ scale: 1.02, borderColor: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.035)' }}
+              whileHover={{
+                scale: 1.02,
+                borderColor: 'var(--color-text-primary)',
+                background: 'transparent',
+                color: 'var(--color-text-primary)',
+              }}
               whileTap={{ scale: 0.98 }}
               onClick={() => { setEditingEvent(null); setModalOpen(true); }}
               style={{
                 borderRadius: '2rem',
-                border: '1.5px dashed rgba(255,255,255,0.12)',
+                border: '1.5px dashed var(--color-border-muted, rgba(120,120,140,0.35))',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: '0.75rem', minHeight: '240px', cursor: 'pointer',
-                color: '#3f3f46', background: 'transparent',
-                transition: 'all 0.2s',
+                color: 'var(--color-text-subtle, #71717a)', background: 'transparent',
+                transition: 'border-color 0.2s, background 0.2s, color 0.2s',
               }}
             >
-              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', border: '1px dashed rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', border: '1px dashed var(--color-border-muted, rgba(120,120,140,0.35))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Plus style={{ width: '1.25rem', height: '1.25rem' }} />
               </div>
               <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Draft New Event</span>

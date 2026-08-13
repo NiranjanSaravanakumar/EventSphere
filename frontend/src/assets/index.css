@@ -2,46 +2,53 @@
 @import "tailwindcss";
 
 /* ============================================================
-   TAILWIND V4 THEME (CSS-first configuration)
+   THEME VARIABLES
+   ============================================================ */
+:root {
+  /* Light Mode Colors */
+  --color-bg-primary: #FAFAFA;
+  --bg-primary-rgb: 250, 250, 250;
+  --color-text-primary: #050505;
+  --color-text-muted: #000000;
+  --color-text-subtle: #111111;
+  --color-border: #e4e4e7;
+  --color-border-muted: rgba(100,100,120,0.30);
+  --color-input-bg: #f4f4f5;
+  --color-accent: #6366f1;
+  --draft-hover-bg: rgba(99,102,241,0.06);
+
+  /* Glass RGB for Light Mode (black base for translucency against light bg) */
+  --glass-rgb: 0, 0, 0;
+  --glass-shadow: 0 20px 50px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.6);
+  --glass-border: rgba(0,0,0,0.08);
+}
+
+:root.dark {
+  /* Dark Mode Colors */
+  --color-bg-primary: #050505;
+  --bg-primary-rgb: 5, 5, 5;
+  --color-text-primary: #FAFAFA;
+  --color-text-muted: #a1a1aa;
+  --color-text-subtle: #71717A;
+  --color-border: #27272A;
+  --color-border-muted: rgba(180,180,200,0.22);
+  --color-input-bg: rgba(255,255,255,0.05);
+  --color-accent: #818cf8;
+  --draft-hover-bg: rgba(129,140,248,0.07);
+
+  /* Glass RGB for Dark Mode (white base for translucency against dark bg) */
+  --glass-rgb: 255, 255, 255;
+  --glass-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.1);
+  --glass-border: rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   TAILWIND V4 THEME EXTENSIONS
    ============================================================ */
 @theme {
-  /* Colors */
-  --color-background: #050505;
-  --color-foreground: #FAFAFA;
-
-  --color-glass-surface:   rgba(255,255,255,0.03);
-  --color-glass-hover:     rgba(255,255,255,0.06);
-  --color-glass-active:    rgba(255,255,255,0.09);
-  --color-glass-border:    rgba(255,255,255,0.08);
-  --color-glass-highlight: rgba(255,255,255,0.15);
-
-  --color-monochrome-50:  #FAFAFA;
-  --color-monochrome-100: #F4F4F5;
-  --color-monochrome-300: #D4D4D8;
-  --color-monochrome-500: #71717A;
-  --color-monochrome-800: #27272A;
-  --color-monochrome-900: #18181B;
-  --color-monochrome-950: #09090B;
-
-  /* Font */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  /* Backdrop blur */
-  --blur-apple:  32px;
-  --blur-subtle: 16px;
-
-  /* Shadows */
-  --shadow-glass: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.1);
-  --shadow-glow:  0 0 25px rgba(255,255,255,0.08);
-
-  /* Animations */
   --animate-float-slow: float 6s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s ease-in-out infinite;
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-12px); }
-  }
 }
 
 /* ============================================================
@@ -62,43 +69,44 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #050505;
-  color: #FAFAFA;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ============================================================
    GLASS UTILITY CLASSES
    ============================================================ */
 .glass {
-  background: rgba(255,255,255,0.04);
+  background: rgba(var(--glass-rgb), 0.04);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.10);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
 }
 
 .glass-input {
   width: 100%;
   height: 3rem;
   padding: 0 1rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--color-input-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
-  color: #FAFAFA;
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
 }
 
 .glass-input:focus {
-  border-color: rgba(255,255,255,0.20);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.10);
+  border-color: rgba(var(--glass-rgb), 0.20);
+  box-shadow: 0 0 0 1px rgba(var(--glass-rgb), 0.10);
 }
 
 .glass-input::placeholder {
-  color: #71717A;
+  color: var(--color-text-subtle);
 }
 
 /* ============================================================
@@ -106,15 +114,15 @@ body {
    ============================================================ */
 ::-webkit-scrollbar          { width: 6px; }
 ::-webkit-scrollbar-track    { background: transparent; }
-::-webkit-scrollbar-thumb    { background: rgba(255,255,255,0.10); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
+::-webkit-scrollbar-thumb    { background: rgba(var(--glass-rgb), 0.10); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--glass-rgb), 0.20); }
 
 /* ============================================================
    SELECTION
    ============================================================ */
 ::selection {
-  background: rgba(255,255,255,0.15);
-  color: #FAFAFA;
+  background: rgba(var(--glass-rgb), 0.15);
+  color: var(--color-text-primary);
 }
 
 /* ============================================================

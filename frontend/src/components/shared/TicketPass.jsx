@@ -73,15 +73,15 @@ const TicketPass = ({
           width: '320px',
           borderRadius: '2rem',
           overflow: 'hidden',
-          background: 'rgba(255,255,255,0.055)',
+          background: 'rgba(var(--glass-rgb),0.055)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
           border: isCheckedIn
             ? '1px solid rgba(16,185,129,0.30)'
-            : '1px solid rgba(255,255,255,0.10)',
+            : '1px solid rgba(var(--glass-rgb),0.10)',
           boxShadow: isCheckedIn
-            ? '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.15)'
-            : '0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15)',
+            ? '0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(16,185,129,0.15), inset 0 1px 0 rgba(var(--glass-rgb),0.15)'
+            : '0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(var(--glass-rgb),0.15)',
           cursor: 'pointer',
           userSelect: 'none',
         }}
@@ -97,7 +97,7 @@ const TicketPass = ({
             background: useTransform(
               [glareX, glareY],
               ([gx, gy]) =>
-                `radial-gradient(circle at ${gx} ${gy}, rgba(255,255,255,0.12) 0%, transparent 55%)`
+                `radial-gradient(circle at ${gx} ${gy}, rgba(var(--glass-rgb),0.12) 0%, transparent 55%)`
             ),
           }}
         />
@@ -105,7 +105,7 @@ const TicketPass = ({
         {/* Top edge highlight */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.25), transparent)',
           zIndex: 21,
         }} />
 
@@ -130,11 +130,11 @@ const TicketPass = ({
           <h2 style={{
             fontSize: '1.125rem', fontWeight: 700,
             letterSpacing: '-0.02em', lineHeight: 1.25,
-            color: '#FAFAFA',
+            color: 'var(--color-text-primary)',
           }}>
             {eventName}
           </h2>
-          <p style={{ fontSize: '0.8125rem', color: '#71717A', marginTop: '0.375rem' }}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem' }}>
             {attendeeName}
           </p>
 
@@ -146,7 +146,7 @@ const TicketPass = ({
               { Icon: MapPin,   text: location },
             ].map(({ Icon, text }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Icon style={{ width: '0.9375rem', height: '0.9375rem', color: '#71717A', flexShrink: 0 }} />
+                <Icon style={{ width: '0.9375rem', height: '0.9375rem', color: 'var(--color-text-subtle)', flexShrink: 0 }} />
                 <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{text}</span>
               </div>
             ))}
@@ -159,20 +159,20 @@ const TicketPass = ({
           <div style={{
             position: 'absolute', left: '-14px', top: '50%', transform: 'translateY(-50%)',
             width: '28px', height: '28px', borderRadius: '50%',
-            background: '#050505',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--color-bg-primary)',
+            border: '1px solid rgba(var(--glass-rgb),0.07)',
           }} />
           {/* Dashed line */}
           <div style={{
             position: 'absolute', left: '14px', right: '14px', top: '50%',
-            borderTop: '1.5px dashed rgba(255,255,255,0.10)',
+            borderTop: '1.5px dashed rgba(var(--glass-rgb),0.10)',
           }} />
           {/* Right notch */}
           <div style={{
             position: 'absolute', right: '-14px', top: '50%', transform: 'translateY(-50%)',
             width: '28px', height: '28px', borderRadius: '50%',
-            background: '#050505',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'var(--color-bg-primary)',
+            border: '1px solid rgba(var(--glass-rgb),0.07)',
           }} />
         </div>
 
@@ -206,8 +206,8 @@ const TicketPass = ({
             <div style={{
               width: '190px', height: '190px',
               borderRadius: '1.125rem',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: 'rgba(var(--glass-rgb),0.04)',
+              border: '1px solid rgba(var(--glass-rgb),0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Ticket style={{ width: '2rem', height: '2rem', color: '#3f3f46' }} />
@@ -218,7 +218,7 @@ const TicketPass = ({
           <div style={{ textAlign: 'center' }}>
             <p style={{
               fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.10em',
-              textTransform: 'uppercase', color: '#71717A',
+              textTransform: 'uppercase', color: 'var(--color-text-subtle)',
             }}>
               {isCheckedIn ? 'Already Scanned' : 'Ready to Scan'}
             </p>

@@ -42,8 +42,8 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
         width: '100%',
         padding: '1.5rem',
         borderRadius: '1.125rem',
-        border: hovered ? `1px solid ${accent}44` : '1px solid rgba(255,255,255,0.07)',
-        background: hovered ? `${accent}09` : 'rgba(255,255,255,0.025)',
+        border: hovered ? `1px solid ${accent}44` : '1px solid rgba(var(--glass-rgb),0.07)',
+        background: hovered ? `${accent}09` : 'rgba(var(--glass-rgb),0.025)',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -58,8 +58,8 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
         flexShrink: 0,
         width: '3rem', height: '3rem',
         borderRadius: '0.875rem',
-        background: hovered ? `${accent}18` : 'rgba(255,255,255,0.06)',
-        border: `1px solid ${hovered ? accent + '33' : 'rgba(255,255,255,0.08)'}`,
+        background: hovered ? `${accent}18` : 'rgba(var(--glass-rgb),0.06)',
+        border: `1px solid ${hovered ? accent + '33' : 'rgba(var(--glass-rgb),0.08)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background 0.25s, border 0.25s',
       }}>
@@ -67,10 +67,10 @@ const PortalCard = ({ id, icon: Icon, title, description, accent, onClick }) => 
       </div>
 
       <div>
-        <p style={{ fontSize: '1rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.015em' }}>
+        <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em' }}>
           {title}
         </p>
-        <p style={{ fontSize: '0.8125rem', color: '#71717A', marginTop: '0.25rem', lineHeight: 1.55 }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.25rem', lineHeight: 1.55 }}>
           {description}
         </p>
       </div>
@@ -88,7 +88,7 @@ const Background = ({ role }) => {
     ? 'rgba(139,92,246,0.06)'
     : role === 'ROLE_ATTENDEE'
     ? 'rgba(52,211,153,0.06)'
-    : 'rgba(255,255,255,0.022)';
+    : 'rgba(var(--glass-rgb),0.022)';
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden>
@@ -104,12 +104,12 @@ const Background = ({ role }) => {
       <div style={{
         position: 'absolute', bottom: '-10%', right: '-5%',
         width: 500, height: 500, borderRadius: '50%',
-        background: 'rgba(255,255,255,0.015)', filter: 'blur(80px)',
+        background: 'rgba(var(--glass-rgb),0.015)', filter: 'blur(80px)',
       }} />
       <div style={{
         position: 'absolute', top: '40%', right: '18%',
         width: 280, height: 280, borderRadius: '50%',
-        background: 'rgba(255,255,255,0.01)', filter: 'blur(60px)',
+        background: 'rgba(var(--glass-rgb),0.01)', filter: 'blur(60px)',
       }} />
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.022 }}>
         <defs>
@@ -224,7 +224,7 @@ const AuthPage = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#050505',
+        background: 'var(--color-bg-primary)',
         overflow: 'hidden',
       }}
     >
@@ -244,15 +244,15 @@ const AuthPage = () => {
         <div style={{
           width: '2.25rem', height: '2.25rem',
           borderRadius: '0.625rem',
-          background: 'rgba(255,255,255,0.07)',
-          border: '1px solid rgba(255,255,255,0.11)',
+          background: 'rgba(var(--glass-rgb),0.07)',
+          border: '1px solid rgba(var(--glass-rgb),0.11)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 20px rgba(255,255,255,0.05)',
+          boxShadow: '0 0 20px rgba(var(--glass-rgb),0.05)',
         }}>
-          <Sparkles style={{ width: '1.1rem', height: '1.1rem', color: '#FAFAFA' }} />
+          <Sparkles style={{ width: '1.1rem', height: '1.1rem', color: 'var(--color-text-primary)' }} />
         </div>
-        <span style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', color: '#FAFAFA' }}>
-          Event<span style={{ color: '#52525b' }}>Sphere</span>
+        <span style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--color-text-primary)' }}>
+          Event<span style={{ color: 'var(--color-text-muted)' }}>Sphere</span>
         </span>
       </motion.div>
 
@@ -266,17 +266,17 @@ const AuthPage = () => {
           margin: '0 1rem',
           borderRadius: '1.75rem',
           overflow: 'hidden',
-          background: 'rgba(255,255,255,0.038)',
+          background: 'rgba(var(--glass-rgb),0.038)',
           backdropFilter: 'blur(36px)',
           WebkitBackdropFilter: 'blur(36px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.65), inset 0 1px 0 0 rgba(255,255,255,0.1)',
+          border: '1px solid rgba(var(--glass-rgb),0.08)',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.65), inset 0 1px 0 0 rgba(var(--glass-rgb),0.1)',
         }}
       >
         {/* Specular highlight */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.2), transparent)',
         }} />
 
         <div style={{ padding: '2rem' }}>
@@ -292,19 +292,43 @@ const AuthPage = () => {
                 exit="exit"
                 style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
               >
-                <div>
-                  <h1 style={{
-                    fontSize: '1.5rem', fontWeight: 600,
-                    letterSpacing: '-0.025em', color: '#FAFAFA',
-                    marginBottom: '0.375rem',
-                  }}>
-                    <ScrollBounceText as="span" intensity={0.85} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
-                      Choose your portal
-                    </ScrollBounceText>
-                  </h1>
-                  <p style={{ fontSize: '0.875rem', color: '#71717A', lineHeight: 1.6 }}>
-                    Select how you'd like to use EventSphere.
-                  </p>
+                <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
+                  <motion.button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.93 }}
+                    transition={SPRING}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '2rem', height: '2rem',
+                      borderRadius: '0.5rem',
+                      background: 'rgba(var(--glass-rgb),0.05)',
+                      border: '1px solid rgba(var(--glass-rgb),0.08)',
+                      cursor: 'pointer', color: 'var(--color-text-subtle)',
+                      flexShrink: 0,
+                      marginTop: '0.125rem', // aligns button nicely with the first line of text
+                    }}
+                    title="Back to Home"
+                  >
+                    <ArrowLeft style={{ width: '0.875rem', height: '0.875rem' }} />
+                  </motion.button>
+                  
+                  <div>
+                    <h1 style={{
+                      fontSize: '1.5rem', fontWeight: 600,
+                      letterSpacing: '-0.025em', color: 'var(--color-text-primary)',
+                      marginBottom: '0.375rem',
+                      lineHeight: 1.2,
+                    }}>
+                      <ScrollBounceText as="span" intensity={0.85} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
+                        Choose your portal
+                      </ScrollBounceText>
+                    </h1>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', lineHeight: 1.6 }}>
+                      Select how you'd like to use EventSphere.
+                    </p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -338,7 +362,7 @@ const AuthPage = () => {
                       background: 'none', border: 'none', cursor: 'pointer',
                       transition: 'color 0.2s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#71717A')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-subtle)')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
                   >
                     <ShieldCheck style={{ width: '0.75rem', height: '0.75rem' }} />
@@ -371,9 +395,9 @@ const AuthPage = () => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       width: '2rem', height: '2rem',
                       borderRadius: '0.5rem',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      cursor: 'pointer', color: '#71717A',
+                      background: 'rgba(var(--glass-rgb),0.05)',
+                      border: '1px solid rgba(var(--glass-rgb),0.08)',
+                      cursor: 'pointer', color: 'var(--color-text-subtle)',
                       flexShrink: 0,
                     }}
                   >
@@ -398,12 +422,12 @@ const AuthPage = () => {
 
                 {/* Heading */}
                 <motion.div layout style={{ marginBottom: '1.75rem' }}>
-                  <motion.h1 layout style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: '#FAFAFA' }}>
+                  <motion.h1 layout style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--color-text-primary)' }}>
                     <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={1.8} maxTranslateY={3} stiffness={340} damping={36}>
                       {isLogin ? portal?.loginTitle : portal?.registerTitle}
                     </ScrollBounceText>
                   </motion.h1>
-                  <motion.p layout style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem', lineHeight: 1.6 }}>
+                  <motion.p layout style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem', lineHeight: 1.6 }}>
                     {isLogin ? portal?.loginSub : portal?.registerSub}
                   </motion.p>
                 </motion.div>
@@ -503,12 +527,12 @@ const AuthPage = () => {
                     id="auth-toggle"
                     onClick={toggleMode}
                     style={{
-                      fontSize: '0.875rem', color: '#71717A',
+                      fontSize: '0.875rem', color: 'var(--color-text-subtle)',
                       background: 'none', border: 'none', cursor: 'pointer',
                       transition: 'color 0.2s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#FAFAFA')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#71717A')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-subtle)')}
                   >
                     {isLogin
                       ? "Don't have an account? Sign up"

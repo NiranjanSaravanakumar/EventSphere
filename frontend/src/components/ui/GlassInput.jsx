@@ -6,10 +6,10 @@ const GlassInput = ({ icon: Icon, label, error, style, ...props }) => {
     height: '3rem',
     paddingLeft: Icon ? '2.75rem' : '1rem',
     paddingRight: '1rem',
-    background: 'rgba(255,255,255,0.05)',
-    border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+    background: 'rgba(var(--glass-rgb),0.05)',
+    border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(var(--glass-rgb),0.08)'}`,
     borderRadius: '0.75rem',
-    color: '#FAFAFA',
+    color: 'var(--color-text-primary)',
     fontSize: '0.875rem',
     outline: 'none',
     transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -40,18 +40,18 @@ const GlassInput = ({ icon: Icon, label, error, style, ...props }) => {
             transform: 'translateY(-50%)',
             width: '1rem',
             height: '1rem',
-            color: '#71717A',
+            color: 'var(--color-text-subtle)',
             pointerEvents: 'none',
           }} />
         )}
         <input
           style={inputStyle}
           onFocus={(e) => {
-            e.target.style.borderColor = 'rgba(255,255,255,0.20)';
-            e.target.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.10)';
+            e.target.style.borderColor = 'rgba(var(--glass-rgb),0.20)';
+            e.target.style.boxShadow = '0 0 0 1px rgba(var(--glass-rgb),0.10)';
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)';
+            e.target.style.borderColor = error ? 'rgba(239,68,68,0.4)' : 'rgba(var(--glass-rgb),0.08)';
             e.target.style.boxShadow = 'none';
           }}
           {...props}

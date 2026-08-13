@@ -64,29 +64,29 @@ const ScannerPanel = ({ onClose }) => {
           background: 'rgba(8,8,8,0.92)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.12)',
+          border: '1px solid rgba(var(--glass-rgb),0.09)',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
           overflow: 'hidden',
         }}
       >
         {/* Top highlight */}
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)' }} />
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.18), transparent)' }} />
 
         <div style={{ padding: '2rem' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.75rem' }}>
             <div style={{
               width: '2.5rem', height: '2.5rem', borderRadius: '0.75rem',
-              background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.09)',
+              background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.09)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <ScanLine style={{ width: '1.125rem', height: '1.125rem', color: '#D4D4D8' }} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
                 Check-In Scanner
               </h2>
-              <p style={{ fontSize: '0.75rem', color: '#71717A', marginTop: '0.125rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', marginTop: '0.125rem' }}>
                 Paste or type the attendee's QR token
               </p>
             </div>
@@ -101,14 +101,14 @@ const ScannerPanel = ({ onClose }) => {
               autoFocus
               style={{
                 flex: 1, height: '3rem', padding: '0 1rem',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                borderRadius: '0.75rem', color: '#FAFAFA',
+                background: 'rgba(var(--glass-rgb),0.05)',
+                border: '1px solid rgba(var(--glass-rgb),0.09)',
+                borderRadius: '0.75rem', color: 'var(--color-text-primary)',
                 fontFamily: 'monospace', fontSize: '0.875rem',
                 letterSpacing: '0.04em', outline: 'none',
               }}
-              onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-              onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.09)'; }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}
+              onBlur={e  => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.09)'; }}
             />
             <motion.button
               type="submit"
@@ -118,8 +118,8 @@ const ScannerPanel = ({ onClose }) => {
               style={{
                 height: '3rem', padding: '0 1.25rem',
                 borderRadius: '0.75rem', border: 'none',
-                background: scanning || !token.trim() ? 'rgba(255,255,255,0.25)' : '#FAFAFA',
-                color: '#050505', fontSize: '0.875rem', fontWeight: 600,
+                background: scanning || !token.trim() ? 'rgba(var(--glass-rgb),0.25)' : 'var(--color-text-primary)',
+                color: 'var(--color-bg-primary)', fontSize: '0.875rem', fontWeight: 600,
                 cursor: scanning || !token.trim() ? 'not-allowed' : 'pointer',
                 flexShrink: 0, transition: 'background 0.2s',
               }}
@@ -154,7 +154,7 @@ const ScannerPanel = ({ onClose }) => {
                     <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: result.success ? '#6ee7b7' : '#f87171' }}>
                       {result.success ? 'Check-In Successful' : 'Check-In Failed'}
                     </p>
-                    <p style={{ fontSize: '0.8125rem', color: '#71717A', marginTop: '0.125rem' }}>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.125rem' }}>
                       {result.message}
                     </p>
                   </div>
@@ -162,14 +162,14 @@ const ScannerPanel = ({ onClose }) => {
 
                 {/* Attendee / event info (success only) */}
                 {result.success && result.attendeeName && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(var(--glass-rgb),0.06)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <User style={{ width: '0.875rem', height: '0.875rem', color: '#71717A' }} />
+                      <User style={{ width: '0.875rem', height: '0.875rem', color: 'var(--color-text-subtle)' }} />
                       <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{result.attendeeName}</span>
                     </div>
                     {result.eventTitle && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Calendar style={{ width: '0.875rem', height: '0.875rem', color: '#71717A' }} />
+                        <Calendar style={{ width: '0.875rem', height: '0.875rem', color: 'var(--color-text-subtle)' }} />
                         <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{result.eventTitle}</span>
                       </div>
                     )}
@@ -184,7 +184,7 @@ const ScannerPanel = ({ onClose }) => {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
                     width: '100%', height: '2.5rem', borderRadius: '0.625rem',
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)',
+                    background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.09)',
                     color: '#D4D4D8', fontSize: '0.8125rem', cursor: 'pointer',
                   }}
                 >

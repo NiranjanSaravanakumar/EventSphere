@@ -13,14 +13,14 @@ const GlassButton = ({
   ...props
 }) => {
   const primaryStyle = {
-    background: '#FAFAFA',
-    color: '#050505',
+    background: 'var(--color-text-primary)',
+    color: 'var(--color-bg-primary)',
   };
 
   const ghostStyle = {
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    color: '#FAFAFA',
+    background: 'rgba(var(--glass-rgb),0.05)',
+    border: '1px solid rgba(var(--glass-rgb),0.08)',
+    color: 'var(--color-text-primary)',
   };
 
   const baseStyle = {

@@ -3,18 +3,19 @@ import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Sparkles, Lock, ScanLine, Users, Calendar, ArrowRight,
-  Zap, ShieldCheck, BarChart3, Globe
+  Zap, ShieldCheck, BarChart3, Globe, Sun, Moon
 } from 'lucide-react';
 import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 
 const SPRING = { type: 'spring', stiffness: 300, damping: 30 };
 
 // ── Ambient particle orbs ───────────────────────────────────────────────────
 const AmbientBackground = () => (
   <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }} aria-hidden>
-    <div style={{ position: 'absolute', top: '-15%', left: '-8%', width: 700, height: 700, borderRadius: '50%', background: 'rgba(255,255,255,0.018)', filter: 'blur(120px)' }} />
-    <div style={{ position: 'absolute', top: '30%',  right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'rgba(255,255,255,0.012)', filter: 'blur(80px)' }} />
-    <div style={{ position: 'absolute', bottom: '-5%', left: '30%', width: 600, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.010)', filter: 'blur(100px)' }} />
+    <div style={{ position: 'absolute', top: '-15%', left: '-8%', width: 700, height: 700, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.018)', filter: 'blur(120px)' }} />
+    <div style={{ position: 'absolute', top: '30%',  right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.012)', filter: 'blur(80px)' }} />
+    <div style={{ position: 'absolute', bottom: '-5%', left: '30%', width: 600, height: 400, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.010)', filter: 'blur(100px)' }} />
     <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.018 }}>
       <defs>
         <pattern id="landing-grid" width="72" height="72" patternUnits="userSpaceOnUse">
@@ -36,28 +37,28 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
     style={{
       padding: '1.75rem',
       borderRadius: '1.5rem',
-      background: 'rgba(255,255,255,0.04)',
+      background: 'rgba(var(--glass-rgb),0.04)',
       backdropFilter: 'blur(24px)',
       WebkitBackdropFilter: 'blur(24px)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+      border: '1px solid rgba(var(--glass-rgb),0.07)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.06)',
       display: 'flex', flexDirection: 'column', gap: '1rem',
       position: 'relative', overflow: 'hidden',
     }}
   >
-    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)' }} />
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.12), transparent)' }} />
     <div style={{
       width: '2.5rem', height: '2.5rem', borderRadius: '0.875rem',
-      background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.08)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <Icon style={{ width: '1.125rem', height: '1.125rem', color: '#D4D4D8' }} />
     </div>
     <div>
-      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.015em', marginBottom: '0.375rem' }}>
+      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em', marginBottom: '0.375rem' }}>
         {title}
       </h3>
-      <p style={{ fontSize: '0.8125rem', color: '#71717A', lineHeight: 1.65 }}>
+      <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', lineHeight: 1.65 }}>
         {description}
       </p>
     </div>
@@ -75,14 +76,14 @@ const StatPill = ({ value, label, delay }) => (
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
       padding: '1.25rem 2rem',
       borderRadius: '1.25rem',
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.07)',
+      background: 'rgba(var(--glass-rgb),0.04)',
+      border: '1px solid rgba(var(--glass-rgb),0.07)',
     }}
   >
-    <span style={{ fontSize: '2rem', fontWeight: 300, color: '#FAFAFA', letterSpacing: '-0.03em', lineHeight: 1 }}>
+    <span style={{ fontSize: '2rem', fontWeight: 300, color: 'var(--color-text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
       {value}
     </span>
-    <span style={{ fontSize: '0.75rem', color: '#52525b', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
       {label}
     </span>
   </motion.div>
@@ -104,6 +105,7 @@ const RoleBadge = ({ icon: Icon, label, color }) => (
 // ── Floating glass Navbar ───────────────────────────────────────────────────
 const TopNav = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
   return (
     <motion.nav
       initial={{ opacity: 0, y: -20 }}
@@ -129,18 +131,18 @@ const TopNav = () => {
         gap: '0.75rem',
         padding: '0.625rem 1.25rem',
         borderRadius: '2rem',
-        background: 'rgba(8,8,8,0.82)',
+        background: theme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+        boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.5)' : '0 4px 24px rgba(0,0,0,0.08)',
       }}
     >
       {/* Col 1 — Logo (left-aligned) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
-        <Sparkles style={{ width: '1rem', height: '1rem', color: '#71717A', flexShrink: 0 }} />
-        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#FAFAFA', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-          Event<span style={{ color: '#52525b' }}>Sphere</span>
+        <Sparkles style={{ width: '1rem', height: '1rem', color: 'var(--color-text-subtle)', flexShrink: 0 }} />
+        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+          Event<span style={{ color: 'var(--color-text-muted)' }}>Sphere</span>
         </span>
       </div>
 
@@ -152,7 +154,27 @@ const TopNav = () => {
       </div>
 
       {/* Col 3 — Sign In (right-aligned) */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem' }}>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleTheme}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: '2rem', height: '2rem',
+            borderRadius: '0.625rem',
+            background: 'rgba(var(--glass-rgb),0.05)',
+            border: '1px solid rgba(var(--glass-rgb),0.08)',
+            color: 'var(--color-text-subtle)',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-subtle)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.05)'; }}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun style={{ width: '0.875rem', height: '0.875rem' }} /> : <Moon style={{ width: '0.875rem', height: '0.875rem' }} />}
+        </motion.button>
         <motion.button
           id="landing-signin-btn"
           whileHover={{ scale: 1.04 }}
@@ -162,7 +184,7 @@ const TopNav = () => {
           style={{
             height: '2.125rem', padding: '0 1.125rem',
             borderRadius: '999px', border: 'none',
-            background: '#FAFAFA', color: '#050505',
+            background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
             fontSize: '0.875rem', fontWeight: 600,
             cursor: 'pointer', whiteSpace: 'nowrap',
             flexShrink: 0,
@@ -193,7 +215,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050505', color: '#FAFAFA', fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
       <AmbientBackground />
       <TopNav />
 
@@ -219,8 +241,8 @@ const LandingPage = () => {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
               padding: '0.375rem 1rem', borderRadius: '999px',
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              fontSize: '0.75rem', fontWeight: 600, color: '#71717A',
+              background: 'rgba(var(--glass-rgb),0.05)', border: '1px solid rgba(var(--glass-rgb),0.08)',
+              fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-subtle)',
               letterSpacing: '0.05em', textTransform: 'uppercase',
               marginBottom: '2rem',
             }}
@@ -239,7 +261,7 @@ const LandingPage = () => {
               fontWeight: 300,
               letterSpacing: '-0.04em',
               lineHeight: 1.08,
-              color: '#FAFAFA',
+              color: 'var(--color-text-primary)',
               maxWidth: '800px',
               margin: '0 auto 1.5rem',
             }}
@@ -258,7 +280,7 @@ const LandingPage = () => {
             transition={{ delay: 0.45, ...SPRING }}
             style={{
               fontSize: 'clamp(1rem, 2vw, 1.1875rem)',
-              color: '#52525b',
+              color: 'var(--color-text-muted)',
               maxWidth: '560px',
               margin: '0 auto 3rem',
               lineHeight: 1.7,
@@ -285,10 +307,10 @@ const LandingPage = () => {
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
                 height: '3rem', padding: '0 1.75rem',
                 borderRadius: '999px', border: 'none',
-                background: '#FAFAFA', color: '#050505',
+                background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
                 fontSize: '0.9375rem', fontWeight: 700,
                 cursor: 'pointer',
-                boxShadow: '0 0 32px rgba(255,255,255,0.12)',
+                boxShadow: '0 0 32px rgba(var(--glass-rgb),0.12)',
               }}
             >
               Get Started Free
@@ -309,7 +331,7 @@ const LandingPage = () => {
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-            style={{ width: '1px', height: '2rem', background: 'linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)' }}
+            style={{ width: '1px', height: '2rem', background: 'linear-gradient(to bottom, rgba(var(--glass-rgb),0.2), transparent)' }}
           />
         </motion.div>
       </section>
@@ -336,7 +358,7 @@ const LandingPage = () => {
           <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#3f3f46', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
             Platform Capabilities
           </p>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 300, letterSpacing: '-0.03em', color: '#FAFAFA', lineHeight: 1.15 }}>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--color-text-primary)', lineHeight: 1.15 }}>
             {/* ScrollBounceText: block wrap — skews the whole heading as a unit */}
             <ScrollBounceText intensity={1.1} maxSkewDeg={3} maxTranslateY={4} stiffness={380} damping={32}>
               Everything you need,<br /><strong>nothing you don't.</strong>
@@ -362,7 +384,7 @@ const LandingPage = () => {
           transition={SPRING}
           style={{ marginBottom: '3rem' }}
         >
-          <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 300, letterSpacing: '-0.03em', color: '#FAFAFA', lineHeight: 1.2 }}>
+          <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
             {/* Lighter intensity — this section has more surrounding motion already */}
             <ScrollBounceText intensity={0.7} maxSkewDeg={2} maxTranslateY={3} stiffness={320} damping={38}>
               One platform,<br /><strong>three workspaces.</strong>
@@ -396,7 +418,7 @@ const LandingPage = () => {
               transition={{ ...SPRING, delay: i * 0.08 }}
               style={{
                 padding: '1.75rem', borderRadius: '1.5rem',
-                background: 'rgba(255,255,255,0.03)',
+                background: 'rgba(var(--glass-rgb),0.03)',
                 border: `1px solid ${color}18`,
                 boxShadow: `inset 0 1px 0 ${color}10`,
                 textAlign: 'left',
@@ -406,12 +428,12 @@ const LandingPage = () => {
                 <div style={{ width: '2rem', height: '2rem', borderRadius: '0.625rem', background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon style={{ width: '0.875rem', height: '0.875rem', color }} />
                 </div>
-                <span style={{ fontWeight: 600, color: '#FAFAFA', fontSize: '0.9375rem' }}>{role}</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)', fontSize: '0.9375rem' }}>{role}</span>
               </div>
               <code style={{
                 display: 'block', fontSize: '0.6875rem', color: '#3f3f46',
                 fontFamily: '"SF Mono", "Fira Code", monospace',
-                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
+                background: 'rgba(var(--glass-rgb),0.03)', border: '1px solid rgba(var(--glass-rgb),0.05)',
                 borderRadius: '0.375rem', padding: '0.375rem 0.625rem',
                 marginBottom: '1.125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
@@ -419,7 +441,7 @@ const LandingPage = () => {
               </code>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                 {perks.map(p => (
-                  <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: '#71717A' }}>
+                  <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--color-text-subtle)' }}>
                     <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: color, flexShrink: 0 }} />
                     {p}
                   </li>
@@ -435,7 +457,7 @@ const LandingPage = () => {
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer style={{
         position: 'relative', zIndex: 1,
-        borderTop: '1px solid rgba(255,255,255,0.04)',
+        borderTop: '1px solid rgba(var(--glass-rgb),0.04)',
         padding: '2rem 1.5rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
         maxWidth: '1100px', margin: '0 auto',

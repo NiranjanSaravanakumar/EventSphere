@@ -52,8 +52,8 @@ const Tab = ({ label, active, onClick }) => (
     style={{
       padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
       fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', border: 'none',
-      background: active ? 'rgba(255,255,255,0.10)' : 'transparent',
-      color: active ? '#FAFAFA' : '#71717A', transition: 'all 0.2s',
+      background: active ? 'rgba(var(--glass-rgb),0.10)' : 'transparent',
+      color: active ? 'var(--color-text-primary)' : 'var(--color-text-subtle)', transition: 'all 0.2s',
     }}
   >
     {label}
@@ -63,14 +63,14 @@ const Tab = ({ label, active, onClick }) => (
 // ── Capacity bar ───────────────────────────────────────────────────────────────
 const CapacityBar = ({ registered, capacity }) => {
   const pct = Math.min(100, Math.round((registered / capacity) * 100));
-  const color = pct >= 90 ? '#f87171' : '#FAFAFA';
+  const color = pct >= 90 ? '#f87171' : 'var(--color-text-primary)';
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '0.6875rem', color: '#71717A' }}>{registered}/{capacity} spots</span>
+        <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{registered}/{capacity} spots</span>
         <span style={{ fontSize: '0.6875rem', color }}>{pct}%</span>
       </div>
-      <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+      <div style={{ width: '100%', height: '2px', background: 'rgba(var(--glass-rgb),0.08)', borderRadius: '2px', overflow: 'hidden' }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -99,10 +99,10 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
       transition={SPRING}
       style={{
         padding: '1.5rem', borderRadius: '1.25rem',
-        background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)',
+        background: 'rgba(var(--glass-rgb),0.04)', backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        border: isRegistered ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)',
+        border: isRegistered ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(var(--glass-rgb),0.08)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.07)',
         display: 'flex', flexDirection: 'column', gap: '1rem',
         position: 'relative', overflow: 'hidden',
       }}
@@ -111,7 +111,7 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
         position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
         background: isRegistered
           ? 'linear-gradient(90deg, transparent, rgba(16,185,129,0.4), transparent)'
-          : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)',
+          : 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.12), transparent)',
       }} />
 
       {isRegistered && (
@@ -127,11 +127,11 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
       )}
 
       <div style={{ paddingRight: isRegistered ? '5.5rem' : 0 }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#FAFAFA', letterSpacing: '-0.015em', lineHeight: 1.3 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em', lineHeight: 1.3 }}>
           {event.title}
         </h3>
         {event.description && (
-          <p style={{ fontSize: '0.8125rem', color: '#71717A', marginTop: '0.375rem', lineHeight: 1.5,
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem', lineHeight: 1.5,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {event.description}
           </p>
@@ -145,7 +145,7 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
           { Icon: Users,    text: `Hosted by ${event.organizerName}` },
         ].map(({ Icon, text }) => (
           <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: '#71717A', flexShrink: 0 }} />
+            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: 'var(--color-text-subtle)', flexShrink: 0 }} />
             <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{text}</span>
           </div>
         ))}
@@ -156,8 +156,8 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
       {/* Registration window indicator */}
       {event.registrationEnd && !isRegistered && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          <Clock style={{ width: '0.75rem', height: '0.75rem', color: '#52525b', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.6875rem', color: '#52525b' }}>
+          <Clock style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
             Registration closes {fmtShort(event.registrationEnd)}
           </span>
         </div>
@@ -171,8 +171,8 @@ const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
         disabled={isRegistered || isSoldOut || registering}
         style={{
           width: '100%', height: '2.5rem', borderRadius: '0.75rem', border: 'none',
-          background: isRegistered ? 'rgba(16,185,129,0.10)' : isSoldOut ? 'rgba(255,255,255,0.04)' : '#FAFAFA',
-          color: isRegistered ? '#6ee7b7' : isSoldOut ? '#71717A' : '#050505',
+          background: isRegistered ? 'rgba(16,185,129,0.10)' : isSoldOut ? 'rgba(var(--glass-rgb),0.04)' : 'var(--color-text-primary)',
+          color: isRegistered ? '#6ee7b7' : isSoldOut ? 'var(--color-text-subtle)' : 'var(--color-bg-primary)',
           fontSize: '0.875rem', fontWeight: 600,
           cursor: isRegistered || isSoldOut ? 'default' : 'pointer',
           opacity: registering ? 0.7 : 1, transition: 'all 0.2s',
@@ -274,14 +274,14 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050505', color: '#FAFAFA', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Inter, sans-serif' }}>
       <Navbar />
 
       <div style={{ position: 'relative', padding: '2.5rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
 
         {/* Ambient orbs */}
-        <div style={{ position: 'absolute', top: '-5%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.02)', filter: 'blur(90px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.015)', filter: 'blur(80px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '-5%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.02)', filter: 'blur(90px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.015)', filter: 'blur(80px)', pointerEvents: 'none' }} />
 
         {/* Header */}
         <motion.div
@@ -290,12 +290,12 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
           style={{ marginBottom: '2rem', position: 'relative', zIndex: 10 }}
         >
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#FAFAFA' }}>
+          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--color-text-primary)' }}>
             <ScrollBounceText as="span" intensity={1} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={34}>
               Event Portal
             </ScrollBounceText>
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.375rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem' }}>
             Discover events and access your tickets.
           </p>
         </motion.div>
@@ -307,8 +307,8 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
         }}>
           <div style={{
             display: 'flex', gap: '0.25rem', padding: '0.25rem',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.07)', borderRadius: '0.75rem',
+            background: 'rgba(var(--glass-rgb),0.04)',
+            border: '1px solid rgba(var(--glass-rgb),0.07)', borderRadius: '0.75rem',
           }}>
             <Tab label="Discover"                      active={tab === 'discover'} onClick={() => setTab('discover')} />
             <Tab label={`My Tickets (${tickets.length})`} active={tab === 'tickets'}  onClick={() => setTab('tickets')}  />
@@ -316,15 +316,15 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
 
           {tab === 'discover' && (
             <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: '#71717A', pointerEvents: 'none' }} />
+              <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: 'var(--color-text-subtle)', pointerEvents: 'none' }} />
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search events…"
                 style={{
                   height: '2.5rem', paddingLeft: '2.5rem', paddingRight: '1rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '0.75rem', color: '#FAFAFA', fontSize: '0.875rem', outline: 'none', width: '220px',
+                  background: 'rgba(var(--glass-rgb),0.05)',
+                  border: '1px solid rgba(var(--glass-rgb),0.08)',
+                  borderRadius: '0.75rem', color: 'var(--color-text-primary)', fontSize: '0.875rem', outline: 'none', width: '220px',
                 }}
               />
             </div>
@@ -334,7 +334,7 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
         {/* Content */}
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '5rem' }}>
-            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(255,255,255,0.12)', borderTopColor: 'rgba(255,255,255,0.6)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(var(--glass-rgb),0.12)', borderTopColor: 'rgba(var(--glass-rgb),0.6)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -357,10 +357,10 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
                     variants={cardVariants}
                     style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
                   >
-                    <div style={{ width: '4rem', height: '4rem', borderRadius: '1.25rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar style={{ width: '1.5rem', height: '1.5rem', color: '#71717A' }} />
+                    <div style={{ width: '4rem', height: '4rem', borderRadius: '1.25rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-text-subtle)' }} />
                     </div>
-                    <p style={{ color: '#71717A' }}>
+                    <p style={{ color: 'var(--color-text-subtle)' }}>
                       {search ? `No events found for "${search}"` : 'No upcoming events.'}
                     </p>
                   </motion.div>
@@ -385,12 +385,12 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
               >
                 {tickets.length === 0 ? (
                   <div style={{ paddingTop: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
-                    <div style={{ width: '5rem', height: '5rem', borderRadius: '1.5rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ticket style={{ width: '2rem', height: '2rem', color: '#71717A' }} />
+                    <div style={{ width: '5rem', height: '5rem', borderRadius: '1.5rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ticket style={{ width: '2rem', height: '2rem', color: 'var(--color-text-subtle)' }} />
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontWeight: 600, color: '#FAFAFA' }}>No tickets yet</p>
-                      <p style={{ fontSize: '0.875rem', color: '#71717A', marginTop: '0.25rem' }}>
+                      <p style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>No tickets yet</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.25rem' }}>
                         Register for an event to receive your Wallet Pass.
                       </p>
                     </div>
@@ -399,7 +399,7 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
                       onClick={() => setTab('discover')}
                       style={{
                         padding: '0.625rem 1.5rem', borderRadius: '0.875rem',
-                        background: '#FAFAFA', color: '#050505',
+                        background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
                         border: 'none', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
                       }}
                     >
@@ -409,7 +409,7 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
                 ) : (
                   <>
                     {/* Section label */}
-                    <p style={{ fontSize: '0.75rem', fontWeight: 500, color: '#71717A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1.5rem' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1.5rem' }}>
                       {tickets.length} Ticket{tickets.length !== 1 ? 's' : ''}
                     </p>
 
