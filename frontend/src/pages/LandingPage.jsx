@@ -27,43 +27,44 @@ const AmbientBackground = () => (
   </div>
 );
 
-// ── Feature card ────────────────────────────────────────────────────────────
-const FeatureCard = ({ icon: Icon, title, description, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
-    whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-    viewport={{ once: true, margin: '-60px' }}
-    transition={{ ...SPRING, delay }}
-    style={{
-      padding: '1.75rem',
-      borderRadius: '1.5rem',
-      background: 'rgba(var(--glass-rgb),0.04)',
-      backdropFilter: 'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
-      border: '1px solid rgba(var(--glass-rgb),0.07)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.06)',
-      display: 'flex', flexDirection: 'column', gap: '1rem',
-      position: 'relative', overflow: 'hidden',
-    }}
-  >
-    <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.12), transparent)' }} />
-    <div style={{
-      width: '2.5rem', height: '2.5rem', borderRadius: '0.875rem',
-      background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.08)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Icon style={{ width: '1.125rem', height: '1.125rem', color: '#D4D4D8' }} />
-    </div>
-    <div>
-      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em', marginBottom: '0.375rem' }}>
-        {title}
-      </h3>
-      <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', lineHeight: 1.65 }}>
-        {description}
-      </p>
-    </div>
-  </motion.div>
-);
+// ── Feature Row ────────────────────────────────────────────────────────────
+const FeatureRow = ({ icon: Icon, title, description, index }) => {
+  const isEven = index % 2 === 0;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: isEven ? -60 : 60, filter: 'blur(8px)' }}
+      whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+      viewport={{ once: false, amount: 0.3 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8 md:gap-16 py-8 md:py-12`}
+    >
+      <div className={`flex-1 flex flex-col ${isEven ? 'md:items-start md:text-left' : 'md:items-end md:text-right'} items-center text-center`}>
+        <h3 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', marginBottom: '0.75rem' }}>
+          {title}
+        </h3>
+        <p style={{ fontSize: '1.0625rem', color: 'var(--color-text-subtle)', lineHeight: 1.7, maxWidth: '450px' }}>
+          {description}
+        </p>
+      </div>
+
+      <div className="flex-1 w-full">
+        <div style={{
+          width: '100%', aspectRatio: '16/9', borderRadius: '1.5rem',
+          background: 'rgba(var(--glass-rgb),0.02)',
+          backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(var(--glass-rgb),0.3)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative', overflow: 'hidden'
+        }}>
+           <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.5), transparent)' }} />
+           <Icon style={{ width: '6rem', height: '6rem', color: 'rgba(var(--glass-rgb),0.6)' }} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 // ── Stat pill ───────────────────────────────────────────────────────────────
 const StatPill = ({ value, label, delay }) => (
@@ -352,7 +353,7 @@ const LandingPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: false, amount: 0.3 }}
           transition={SPRING}
           style={{ textAlign: 'center', marginBottom: '4rem' }}
         >
@@ -367,12 +368,8 @@ const LandingPage = () => {
           </h2>
         </motion.div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '1rem',
-        }}>
-          {features.map(f => <FeatureCard key={f.title} {...f} />)}
+        <div className="flex flex-col">
+          {features.map((f, i) => <FeatureRow key={f.title} index={i} {...f} />)}
         </div>
       </section>
 
@@ -381,7 +378,7 @@ const LandingPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: false, amount: 0.3 }}
           transition={SPRING}
           style={{ marginBottom: '3rem' }}
         >
@@ -413,10 +410,10 @@ const LandingPage = () => {
           ].map(({ role, color, icon: Icon, path, perks }, i) => (
             <motion.div
               key={role}
-              initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
+              initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
               whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              viewport={{ once: true }}
-              transition={{ ...SPRING, delay: i * 0.08 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ ...SPRING, delay: i * 0.1 }}
               style={{
                 padding: '1.75rem', borderRadius: '1.5rem',
                 background: 'rgba(var(--glass-rgb),0.03)',
