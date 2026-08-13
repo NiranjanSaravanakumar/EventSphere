@@ -9,6 +9,8 @@ import { useAuth, emailToSlug } from '../context/AuthContext.jsx';
 import GlassInput from '../components/ui/GlassInput.jsx';
 import GlassButton from '../components/ui/GlassButton.jsx';
 import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
+import authHero from '../assets/auth_hero.png';
+import organizerHero from '../assets/organizer_hero.png';
 
 // â”€â”€ Animation configs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
@@ -211,17 +213,30 @@ const AuthPage = () => {
     <div
       id="auth-page"
       style={{
-        position: 'relative',
         minHeight: '100vh',
         width: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         background: 'var(--color-bg-primary)',
         overflow: 'hidden',
       }}
     >
+      {/* ── Left Panel — Login Form ─────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="auth-left-panel"
+        style={{
+          flex: step === 'selection' ? '0 0 100%' : '0 0 50%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
       <Background />
 
       {/* Logo */}
@@ -552,6 +567,102 @@ const AuthPage = () => {
       >
         &copy; 2026 EventSphere &middot; Enterprise Event Platform
       </motion.p>
+      </motion.div>
+
+      {/* ── Right Panel — Hero Image ──────────────────────────────────────────── */}
+      <AnimatePresence>
+      {step !== 'selection' && (
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 40 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="auth-right-panel"
+          style={{
+            flex: '0 0 50%',
+            position: 'relative',
+            overflow: 'hidden',
+            minHeight: '100vh',
+          }}
+        >
+          {/* Background image */}
+          <img
+            src={role === 'ROLE_ORGANIZER' ? organizerHero : authHero}
+            alt="EventSphere Platform"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+
+        {/* Dark gradient overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(225deg, rgba(0,0,0,0.2) 0%, rgba(15,10,40,0.6) 100%)',
+        }} />
+
+        {/* Top — Logo Overlay */}
+        <div style={{
+          position: 'absolute',
+          top: '2.5rem',
+          left: '2.5rem',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.625rem'
+        }}>
+          <div style={{
+            width: '2.25rem', height: '2.25rem',
+            borderRadius: '0.625rem',
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(12px)',
+          }}>
+            <Sparkles style={{ width: '1.1rem', height: '1.1rem', color: '#fff' }} />
+          </div>
+          <span style={{
+            fontSize: '1.25rem', fontWeight: 700,
+            letterSpacing: '-0.025em', color: '#fff',
+          }}>
+            Event<span style={{ color: 'rgba(255,255,255,0.5)' }}>Sphere</span>
+          </span>
+        </div>
+
+        {/* Subtle grid */}
+        <svg
+          aria-hidden
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04 }}
+        >
+          <defs>
+            <pattern id="auth-right-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#auth-right-grid)" />
+        </svg>
+
+        {/* Vertical divider */}
+        <div style={{
+          position: 'absolute', left: 0, top: '10%', bottom: '10%', width: '1px',
+          background: 'linear-gradient(to bottom, transparent, rgba(var(--glass-rgb),0.12), transparent)',
+        }} />
+        </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* ── Responsive styles ──────────────────────────── */}
+      <style>{`
+        @media (max-width: 768px) {
+          .auth-right-panel { display: none !important; }
+          .auth-left-panel  { flex: 0 0 100% !important; }
+        }
+      `}</style>
     </div>
   );
 };
