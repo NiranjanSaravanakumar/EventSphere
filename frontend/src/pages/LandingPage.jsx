@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
+import heroImage from '../assets/hero.png';
 
 const SPRING = { type: 'spring', stiffness: 300, damping: 30 };
 
@@ -201,6 +202,7 @@ const TopNav = () => {
 // ── Main LandingPage ────────────────────────────────────────────────────────
 const LandingPage = () => {
   const navigate    = useNavigate();
+  const { theme }   = useTheme();
   const heroRef     = useRef(null);
   const { scrollY } = useScroll();
   const heroY       = useSpring(useTransform(scrollY, [0, 400], [0, -60]), { stiffness: 80, damping: 20 });
@@ -232,6 +234,17 @@ const LandingPage = () => {
           padding: '8rem 1.5rem 4rem',
         }}
       >
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundImage: `url(${heroImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: theme === 'dark' ? 0.3 : 0.15,
+          zIndex: -1,
+          maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+        }} />
         <motion.div style={{ y: heroY, opacity: heroOpacity }}>
 
           {/* Eyebrow */}
@@ -270,7 +283,7 @@ const LandingPage = () => {
             <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2.5} maxTranslateY={5}>
               Events that run on
               <br />
-              <span style={{ fontWeight: 700 }}>intelligence.</span>
+              <span style={{ fontWeight: 700 }}>INTELLIGENCE</span>
             </ScrollBounceText>
           </motion.h1>
 
@@ -287,8 +300,7 @@ const LandingPage = () => {
               lineHeight: 1.7,
             }}
           >
-            Invite-only registration with QR tickets, real-time analytics,
-            and role-scoped workspaces — built for organisers who mean business.
+            Secure invite-only registration with unique QR codes, real-time analytics, and role-scoped workspaces — built for professional event management.
           </motion.p>
 
           {/* CTAs */}
