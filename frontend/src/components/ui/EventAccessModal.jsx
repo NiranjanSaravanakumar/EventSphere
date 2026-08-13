@@ -184,7 +184,7 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                       textAlign: 'center',
                       fontSize: '1.5rem',
                       letterSpacing: '0.3em',
-                      fontFamily: '"SF Mono", "Fira Code", "Courier New", monospace',
+                      fontFamily: 'Quantico, monospace',
                       fontWeight: 600,
                       color: 'var(--color-text-primary)',
                       outline: 'none',

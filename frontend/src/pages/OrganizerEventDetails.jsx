@@ -120,7 +120,7 @@ const OrganizerEventDetails = () => {
   return (
     <div style={{
       minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)',
-      fontFamily: 'Inter, system-ui, sans-serif', padding: '2rem'
+      fontFamily: 'Quantico, system-ui, sans-serif', padding: '2rem'
     }}>
       {/* Top Nav */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3rem' }}>

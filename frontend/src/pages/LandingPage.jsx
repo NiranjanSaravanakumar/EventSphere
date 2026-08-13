@@ -215,7 +215,7 @@ const LandingPage = () => {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Quantico, system-ui, sans-serif', overflowX: 'hidden' }}>
       <AmbientBackground />
       <TopNav />
 
@@ -432,7 +432,7 @@ const LandingPage = () => {
               </div>
               <code style={{
                 display: 'block', fontSize: '0.6875rem', color: '#3f3f46',
-                fontFamily: '"SF Mono", "Fira Code", monospace',
+                fontFamily: 'Quantico, monospace',
                 background: 'rgba(var(--glass-rgb),0.03)', border: '1px solid rgba(var(--glass-rgb),0.05)',
                 borderRadius: '0.375rem', padding: '0.375rem 0.625rem',
                 marginBottom: '1.125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',

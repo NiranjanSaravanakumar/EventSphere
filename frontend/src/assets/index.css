@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;500;600;700&family=Edu+VIC+WA+NT+Hand+Precursive&family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 /* ============================================================
@@ -8,9 +9,9 @@
   /* Light Mode Colors */
   --color-bg-primary: #FAFAFA;
   --bg-primary-rgb: 250, 250, 250;
-  --color-text-primary: #050505;
+  --color-text-primary: #000000;
   --color-text-muted: #000000;
-  --color-text-subtle: #111111;
+  --color-text-subtle: #000000;
   --color-border: #e4e4e7;
   --color-border-muted: rgba(100,100,120,0.30);
   --color-input-bg: #f4f4f5;
@@ -27,9 +28,9 @@
   /* Dark Mode Colors */
   --color-bg-primary: #050505;
   --bg-primary-rgb: 5, 5, 5;
-  --color-text-primary: #FAFAFA;
-  --color-text-muted: #a1a1aa;
-  --color-text-subtle: #71717A;
+  --color-text-primary: #FFFFFF;
+  --color-text-muted: #FFFFFF;
+  --color-text-subtle: #FFFFFF;
   --color-border: #27272A;
   --color-border-muted: rgba(180,180,200,0.22);
   --color-input-bg: rgba(255,255,255,0.05);
@@ -46,7 +47,7 @@
    TAILWIND V4 THEME EXTENSIONS
    ============================================================ */
 @theme {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Quantico', -apple-system, BlinkMacSystemFont, sans-serif;
   --animate-float-slow: float 6s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s ease-in-out infinite;
 }
@@ -68,7 +69,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Quantico', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   min-height: 100vh;

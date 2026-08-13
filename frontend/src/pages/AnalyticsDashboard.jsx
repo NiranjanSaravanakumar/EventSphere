@@ -102,7 +102,7 @@ const TableRow = ({ stat, index }) => {
       <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {stat.registered.toLocaleString()} / {stat.capacity.toLocaleString()}
       </span>
-      <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-subtle)', letterSpacing: '0.10em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-subtle)', letterSpacing: '0.10em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', whiteSpace: 'nowrap' }}>
         {stat.eventCode ?? '—'}
       </span>
       <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${statusColor}15`, border: `1px solid ${statusColor}30`, color: statusColor, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em' }}>
@@ -378,7 +378,7 @@ const AnalyticsDashboard = () => {
   const header = headerConfig[activeNav] ?? headerConfig.overview;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Quantico, system-ui, sans-serif', display: 'flex' }}>
 
       {/* ── FIXED LEFT SIDEBAR ────────────────────────────────────────────────── */}
       <aside style={{
@@ -642,7 +642,7 @@ const AnalyticsDashboard = () => {
                         {/* Secret code */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                           <Key style={{ width: '0.625rem', height: '0.625rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                          <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.10)' }}>
+                          <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.10)' }}>
                             {event.eventCode ?? '—'}
                           </span>
                         </div>

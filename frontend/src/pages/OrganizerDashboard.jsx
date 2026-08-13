@@ -174,7 +174,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Key style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)' }} />
             <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Access Code</span>
-            <span style={{ fontFamily: '"SF Mono", "Fira Code", monospace', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em' }}>{event.eventCode}</span>
+            <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em' }}>{event.eventCode}</span>
           </div>
           <motion.button
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -451,7 +451,7 @@ const OrganizerDashboard = () => {
   return (
     <div style={{
       minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: 'Quantico, system-ui, sans-serif',
       position: 'relative', overflowX: 'hidden',
     }}>
       {/* Ambient orbs */}

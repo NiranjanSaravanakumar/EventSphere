@@ -104,7 +104,7 @@ const ScannerPanel = ({ onClose }) => {
                 background: 'rgba(var(--glass-rgb),0.05)',
                 border: '1px solid rgba(var(--glass-rgb),0.09)',
                 borderRadius: '0.75rem', color: 'var(--color-text-primary)',
-                fontFamily: 'monospace', fontSize: '0.875rem',
+                fontFamily: 'Quantico, monospace', fontSize: '0.875rem',
                 letterSpacing: '0.04em', outline: 'none',
               }}
               onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}

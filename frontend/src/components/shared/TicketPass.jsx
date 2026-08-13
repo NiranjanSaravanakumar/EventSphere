@@ -225,7 +225,7 @@ const TicketPass = ({
             {qrToken && (
               <p style={{
                 fontSize: '0.6875rem', color: '#3f3f46',
-                fontFamily: 'monospace', letterSpacing: '0.04em',
+                fontFamily: 'Quantico, monospace', letterSpacing: '0.04em',
                 marginTop: '0.25rem',
               }}>
                 {qrToken}
