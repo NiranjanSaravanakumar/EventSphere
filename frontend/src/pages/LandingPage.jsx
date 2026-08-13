@@ -299,6 +299,7 @@ const LandingPage = () => {
           >
             <motion.button
               id="landing-get-started"
+              className="selection:bg-white selection:text-black"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
               transition={SPRING}

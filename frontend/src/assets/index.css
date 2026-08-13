@@ -126,6 +126,13 @@ body {
   color: var(--color-text-primary);
 }
 
+/* Specific selection for Get Started button */
+#landing-get-started::selection,
+#landing-get-started *::selection {
+  background-color: white;
+  color: black; 
+}
+
 /* ============================================================
    ANIMATION UTILITIES
    ============================================================ */
