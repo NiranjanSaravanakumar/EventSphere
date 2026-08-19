@@ -116,7 +116,7 @@ public class EventService {
 
     // ── Mapper ────────────────────────────────────────────────────────────────
     private EventResponse toResponse(Event e) {
-        long registered    = registrationRepository.countByEvent(e);
+        // Count only REGISTERED + CHECKED_IN — cancelled seats must not inflate the total
         long activeSeatsTaken = registrationRepository
                 .countByEventAndStatusNot(e, Registration.Status.CANCELLED);
         long availableSeats = Math.max(0, e.getCapacity() - activeSeatsTaken);
@@ -129,7 +129,7 @@ public class EventService {
                 e.getCapacity(),
                 e.getOrganizer().getId(),
                 e.getOrganizer().getName(),
-                registered,
+                activeSeatsTaken,   // registeredCount = active seats only (no cancelled)
                 e.getCreatedAt(),
                 e.getEventCode(),
                 e.getRegistrationStart(),

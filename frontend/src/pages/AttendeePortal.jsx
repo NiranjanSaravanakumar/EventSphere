@@ -87,11 +87,11 @@ const CancelConfirmModal = ({ eventTitle, onConfirm, onDismiss }) => (
       <div style={{ padding: '1.5rem 2rem' }}>
         <div style={{ border: '1px solid var(--structure)', padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
-            !! WARNING — THIS ACTION IS PERMANENT
+            !! CONFIRM CANCELLATION
           </p>
           <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.6, lineHeight: 1.8, letterSpacing: '0.04em' }}>
-            Cancelling your spot for <strong style={{ opacity: 1 }}>{eventTitle}</strong> will free
-            the seat and <strong style={{ opacity: 1 }}>permanently block you from re-registering</strong> for this event.
+            Your spot for <strong style={{ opacity: 1 }}>{eventTitle}</strong> will be freed.
+            You can <strong style={{ opacity: 1 }}>re-register later</strong> using the event code, as long as seats are still available.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -257,10 +257,18 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
     setRegistering(modalEvent.id);
     try {
       await registrationsApi.register(modalEvent.id, code);
+      setModalEvent(null);                         // close modal on success
       showToast('REGISTERED! YOUR TICKET IS READY.');
       await fetchAll();
       setTab('tickets');
-    } finally { setRegistering(null); }
+    } catch (err) {
+      // Surface the backend error message so the user knows what went wrong
+      const msg = err?.response?.data?.message || err?.message || 'REGISTRATION FAILED.';
+      showToast(msg.toUpperCase(), 'error');
+      setModalEvent(null);                         // close modal so user can retry
+    } finally {
+      setRegistering(null);
+    }
   };
 
   const [confirmCancel, setConfirmCancel] = useState(null); // { registrationId, eventTitle }
@@ -274,8 +282,10 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
     setConfirmCancel(null);
     try {
       await registrationsApi.cancel(registrationId);
-      showToast('REGISTRATION CANCELLED. YOUR SPOT HAS BEEN FREED.');
+      showToast('REGISTRATION CANCELLED. YOU CAN RE-REGISTER ANY TIME.');
       await fetchAll();
+      // Switch to Discover so the user can immediately re-register if they want
+      setTab('discover');
     } catch (err) {
       showToast((err?.response?.data?.message || 'CANCELLATION FAILED.').toUpperCase(), 'error');
     }

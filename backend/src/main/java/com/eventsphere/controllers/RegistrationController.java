@@ -36,8 +36,11 @@ public class RegistrationController {
         try {
             registrationService.registerAttendee(eventId, userDetails.getUsername(), body.eventCode());
             return ResponseEntity.ok(Map.of("message", "Successfully registered for the event."));
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Registration failed: " + e.getMessage()));
         }
     }
 

@@ -2,6 +2,7 @@ package com.eventsphere.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -24,7 +25,18 @@ public class AuthDTOs {
          * Role name to assign. Must be one of: ROLE_ADMIN, ROLE_ORGANIZER, ROLE_ATTENDEE.
          * Defaults to ROLE_ATTENDEE if null.
          */
-        String role
+        String role,
+
+        /** Date of birth in ISO format (yyyy-MM-dd). Required for attendee/organizer. */
+        String dob,
+
+        /** 10-digit phone number (without country code prefix). */
+        @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits.")
+        String phoneNumber,
+
+        /** City of residence. */
+        @Size(max = 100)
+        String city
     ) {}
 
     // ── Response DTOs ─────────────────────────────────────────────────────────
@@ -46,6 +58,9 @@ public class AuthDTOs {
         Long   id,
         String name,
         String email,
-        String role
+        String role,
+        String dob,
+        String phoneNumber,
+        String city
     ) {}
 }

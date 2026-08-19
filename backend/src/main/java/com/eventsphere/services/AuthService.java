@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Service
@@ -35,16 +36,29 @@ public class AuthService {
         String rawRole = (request.role() != null && !request.role().isBlank())
                 ? request.role().toUpperCase()
                 : "ATTENDEE";
-        
+
         String roleName = rawRole.startsWith("ROLE_") ? rawRole : "ROLE_" + rawRole;
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName));
 
+        // Parse DOB if provided
+        LocalDate dob = null;
+        if (request.dob() != null && !request.dob().isBlank()) {
+            try {
+                dob = LocalDate.parse(request.dob());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date of birth format. Use yyyy-MM-dd.");
+            }
+        }
+
         User user = User.builder()
                 .name(request.name())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
+                .dob(dob)
+                .phoneNumber(request.phoneNumber())
+                .city(request.city())
                 .roles(Set.of(role))
                 .build();
 
@@ -87,6 +101,14 @@ public class AuthService {
                 .map(Role::getName)
                 .orElse("ROLE_ATTENDEE");
 
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), roleName);
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                roleName,
+                user.getDob() != null ? user.getDob().toString() : null,
+                user.getPhoneNumber(),
+                user.getCity()
+        );
     }
 }

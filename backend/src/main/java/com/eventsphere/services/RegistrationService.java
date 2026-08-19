@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RegistrationService {
@@ -54,17 +55,37 @@ public class RegistrationService {
             throw new IllegalStateException("This event is fully booked.");
         }
 
-        // ── Gate 4: Duplicate / previously-cancelled check ──────────────────
-        registrationRepository.findByEventAndAttendee(event, attendee).ifPresent(existing -> {
-            if (existing.getStatus() == Registration.Status.CANCELLED) {
-                throw new IllegalStateException(
-                    "You previously cancelled your registration for this event. " +
-                    "Cancellations are permanent and you cannot re-register.");
-            }
-            throw new IllegalStateException("You are already registered for this event.");
-        });
+        // ── Gate 4: Duplicate check — allow re-registration if previously CANCELLED ──
+        Optional<Registration> existingOpt = registrationRepository.findByEventAndAttendee(event, attendee);
+        if (existingOpt.isPresent()) {
+            Registration existing = existingOpt.get();
 
-        // ── All gates passed — create registration ───────────────────────────
+            if (existing.getStatus() != Registration.Status.CANCELLED) {
+                // Active or checked-in — block as a true duplicate
+                throw new IllegalStateException("You are already registered for this event.");
+            }
+
+            // Previously cancelled — reactivate the existing record atomically.
+            // This preserves the unique (event_id, attendee_id) constraint and
+            // frees us from needing to delete + re-insert.
+            // Note: registeredAt is `updatable = false` in the entity, so the
+            // original timestamp is preserved as an audit trail of first registration.
+            existing.setStatus(Registration.Status.REGISTERED);
+            registrationRepository.save(existing);
+
+            // Replace the stale ticket with a freshly generated QR token.
+            ticketRepository.findByRegistration(existing).ifPresent(ticketRepository::delete);
+            String newQrToken = qrCodeService.generateToken(existing);
+            Ticket newTicket = Ticket.builder()
+                    .registration(existing)
+                    .qrToken(newQrToken)
+                    .build();
+            ticketRepository.save(newTicket);
+
+            return existing;
+        }
+
+        // ── All gates passed — create a fresh registration ───────────────────
         Registration registration = Registration.builder()
                 .event(event)
                 .attendee(attendee)
@@ -135,7 +156,14 @@ public class RegistrationService {
             throw new IllegalStateException("This registration is already cancelled.");
         }
 
+        // Mark as cancelled — countByEventAndStatusNot will exclude this seat,
+        // effectively freeing it for the next person who wants to register.
         registration.setStatus(Registration.Status.CANCELLED);
+        registrationRepository.save(registration);
+
+        // Delete the associated QR ticket so it cannot be scanned after cancellation,
+        // and so a clean new ticket can be issued if the attendee re-registers.
+        ticketRepository.findByRegistration(registration).ifPresent(ticketRepository::delete);
     }
 
     /**

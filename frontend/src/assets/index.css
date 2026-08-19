@@ -1,50 +1,46 @@
 /* ============================================================
-   RETRO TERMINAL AMBER — GLOBAL DESIGN SYSTEM
-   EventSphere v2.6
+   HARDWARE BRUTALISM — GLOBAL DESIGN SYSTEM
+   EventSphere v3.0 — Pure Black / Pure White / Amber
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
 /* ── CSS Custom Properties (Dark Mode — Default) ─────────────── */
+/* No data-theme attr on <html> = dark mode (pure black bg)       */
 :root {
-  --anchor: #120E0B;
-  /* dominant background */
-  --structure: #FDF6E3;
-  /* text, borders, empty cards */
-  --pop: #FFB300;
-  /* EXCLUSIVELY active states / buttons */
-  --ink: #FDF6E3;
-  /* shadow base — matches structure so it's visible */
+  --anchor:    #000000;   /* dominant background                  */
+  --structure: #FFFFFF;   /* text, borders, icons                 */
+  --pop:       #FFB300;   /* EXCLUSIVELY active states / buttons  */
+  --ink:       #FFFFFF;   /* shadow base — matches structure      */
 
-  --dim-border: rgba(253, 246, 227, 0.18);
-  --dim-bg: rgba(253, 246, 227, 0.04);
-  --shadow: 6px 6px 0px var(--structure);
+  --dim-border: rgba(255, 255, 255, 0.15);
+  --dim-bg:     rgba(255, 255, 255, 0.04);
+  --shadow:    6px 6px 0px var(--structure);
   --shadow-sm: 3px 3px 0px var(--structure);
   --shadow-lg: 10px 10px 0px var(--structure);
 
-  /* Derived from structure for opacity variants */
-  --structure-55: rgba(253, 246, 227, 0.55);
-  --structure-40: rgba(253, 246, 227, 0.40);
-  --structure-25: rgba(253, 246, 227, 0.25);
+  /* Opacity variants of --structure for subtle text/borders */
+  --structure-55: rgba(255, 255, 255, 0.55);
+  --structure-40: rgba(255, 255, 255, 0.40);
+  --structure-25: rgba(255, 255, 255, 0.25);
 }
 
-/* ── Light Mode ──────────────────────────────────────────────── */
+/* ── Light Mode (.dark class removed = light; data-theme="light") */
 [data-theme="light"] {
-  --anchor: #FDF6E3;
-  --structure: #120E0B;
-  --pop: #FFB300;
-  --ink: #120E0B;
-  /* shadow base — matches structure */
+  --anchor:    #FFFFFF;   /* dominant background                  */
+  --structure: #000000;   /* text, borders, icons                 */
+  --pop:       #FFB300;   /* accent unchanged                     */
+  --ink:       #000000;   /* shadow base — matches structure      */
 
-  --dim-border: rgba(18, 14, 11, 0.18);
-  --dim-bg: rgba(18, 14, 11, 0.04);
-  --shadow: 6px 6px 0px var(--structure);
+  --dim-border: rgba(0, 0, 0, 0.15);
+  --dim-bg:     rgba(0, 0, 0, 0.04);
+  --shadow:    6px 6px 0px var(--structure);
   --shadow-sm: 3px 3px 0px var(--structure);
   --shadow-lg: 10px 10px 0px var(--structure);
 
-  --structure-55: rgba(18, 14, 11, 0.55);
-  --structure-40: rgba(18, 14, 11, 0.40);
-  --structure-25: rgba(18, 14, 11, 0.25);
+  --structure-55: rgba(0, 0, 0, 0.55);
+  --structure-40: rgba(0, 0, 0, 0.40);
+  --structure-25: rgba(0, 0, 0, 0.25);
 }
 
 /* ── Reset ───────────────────────────────────────────────────── */
@@ -132,6 +128,18 @@ time {
 .grit-btn:active {
   transform: translate(6px, 6px) !important;
   box-shadow: none !important;
+}
+
+/* ── Action Button (Edit / Delete / Copy) — Pop accent on hover ── */
+/* Gives the 10% --pop treatment to secondary interactive buttons   */
+/* transition: none — instant invert, no gradual fade               */
+.grit-action-btn {
+  transition: border-color 0s, color 0s, transform 0.1s steps(3, end), box-shadow 0.1s steps(3, end);
+}
+
+.grit-action-btn:hover:not(:disabled) {
+  border-color: var(--pop) !important;
+  color: var(--pop) !important;
 }
 
 /* ── Card Hover (stutter shift) ──────────────────────────────── */

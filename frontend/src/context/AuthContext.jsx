@@ -48,8 +48,8 @@ export const AuthProvider = ({ children }) => {
     return authUser;
   }, []);
 
-  const register = useCallback(async (name, email, password, role = 'ROLE_ATTENDEE') => {
-    const { data } = await authApi.register({ name, email, password, role });
+  const register = useCallback(async (name, email, password, role = 'ROLE_ATTENDEE', dob, phoneNumber, city) => {
+    const { data } = await authApi.register({ name, email, password, role, dob, phoneNumber, city });
     persist(data.accessToken, {
       id:    data.userId,
       name:  data.name,

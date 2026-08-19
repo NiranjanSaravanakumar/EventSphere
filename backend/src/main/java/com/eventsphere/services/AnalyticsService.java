@@ -51,7 +51,9 @@ public class AnalyticsService {
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
         for (Event event : events) {
-            long registered = registrationRepository.countByEvent(event);
+            // Only count active (non-cancelled) seats so cancellations lower totals
+            long registered = registrationRepository
+                                  .countByEventAndStatusNot(event, Registration.Status.CANCELLED);
             long checkedIn  = registrationRepository.countByEventAndStatus(
                                   event, Registration.Status.CHECKED_IN);
             long cap        = event.getCapacity();

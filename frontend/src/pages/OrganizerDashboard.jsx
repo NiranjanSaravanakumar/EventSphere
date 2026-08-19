@@ -59,12 +59,12 @@ const CapacityBar = ({ registered, capacity }) => {
         <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.6 }}>
           {registered.toLocaleString()}&thinsp;/&thinsp;{capacity.toLocaleString()} SEATS
         </span>
-        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: atCap ? 'var(--pop)' : 'var(--structure)' }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: 'var(--pop)' }}>
           {pct}%
         </span>
       </div>
       <div style={{ width: '100%', height: '3px', background: 'var(--dim-border)' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: atCap ? 'var(--pop)' : 'var(--structure)', transition: 'width 0.15s linear' }} />
+        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--pop)', transition: 'width 0.15s linear' }} />
       </div>
     </div>
   );
@@ -119,7 +119,7 @@ const TactileCard = ({ event, isLarge, onEdit, onDelete, deletingId, fmtDate, on
         padding: isLarge ? '2.5rem' : '1.75rem',
         display: 'flex', flexDirection: 'column', gap: '1.5rem',
         position: 'relative',
-        minHeight: isLarge ? '340px' : '260px',
+        minHeight: isLarge ? '340px' : '220px',
         height: '100%',
       }}
     >
@@ -164,21 +164,27 @@ const TactileCard = ({ event, isLarge, onEdit, onDelete, deletingId, fmtDate, on
       {/* Access code badge */}
       {event.eventCode && (
         <div
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', border: '1px solid var(--dim-border)', position: 'relative', zIndex: 2 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', border: '2px solid var(--structure)', position: 'relative', zIndex: 2 }}
           onClick={e => e.stopPropagation()}
         >
-          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--structure)' }}>
-            ACCESS&thinsp;//&thinsp;{event.eventCode}
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--pop)' }}>
+            ACCESS CODE
+          </span>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '1rem', color: 'var(--pop)', opacity: 0.75 }}>
+            &rarr;
+          </span>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '1.125rem', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--structure)' }}>
+            {event.eventCode}
           </span>
           <button
             id={`copy-code-${event.id}`}
-            className="grit-btn"
+            className="grit-btn grit-action-btn"
             onClick={handleCopy}
             title="Copy access code"
             style={{
               width: '2rem', height: '2rem',
               background: copied ? 'var(--pop)' : 'transparent',
-              border: `1px solid ${copied ? 'var(--pop)' : 'var(--dim-border)'}`,
+              border: `1px solid ${copied ? 'var(--pop)' : 'var(--structure)'}`,
               color: copied ? 'var(--anchor)' : 'var(--structure)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: copied ? 'none' : 'var(--shadow-sm)', cursor: 'pointer',
@@ -193,11 +199,11 @@ const TactileCard = ({ event, isLarge, onEdit, onDelete, deletingId, fmtDate, on
       <div style={{ display: 'flex', gap: '0.75rem', position: 'relative', zIndex: 2 }} onClick={e => e.stopPropagation()}>
         <button
           id={`edit-event-${event.id}`}
-          className="grit-btn"
+          className="grit-btn grit-action-btn"
           onClick={() => onEdit(event)}
           style={{
             flex: 1, height: '2.75rem',
-            background: 'var(--dim-bg)', border: '1px solid var(--dim-border)',
+            background: 'transparent', border: '2px solid var(--structure)',
             color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace",
             fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
@@ -208,12 +214,12 @@ const TactileCard = ({ event, isLarge, onEdit, onDelete, deletingId, fmtDate, on
         </button>
         <button
           id={`delete-event-${event.id}`}
-          className="grit-btn"
+          className="grit-btn grit-action-btn"
           onClick={() => onDelete(event.id)}
           disabled={deletingId === event.id}
           style={{
             width: '2.75rem', height: '2.75rem',
-            background: 'var(--dim-bg)', border: '1px solid var(--structure)',
+            background: 'transparent', border: '2px solid var(--structure)',
             color: 'var(--structure)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: 'var(--shadow-sm)',
@@ -313,7 +319,7 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
           width: '100%', maxWidth: '560px',
           background: 'var(--anchor)',
           border: '2px solid var(--structure)',
-          boxShadow: '12px 12px 0px var(--ink)',
+          boxShadow: 'var(--shadow-lg)',
         }}
       >
         {/* Modal header */}
@@ -398,6 +404,18 @@ const OrganizerDashboard = () => {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
+  // Auto-refresh: update counts when the organizer returns to this tab,
+  // and poll every 30 s so the board stays live even without tab-switching.
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchEvents(); };
+    document.addEventListener('visibilitychange', onVisible);
+    const interval = setInterval(fetchEvents, 30_000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(interval);
+    };
+  }, [fetchEvents]);
+
   const handleSaved = (msg) => { setModalOpen(false); setEditingEvent(null); showToast(msg); fetchEvents(); };
 
   const handleDelete = async (id) => {
@@ -476,7 +494,7 @@ const OrganizerDashboard = () => {
           <>
             {/* Section header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-              <h2 style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(3rem, 5vw, 4.5rem)', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1.0, whiteSpace: 'nowrap' }}>
+              <h2 style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(3rem, 5vw, 4.5rem)', textTransform: 'uppercase', color: 'var(--pop)', lineHeight: 1.0, whiteSpace: 'nowrap' }}>
                 MY EVENTS
               </h2>
               <div style={{ flex: 1, height: '2px', background: 'var(--structure)', opacity: 0.15 }} />
@@ -485,8 +503,8 @@ const OrganizerDashboard = () => {
               </span>
             </div>
 
-            {/* Equal 2-column event grid */}
-            <section aria-label="Event board" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            {/* Equal 3-column event grid */}
+            <section aria-label="Event board" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
               {events.map((event) => (
                 <div key={event.id} style={{ gridColumn: 'span 1' }}>
                   <TactileCard
@@ -500,14 +518,14 @@ const OrganizerDashboard = () => {
               ))}
 
               {/* Draft new event — dashed tile, always span 1 */}
-              <div style={{ gridColumn: events.length === 0 ? 'span 2' : 'span 1' }}>
+              <div style={{ gridColumn: events.length === 0 ? 'span 3' : 'span 1' }}>
                 <button
                   id="draft-new-event-btn"
                   className="grit-btn grit-draft"
                   onClick={() => { setEditingEvent(null); setModalOpen(true); }}
                   style={{
                     width: '100%',
-                    minHeight: '260px',
+                    minHeight: '220px',
                     height: '100%',
                     background: 'transparent',
                     border: '2px dashed var(--dim-border)',

@@ -115,23 +115,23 @@ const OrganizerEventDetails = () => {
   const availableSpots  = Math.max(0, event.capacity - totalActive);
   const fillPct         = event.capacity > 0 ? Math.round((totalActive / event.capacity) * 100) : 0;
 
-  // ECharts amber terminal palette
-  const chartTextStyle = { color: '#FDF6E3', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 };
+  // ECharts Hardware Brutalism palette — pure black / white / amber
+  const chartTextStyle = { color: '#FFFFFF', fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 };
 
   const registrationPieOption = {
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', backgroundColor: '#000', borderColor: 'rgba(253,246,227,0.18)', textStyle: chartTextStyle },
+    tooltip: { trigger: 'item', backgroundColor: '#000000', borderColor: 'rgba(255,255,255,0.15)', textStyle: chartTextStyle },
     legend: { top: 'bottom', textStyle: chartTextStyle },
     series: [{
       name: 'Seats', type: 'pie', radius: ['40%', '68%'],
       avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 0, borderColor: '#120E0B', borderWidth: 2 },
-      label: { show: true, position: 'inside', formatter: '{c}', color: '#120E0B', fontWeight: 'bold', fontFamily: "'IBM Plex Mono', monospace" },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#120E0B' } },
+      itemStyle: { borderRadius: 0, borderColor: '#000000', borderWidth: 2 },
+      label: { show: true, position: 'inside', formatter: '{c}', color: '#000000', fontWeight: 'bold', fontFamily: "'IBM Plex Mono', monospace" },
+      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#000000' } },
       labelLine: { show: false },
       data: [
-        { value: totalActive,    name: 'Registered',  itemStyle: { color: '#FDF6E3' } },
-        { value: availableSpots, name: 'Available',   itemStyle: { color: 'rgba(253,246,227,0.2)' } },
+        { value: totalActive,    name: 'Registered',  itemStyle: { color: '#FFFFFF' } },
+        { value: availableSpots, name: 'Available',   itemStyle: { color: 'rgba(255,255,255,0.18)' } },
         { value: cancelledCount, name: 'Cancelled',   itemStyle: { color: '#FFB300' } },
       ].filter(d => d.value > 0),
     }],
@@ -139,18 +139,18 @@ const OrganizerEventDetails = () => {
 
   const attendancePieOption = {
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'item', backgroundColor: '#000', borderColor: 'rgba(253,246,227,0.18)', textStyle: chartTextStyle },
+    tooltip: { trigger: 'item', backgroundColor: '#000000', borderColor: 'rgba(255,255,255,0.15)', textStyle: chartTextStyle },
     legend: { top: 'bottom', textStyle: chartTextStyle },
     series: [{
       name: 'Attendance', type: 'pie', radius: ['40%', '68%'],
       avoidLabelOverlap: false,
-      itemStyle: { borderRadius: 0, borderColor: '#120E0B', borderWidth: 2 },
-      label: { show: true, position: 'inside', formatter: '{c}', color: '#120E0B', fontWeight: 'bold', fontFamily: "'IBM Plex Mono', monospace" },
-      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#120E0B' } },
+      itemStyle: { borderRadius: 0, borderColor: '#000000', borderWidth: 2 },
+      label: { show: true, position: 'inside', formatter: '{c}', color: '#000000', fontWeight: 'bold', fontFamily: "'IBM Plex Mono', monospace" },
+      emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#000000' } },
       labelLine: { show: false },
       data: [
         { value: checkedInCount,  name: 'Checked In',      itemStyle: { color: '#FFB300' } },
-        { value: registeredCount, name: 'Not Yet Arrived', itemStyle: { color: '#FDF6E3' } },
+        { value: registeredCount, name: 'Not Yet Arrived', itemStyle: { color: '#FFFFFF' } },
       ].filter(d => d.value > 0),
     }],
   };
