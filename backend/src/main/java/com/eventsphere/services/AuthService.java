@@ -32,9 +32,11 @@ public class AuthService {
             throw new IllegalArgumentException("Email is already registered: " + request.email());
         }
 
-        String roleName = (request.role() != null && !request.role().isBlank())
-                ? request.role()
-                : "ROLE_ATTENDEE";
+        String rawRole = (request.role() != null && !request.role().isBlank())
+                ? request.role().toUpperCase()
+                : "ATTENDEE";
+        
+        String roleName = rawRole.startsWith("ROLE_") ? rawRole : "ROLE_" + rawRole;
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName));
