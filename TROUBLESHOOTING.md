@@ -1,41 +1,54 @@
-# EventSphere — Troubleshooting Notes
+﻿# EventSphere — Troubleshooting Notes
 
-> All real issues encountered and resolved during development.  
+> All real issues encountered and resolved during development.
 > Use this file as the first reference before digging through code.
 
 ---
 
 ## 📋 Table of Contents
 
+### Backend
 1. [403 Forbidden on ALL endpoints](#1-403-forbidden-on-all-endpoints)
 2. [JWT WeakKeyException — HS512 key too short](#2-jwt-weakkeyexception--hs512-key-too-short)
 3. [Port 8080 / 5173 already in use](#3-port-8080--5173-already-in-use)
-4. [Blank / Black screen on frontend](#4-blank--black-screen-on-frontend)
-5. [Admin cannot edit or delete events they don't own](#5-admin-cannot-edit-or-delete-events-they-dont-own)
-6. [No attendee cancellation endpoint](#6-no-attendee-cancellation-endpoint)
-7. [No guest list for organizer](#7-no-guest-list-for-organizer)
-8. [No All-Users view for Admin](#8-no-all-users-view-for-admin)
-9. [Admin account does not exist on first boot](#9-admin-account-does-not-exist-on-first-boot)
-10. [mvnw: Permission denied / not recognised](#10-mvnw-permission-denied--not-recognised)
-11. [CORS errors in browser console](#11-cors-errors-in-browser-console)
-12. [Single login form breaking role immersion — redesigned to portal selection](#12-single-login-form-breaking-role-immersion)
-13. [MySQL connection refused on startup](#13-mysql-connection-refused-on-startup)
-14. [QR code not displaying on ticket — blank image area](#14-qr-code-not-displaying-on-ticket--blank-image-area)
-15. [Attendee can register for same event twice](#15-attendee-can-register-for-same-event-twice)
-16. [JWT token lost on browser refresh](#16-jwt-token-lost-on-browser-refresh)
-17. [npm install / Vite build errors — node_modules issues](#17-npm-install--vite-build-errors--node_modules-issues)
-18. [Spring Boot fails to start — schema.sql errors](#18-spring-boot-fails-to-start--schemasql-errors)
-19. [Organizer sees another organizer's events](#19-organizer-sees-another-organizers-events)
-20. [ECharts / echarts-for-react not rendering on first load](#20-echarts--echarts-for-react-not-rendering-on-first-load)
+4. [Admin cannot edit or delete events they don't own](#4-admin-cannot-edit-or-delete-events-they-dont-own)
+5. [Admin account does not exist on first boot](#5-admin-account-does-not-exist-on-first-boot)
+6. [mvnw: Permission denied / not recognised](#6-mvnw-permission-denied--not-recognised)
+7. [CORS errors in browser console](#7-cors-errors-in-browser-console)
+8. [MySQL connection refused on startup](#8-mysql-connection-refused-on-startup)
+9. [Spring Boot fails to start — schema.sql errors](#9-spring-boot-fails-to-start--schemasql-errors)
+10. [Organizer sees another organizer's events](#10-organizer-sees-another-organizers-events)
+11. [Attendee can register for same event twice](#11-attendee-can-register-for-same-event-twice)
+
+### Frontend — General
+12. [Blank / Black screen on frontend](#12-blank--black-screen-on-frontend)
+13. [JWT token lost on browser refresh](#13-jwt-token-lost-on-browser-refresh)
+14. [npm install / Vite build errors — node_modules issues](#14-npm-install--vite-build-errors--node_modules-issues)
+15. [QR code not displaying on ticket — blank image area](#15-qr-code-not-displaying-on-ticket--blank-image-area)
+16. [ECharts / echarts-for-react not rendering on first load](#16-echarts--echarts-for-react-not-rendering-on-first-load)
+
+### Frontend — Theming (Retro Terminal Design System)
+17. [Light/Dark mode elements not inverting correctly](#17-lightdark-mode-elements-not-inverting-correctly)
+18. [Shadows or borders disappear / look wrong after theme switch](#18-shadows-or-borders-disappear--look-wrong-after-theme-switch)
+
+### Frontend — Layout (Bento Box Grid)
+19. [Bento Box metric cards are unequal sizes](#19-bento-box-metric-cards-are-unequal-sizes)
+20. [Event grid cards are different heights](#20-event-grid-cards-are-different-heights)
+
+### Frontend — Check-In / Scanner
+21. [Camera permission denied when switching to Camera Scan mode](#21-camera-permission-denied-when-switching-to-camera-scan-mode)
+22. [Camera stream stays active after closing scanner](#22-camera-stream-stays-active-after-closing-scanner)
+23. [Scanner detects QR but check-in always fails](#23-scanner-detects-qr-but-check-in-always-fails)
+24. [NotFoundException spam in browser console during Camera Scan](#24-notfoundexception-spam-in-browser-console-during-camera-scan)
 
 ---
 
 ## 1. 403 Forbidden on ALL endpoints
 
-**Symptom**  
+**Symptom**
 Every API call — including `POST /api/auth/register` and `POST /api/auth/login` — returns `403 Forbidden`. Sign-up and admin login both fail immediately.
 
-**Root Cause**  
+**Root Cause**
 `JwtAuthenticationFilter` was annotated with `@Component`. Spring Boot automatically scans all `@Component` beans that extend `OncePerRequestFilter` and registers them as **raw servlet filters** — they run *before* Spring Security starts. `SecurityConfig.addFilterBefore()` then added the same filter **a second time** inside the security chain.
 
 On the first pass (before security), the `SecurityContext` was empty. The second pass then blocked everything with 403 because no authentication existed yet.
@@ -66,15 +79,15 @@ Filter jwtFilterRegistration was not registered (disabled)
 
 ## 2. JWT WeakKeyException — HS512 key too short
 
-**Symptom**  
+**Symptom**
 Login returns 403. Backend log shows:
 ```
 WeakKeyException: The signing key's size is 384 bits which is not secure
 enough for the HS512 algorithm. Keys used with HS512 MUST have a size >= 512 bits.
 ```
 
-**Root Causes (two separate bugs)**  
-1. The JWT secret in `application.properties` is a **hex string**, but `JwtTokenProvider` was decoding it with `Decoders.BASE64.decode()` — treating a hex string as Base64 produces garbage bytes and far fewer usable bits than expected.  
+**Root Causes (two separate bugs)**
+1. The JWT secret in `application.properties` is a **hex string**, but `JwtTokenProvider` was decoding it with `Decoders.BASE64.decode()` — treating a hex string as Base64 produces garbage bytes and far fewer usable bits than expected.
 2. The algorithm was set to `HS512`, which requires a minimum of **512 bits**. The hex secret decoded as UTF-8 gives 504 bits — enough for HS256 but not HS512.
 
 **Fix applied in:** [`JwtTokenProvider.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/security/JwtTokenProvider.java)
@@ -98,14 +111,14 @@ byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
 
 ## 3. Port 8080 / 5173 already in use
 
-**Symptom**  
+**Symptom**
 Backend fails to start:
 ```
 Web server failed to start. Port 8080 was already in use.
 ```
 Or Vite fails to start with port 5173 already bound.
 
-**Cause**  
+**Cause**
 An old backend/frontend process was not cleanly stopped — typically after killing the terminal window without pressing `Ctrl+C` first.
 
 **Fix — Kill by port (Windows PowerShell)**
@@ -139,35 +152,12 @@ kill -9 $(lsof -t -i:5173)
 
 ---
 
-## 4. Blank / Black screen on frontend
+## 4. Admin cannot edit or delete events they don't own
 
-**Symptom**  
-`localhost:5173` shows a completely black/empty page with no content. Browser console shows:
-```
-ReferenceError: user is not defined  (App.jsx)
-```
-
-**Root Cause**  
-In `App.jsx`, the `AppRoutes` component only destructured `isAuthenticated` from `useAuth()`, but the `/adminlogin` route element used `user?.role` inline to decide whether to redirect an already-logged-in admin. Since `user` was never declared in the `AppRoutes` scope, JavaScript threw a `ReferenceError` which crashed the entire React component tree on mount.
-
-**Fix applied in:** [`App.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/App.jsx)
-
-```jsx
-// BEFORE (bug — user not in scope)
-const { isAuthenticated } = useAuth();
-
-// AFTER (fix — user now available for the adminlogin redirect check)
-const { isAuthenticated, user } = useAuth();
-```
-
----
-
-## 5. Admin cannot edit or delete events they don't own
-
-**Symptom**  
+**Symptom**
 Admin tries to edit or delete an event created by an Organizer and gets `403 AccessDeniedException`.
 
-**Root Cause**  
+**Root Cause**
 `EventService.updateEvent()` and `deleteEvent()` had a hard ownership check:
 ```java
 if (!event.getOrganizer().getEmail().equals(requesterEmail)) {
@@ -194,88 +184,12 @@ if (!isAdmin() && !event.getOrganizer().getEmail().equals(requesterEmail)) {
 
 ---
 
-## 6. No attendee cancellation endpoint
+## 5. Admin account does not exist on first boot
 
-**Symptom**  
-Attendees had no way to cancel a registration. The "Cancel Registration" button was missing from the UI and there was no backend endpoint.
-
-**Fix — Backend:** [`RegistrationService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/RegistrationService.java) + [`RegistrationController.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/controllers/RegistrationController.java)
-
-```
-DELETE /api/registrations/{id}
-```
-Guards applied:
-- Ownership check (can only cancel your own registration)
-- Cannot cancel if status is `CHECKED_IN`
-- Cannot cancel if already `CANCELLED`
-- Sets status to `CANCELLED` (frees capacity slot)
-
-**Fix — Frontend:** [`AttendeePortal.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/pages/AttendeePortal.jsx)
-- Added **Cancel Registration** button (red, visible only for `REGISTERED` tickets)
-- `handleCancel()` calls `registrationsApi.cancel(registrationId)`
-- Confirms with `window.confirm()` before sending request
-- Refreshes ticket list on success
-
-**Fix — API service:** [`api.js`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/services/api.js)
-```js
-registrationsApi.cancel(registrationId)  // DELETE /registrations/{id}
-```
-
----
-
-## 7. No guest list for organizer
-
-**Symptom**  
-Organizers had no way to see who had registered for their events.
-
-**Fix — Backend:** New endpoint added to [`RegistrationController.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/controllers/RegistrationController.java)
-
-```
-GET /api/registrations/event/{eventId}/guests
-```
-- `@PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")`
-- Organizers can only view guests for events they own
-- Admins can view guests for any event
-- Returns `List<GuestView>` with attendee name, email, status, registered timestamp
-
-**Fix — API service:** [`api.js`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/services/api.js)
-```js
-registrationsApi.guestList(eventId)  // GET /registrations/event/{id}/guests
-```
-
----
-
-## 8. No All-Users view for Admin
-
-**Symptom**  
-The RBAC spec required Admins to see the complete list of all platform users (Organizers + Attendees), but no such endpoint existed.
-
-**Fix — Backend:** New [`AdminController.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/controllers/AdminController.java) created.
-
-```
-GET /api/admin/users    → All platform users     [ADMIN only]
-GET /api/admin/events   → All events, all orgs   [ADMIN only]
-```
-
-Class-level `@PreAuthorize("hasRole('ADMIN')")` ensures only admins reach these endpoints. Also secured at the URL level in `SecurityConfig`:
-```java
-.requestMatchers("/api/admin/**").hasRole("ADMIN")
-```
-
-**Fix — API service:** [`api.js`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/services/api.js)
-```js
-adminApi.getUsers()    // GET /admin/users
-adminApi.getEvents()   // GET /admin/events
-```
-
----
-
-## 9. Admin account does not exist on first boot
-
-**Symptom**  
+**Symptom**
 Fresh database has no admin account. Login at `/adminlogin` with `admin@eventsphere.com` returns 401 because the user doesn't exist.
 
-**Root Cause**  
+**Root Cause**
 An earlier approach used a hardcoded SQL `INSERT` in `schema.sql` with a plaintext password. Spring Security's BCrypt check rejected it because the stored value was not a valid BCrypt hash.
 
 **Fix — Backend:** [`DataSeeder.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/config/DataSeeder.java)
@@ -296,14 +210,14 @@ Password : admin123
 
 ---
 
-## 10. mvnw: Permission denied / not recognised
+## 6. mvnw: Permission denied / not recognised
 
 **Symptom — Windows**
 ```
 './mvnw' is not recognized as an internal or external command
 ```
 
-**Fix**  
+**Fix**
 On Windows, always use the `.cmd` wrapper:
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -323,17 +237,17 @@ chmod +x mvnw
 
 ---
 
-## 11. CORS errors in browser console
+## 7. CORS errors in browser console
 
-**Symptom**  
+**Symptom**
 Frontend at `localhost:5173` gets CORS errors when calling `localhost:8080`. Browser console shows:
 ```
 Access to XMLHttpRequest at 'http://localhost:8080/api/...'
 from origin 'http://localhost:5173' has been blocked by CORS policy
 ```
 
-**Root Cause**  
-`SecurityConfig` had an empty CORS lambda (`cors -> {}`) which ignores the `CorsConfigurationSource` bean defined in `WebConfig`. The Spring Security CORS integration requires explicitly wiring the bean:
+**Root Cause**
+`SecurityConfig` had an empty CORS lambda (`cors -> {}`) which ignores the `CorsConfigurationSource` bean defined in `WebConfig`. The Spring Security CORS integration requires explicitly wiring the bean.
 
 **Fix applied in:** [`SecurityConfig.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/config/SecurityConfig.java)
 
@@ -349,48 +263,9 @@ from origin 'http://localhost:5173' has been blocked by CORS policy
 
 ---
 
-## 12. Single login form breaking role immersion
+## 8. MySQL connection refused on startup
 
-**Symptom / Problem**  
-Organizers and Attendees landed on the exact same login/register form at `/login`. The form had a small "I am joining as" pill toggle buried inside the registration step. This caused two issues:
-1. **UX immersion broken** — an Organizer opening a "Workspace" and an Attendee opening a "Consumer App" were forced through the same door with no visual distinction.
-2. **Registration role error-prone** — users could accidentally register with the wrong role if they didn't notice the small pill toggle.
-
-**Root Cause**  
-There was no step to differentiate the user's intent *before* showing credentials. The backend correctly stores the role, but the frontend gave no meaningful context to help the user understand which role they were signing up for.
-
-**Fix applied in:** [`AuthPage.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/pages/AuthPage.jsx)
-
-The page now implements a **3-step portal-selection flow**:
-
-```
-Step 1 — Portal Selection
-  ┌─────────────────────────────┐
-  │  🎫 Attendee Portal         │  → sets role = ROLE_ATTENDEE
-  │  🎤 Creator Studio          │  → sets role = ROLE_ORGANIZER
-  │  (Admin portal link below)  │  → navigates to /adminlogin
-  └─────────────────────────────┘
-
-Step 2 — Login / Register (role-aware)
-  ← Back button + coloured portal badge (e.g. 🎫 Attendee Portal)
-  Heading and subtext are contextual per portal
-  register() always sends the correct role payload
-```
-
-**Key UX details:**
-- The ambient background orb smoothly animates its tint colour (emerald for Attendee, violet for Organizer) when a portal is chosen, providing instant visual feedback
-- `PortalCard` components have per-card accent hover states
-- Framer Motion `AnimatePresence mode="wait"` handles the step transition with blur + slide animations
-- The glass card height layout-animates automatically via `motion.div layout`
-- All existing `useAuth` wiring, `GlassInput`/`GlassButton` components, and post-auth navigation slugs are preserved unchanged
-
-**Login flow is unchanged** — the backend resolves the actual role from the JWT token. Selecting a portal before login is purely UX; if a user already has an account and picks the "wrong" portal card, login succeeds and they are redirected to their correct dashboard anyway.
-
----
-
-## 13. MySQL connection refused on startup
-
-**Symptom**  
+**Symptom**
 Backend fails to start with:
 ```
 com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
@@ -415,7 +290,7 @@ sudo systemctl start mysql
 brew services start mysql
 ```
 
-**Cause B: Wrong credentials in `application.properties`**  
+**Cause B: Wrong credentials in `application.properties`**
 Check `backend/src/main/resources/application.properties`:
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/eventsphere
@@ -430,7 +305,7 @@ Verify you can connect with those credentials in MySQL Workbench or the CLI.
 CREATE DATABASE eventsphere;
 ```
 
-**Cause D: MySQL is running on a non-default port**  
+**Cause D: MySQL is running on a non-default port**
 Update the port in `application.properties`:
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:YOUR_PORT/eventsphere
@@ -438,42 +313,68 @@ spring.datasource.url=jdbc:mysql://localhost:YOUR_PORT/eventsphere
 
 ---
 
-## 14. QR code not displaying on ticket — blank image area
+## 9. Spring Boot fails to start — schema.sql errors
 
-**Symptom**  
-Ticket cards in the Attendee Portal show a blank white or grey rectangle where the QR code should be. No console error or a broken image icon.
+**Symptom**
+Backend throws during startup:
+```
+org.springframework.jdbc.datasource.init.ScriptStatementFailedException:
+Failed to execute SQL script statement ... from class path resource [schema.sql]
+```
 
 **Possible Causes & Fixes**
 
-**Cause A: `qrBase64` field is null or empty**  
-Call `GET /api/registrations/my-tickets` directly in the browser (with your Bearer token) and check that each ticket object has a non-empty `qrBase64` field. If it's null, the QR generation failed silently on the backend.
-
-Check the backend log for `ZXing` errors:
+**Cause A: Tables already exist with incompatible definitions**
+`schema.sql` uses `CREATE TABLE IF NOT EXISTS`. If a previous run created tables with a different column structure, the old tables will be silently kept. Drop and recreate:
+```sql
+DROP DATABASE eventsphere;
+CREATE DATABASE eventsphere;
 ```
-WriterException: ...
+Then restart the backend — Hibernate will re-run `schema.sql` from scratch.
+
+**Cause B: `spring.sql.init.mode` is set to `never`**
+Check `application.properties`:
+```properties
+# Should be 'always' (or remove the line — 'always' is default for embedded DBs)
+spring.sql.init.mode=always
 ```
 
-**Cause B: Corrupt Base64 prefix**  
-The frontend renders the QR with:
-```jsx
-<img src={`data:image/png;base64,${ticket.qrBase64}`} ... />
+**Cause C: Hibernate DDL auto setting conflicts with schema.sql**
+```properties
+# Use 'none' or 'validate' when schema.sql controls the DDL
+spring.jpa.hibernate.ddl-auto=none
 ```
-If `ticket.qrBase64` already contains the `data:image/png;base64,` prefix (double-prefix), the image breaks. Check `QRCodeService.java` — it should return **raw** Base64 without the prefix.
-
-**Cause C: Registration was cancelled before ticket rendered**  
-Cancelled registrations still appear in the ticket list but with `status: CANCELLED`. The `TicketPass` component dims cancelled tickets. If the QR field is stripped for cancelled tickets by the backend, this is expected behaviour.
-
-**Quick fix — regenerate test data:**  
-Cancel and re-register for an event to get a fresh QR ticket.
+Setting this to `create` or `create-drop` alongside `schema.sql` can cause conflicts.
 
 ---
 
-## 15. Attendee can register for same event twice
+## 10. Organizer sees another organizer's events
 
-**Symptom**  
+**Symptom**
+An organizer logs in and can see (or edit/delete) events they didn't create.
+
+**Root Cause**
+`GET /api/events/organizer` was using a non-scoped query that returned all events instead of filtering by `organizer_id`.
+
+**Fix applied in:** [`EventRepository.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/repositories/EventRepository.java) + [`EventService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/EventService.java)
+
+The repository query is scoped by organizer email:
+```java
+List<Event> findByOrganizerEmail(String email);
+```
+
+The service resolves the email from `SecurityContextHolder` — so the query is always scoped to the **currently authenticated user**, not a URL parameter that could be spoofed.
+
+For edit/delete, `EventSecurityService` performs an additional ownership check using `@PreAuthorize("@eventSecurityService.isOwner(#id, authentication.name) or hasRole('ADMIN')")`.
+
+---
+
+## 11. Attendee can register for same event twice
+
+**Symptom**
 An attendee clicks "Register" again for an event they're already registered for and gets a second ticket instead of an error.
 
-**Root Cause**  
+**Root Cause**
 `RegistrationService.register()` was missing a duplicate-registration check.
 
 **Fix applied in:** [`RegistrationService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/RegistrationService.java)
@@ -495,12 +396,35 @@ The frontend shows the server error message inline below the Register button.
 
 ---
 
-## 16. JWT token lost on browser refresh
+## 12. Blank / Black screen on frontend
 
-**Symptom**  
+**Symptom**
+`localhost:5173` shows a completely black/empty page with no content. Browser console shows:
+```
+ReferenceError: user is not defined  (App.jsx)
+```
+
+**Root Cause**
+In `App.jsx`, the `AppRoutes` component only destructured `isAuthenticated` from `useAuth()`, but the `/adminlogin` route element used `user?.role` inline to decide whether to redirect an already-logged-in admin. Since `user` was never declared in the `AppRoutes` scope, JavaScript threw a `ReferenceError` which crashed the entire React component tree on mount.
+
+**Fix applied in:** [`App.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/App.jsx)
+
+```jsx
+// BEFORE (bug — user not in scope)
+const { isAuthenticated } = useAuth();
+
+// AFTER (fix — user now available for the adminlogin redirect check)
+const { isAuthenticated, user } = useAuth();
+```
+
+---
+
+## 13. JWT token lost on browser refresh
+
+**Symptom**
 After refreshing the page, the user is logged out and sent back to `/login` even though they had just authenticated. The dashboard was accessible before refresh.
 
-**Root Cause**  
+**Root Cause**
 The JWT was stored only in React state (`useState`) inside `AuthContext`. React state is ephemeral — it resets on every page refresh.
 
 **Fix applied in:** [`AuthContext.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/context/AuthContext.jsx)
@@ -527,9 +451,9 @@ localStorage.removeItem('token');
 
 ---
 
-## 17. npm install / Vite build errors — node_modules issues
+## 14. npm install / Vite build errors — node_modules issues
 
-**Symptom**  
+**Symptom**
 Running `npm install` or `npm run dev` fails with cryptic errors like:
 ```
 Cannot find module '...'
@@ -552,7 +476,7 @@ npm install
 npm run dev
 ```
 
-**Fix — Clear Vite cache**  
+**Fix — Clear Vite cache**
 Vite caches pre-bundled dependencies in `node_modules/.vite`. If you're seeing stale module versions:
 ```bash
 rm -rf node_modules/.vite
@@ -564,82 +488,57 @@ Or use the `--force` flag to bypass cache:
 npx vite --force
 ```
 
-**If `echarts-for-react` is missing:**
+**If `echarts-for-react` or `@zxing/browser` is missing:**
 ```bash
 npm install echarts echarts-for-react
+npm install @zxing/browser
 ```
 
 ---
 
-## 18. Spring Boot fails to start — schema.sql errors
+## 15. QR code not displaying on ticket — blank image area
 
-**Symptom**  
-Backend throws during startup:
-```
-org.springframework.jdbc.datasource.init.ScriptStatementFailedException:
-Failed to execute SQL script statement ... from class path resource [schema.sql]
-```
+**Symptom**
+Ticket cards in the Attendee Portal show a blank white or grey rectangle where the QR code should be. No console error or a broken image icon.
 
 **Possible Causes & Fixes**
 
-**Cause A: Tables already exist with incompatible definitions**  
-`schema.sql` uses `CREATE TABLE IF NOT EXISTS`. If a previous run created tables with a different column structure, the old tables will be silently kept. Drop and recreate:
-```sql
-DROP DATABASE eventsphere;
-CREATE DATABASE eventsphere;
-```
-Then restart the backend — Hibernate will re-run `schema.sql` from scratch.
+**Cause A: `qrBase64` field is null or empty**
+Call `GET /api/registrations/my-tickets` directly in the browser (with your Bearer token) and check that each ticket object has a non-empty `qrBase64` field. If it's null, the QR generation failed silently on the backend.
 
-**Cause B: `spring.sql.init.mode` is set to `never`**  
-Check `application.properties`:
-```properties
-# Should be 'always' (or remove the line — 'always' is default for embedded DBs)
-spring.sql.init.mode=always
+Check the backend log for `ZXing` errors:
+```
+WriterException: ...
 ```
 
-**Cause C: Hibernate DDL auto setting conflicts with schema.sql**  
-```properties
-# Use 'none' or 'validate' when schema.sql controls the DDL
-spring.jpa.hibernate.ddl-auto=none
+**Cause B: Corrupt Base64 prefix**
+The frontend renders the QR with:
+```jsx
+<img src={`data:image/png;base64,${ticket.qrBase64}`} ... />
 ```
-Setting this to `create` or `create-drop` alongside `schema.sql` can cause conflicts.
+If `ticket.qrBase64` already contains the `data:image/png;base64,` prefix (double-prefix), the image breaks. Check `QRCodeService.java` — it should return **raw** Base64 without the prefix.
+
+**Cause C: Registration was cancelled before ticket rendered**
+Cancelled registrations still appear in the ticket list but with `status: CANCELLED`. The `TicketPass` component dims cancelled tickets. If the QR field is stripped for cancelled tickets by the backend, this is expected behaviour.
+
+**Quick fix — regenerate test data:**
+Cancel and re-register for an event to get a fresh QR ticket.
 
 ---
 
-## 19. Organizer sees another organizer's events
+## 16. ECharts / echarts-for-react not rendering on first load
 
-**Symptom**  
-An organizer logs in and can see (or edit/delete) events they didn't create.
+**Symptom**
+The pie charts in `OrganizerEventDetails.jsx` appear as empty boxes on first load. Resizing the browser window makes them appear correctly.
 
-**Root Cause**  
-`GET /api/events/organizer` was using a non-scoped query that returned all events instead of filtering by `organizer_id`.
-
-**Fix applied in:** [`EventRepository.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/repositories/EventRepository.java) + [`EventService.java`](file:///d:/ANTIGRAVITY/Eventsphere/backend/src/main/java/com/eventsphere/services/EventService.java)
-
-The repository query is scoped by organizer email:
-```java
-List<Event> findByOrganizerEmail(String email);
-```
-
-The service resolves the email from `SecurityContextHolder` — so the query is always scoped to the **currently authenticated user**, not a URL parameter that could be spoofed.
-
-For edit/delete, `EventSecurityService` performs an additional ownership check using `@PreAuthorize("@eventSecurityService.isOwner(#id, authentication.name) or hasRole('ADMIN')")`.
-
----
-
-## 20. ECharts / echarts-for-react not rendering on first load
-
-**Symptom**  
-The pie charts in `OrganizerEventDetails.jsx` or `AnalyticsDashboard.jsx` appear as empty boxes on first load. Resizing the browser window makes them appear correctly.
-
-**Root Cause**  
-ECharts measures the container's dimensions on mount. If the parent container has `height: 0` or is hidden during the initial render (e.g., inside a tab that's not active, or a card that hasn't finished animating in), ECharts records `0×0` and renders nothing.
+**Root Cause**
+ECharts measures the container's dimensions on mount. If the parent container has `height: 0` or is hidden during the initial render (e.g., inside a card that hasn't finished animating in), ECharts records `0×0` and renders nothing.
 
 **Fix**
 
 Ensure the chart container has an explicit pixel height:
 ```jsx
-<div style={{ height: '240px', width: '100%' }}>
+<div style={{ height: '220px', width: '100%' }}>
   <ReactECharts option={option} style={{ height: '100%', width: '100%' }} />
 </div>
 ```
@@ -654,6 +553,243 @@ If the chart is inside a Framer Motion animated container, add `onAnimationCompl
 ```
 
 Dispatching a `resize` event causes ECharts to recalculate its canvas dimensions.
+
+---
+
+## 17. Light/Dark mode elements not inverting correctly
+
+**Symptom**
+After toggling the theme, certain cards, borders, text, or icons remain visually incorrect — e.g. dark text on a dark background in dark mode, or an element that was supposed to flip colour stays the same.
+
+**Root Cause**
+The element is using a **hardcoded colour value** (`#FDF6E3`, `#120E0B`, `black`, `white`, etc.) instead of a CSS variable. Hardcoded values do not respond to the `[data-theme="light"]` variable block swap.
+
+**Fix**
+
+Always use the three semantic CSS variables for any colour:
+
+| Use case | Correct token |
+|---|---|
+| Background of any surface | `var(--anchor)` |
+| Text, borders, empty states | `var(--structure)` |
+| Primary CTA, active/checked-in accent | `var(--pop)` |
+| Shadows | `var(--shadow)` or `var(--shadow-sm)` via `var(--structure)` |
+| Subtle borders | `var(--dim-border)` |
+| Subtle backgrounds | `var(--dim-bg)` |
+
+**Common offenders to check:**
+```jsx
+// ❌ Wrong — hardcoded, will not invert
+border: '2px solid black'
+color: 'white'
+background: '#120E0B'
+boxShadow: '6px 6px 0 #FDF6E3'
+
+// ✅ Correct — follows the variable system
+border: '2px solid var(--structure)'
+color: 'var(--structure)'
+background: 'var(--anchor)'
+boxShadow: 'var(--shadow)'
+```
+
+> **Note:** The amber accent `--pop` (`#FFB300`) is intentionally identical in both modes and does not need to change.
+
+---
+
+## 18. Shadows or borders disappear / look wrong after theme switch
+
+**Symptom**
+The characteristic hard-offset box shadows (the "6px 6px" Retro Terminal style) are invisible in one of the modes, or borders become invisible.
+
+**Root Cause**
+Shadows reference `var(--ink)` or `var(--structure)` — in light mode these are dark values, so a shadow written as `6px 6px 0px var(--ink)` on a light background is correct. If the shadow was hardcoded to a light colour, it disappears on a light background.
+
+**Fix**
+
+Use `var(--shadow)`, `var(--shadow-sm)`, or `var(--shadow-lg)` from `index.css`:
+```css
+/* These are defined in index.css and already use var(--structure) */
+--shadow:    6px 6px 0px var(--structure);
+--shadow-sm: 3px 3px 0px var(--structure);
+--shadow-lg: 10px 10px 0px var(--structure);
+```
+
+Do **not** manually write `boxShadow: '6px 6px 0px white'` or `boxShadow: '6px 6px 0px black'`. Always use the token.
+
+---
+
+## 19. Bento Box metric cards are unequal sizes
+
+**Symptom**
+On the Event Details page, the 6-column metric strip (`StatBlock` components) has cards of varying widths — some are wider than others, breaking the equal-column grid.
+
+**Root Cause**
+A `StatBlock` has an explicit `gridColumn: 'span 2'` or similar override, or the grid container does not have `gridTemplateColumns: 'repeat(6, 1fr)'`.
+
+**Fix**
+
+Check the metric section in `OrganizerEventDetails.jsx`:
+```jsx
+// Grid container must have exactly 6 equal columns
+<section style={{
+  gridColumn: '1 / -1',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(6, 1fr)',
+  gap: '1rem',
+}}>
+```
+
+Each `StatBlock` child must **not** have a `gridColumn` override. They should each naturally occupy one `1fr` column. If you added a card and some are double-wide, find the `gridColumn: 'span 2'` in the component and remove it.
+
+---
+
+## 20. Event grid cards are different heights
+
+**Symptom**
+On the Organizer Dashboard, two adjacent event cards in the 2-column grid are different heights, making the grid look misaligned.
+
+**Root Cause**
+The `TactileCard` is in a wrapper `<div>` but the wrapper doesn't have `height: '100%'` set, so the card doesn't stretch to fill the grid cell.
+
+**Fix**
+
+Both the wrapper `<div>` and the `<article>` inside must have `height: '100%'`:
+```jsx
+<div key={event.id} style={{ gridColumn: 'span 1' }}>
+  <TactileCard ... />
+</div>
+```
+
+Inside `TactileCard`, the `<article>` has `height: '100%'` set by default. If you added a new wrapper layer, propagate `height: '100%'` down. CSS Grid stretches cells by default (`align-items: stretch`), so as long as nothing breaks the height chain the cards will be equal.
+
+---
+
+## 21. Camera permission denied when switching to Camera Scan mode
+
+**Symptom**
+Clicking the "CAMERA SCAN" tab in the scanner shows a red error state:
+```
+CAMERA PERMISSION DENIED. PLEASE ALLOW CAMERA ACCESS IN YOUR BROWSER.
+```
+A "RETRY" button appears but clicking it returns the same error.
+
+**Root Causes & Fixes**
+
+**Cause A: Browser hasn't been granted permission yet**
+The very first time Camera Scan mode is activated, the browser will prompt for camera access. If the user dismissed the prompt (clicked X instead of Allow), the browser will throw `NotAllowedError` on subsequent calls without a new user gesture.
+
+- **Fix:** Click "RETRY" in the scanner UI — this re-runs `navigator.mediaDevices.getUserMedia()` with a fresh user gesture trigger.
+- **Fix:** Manually re-grant camera permission in the browser address bar (click the camera icon) or in browser settings (`chrome://settings/content/camera` on Chrome).
+
+**Cause B: Permission is permanently blocked in browser settings**
+The browser may have saved a "Block" decision for `localhost:5173`.
+
+- **Fix (Chrome/Edge):** Click the lock icon in the address bar → Site settings → Camera → Allow.
+- **Fix (Firefox):** Click the lock icon → Connection secure → More information → Permissions → Use the Camera → Allow.
+
+**Cause C: Page is not served over HTTPS in production**
+`getUserMedia()` requires a **secure context** — it works on `localhost` for development but will be blocked on plain `http://` in production.
+
+- **Fix:** Ensure the production frontend is served over HTTPS (Vercel does this by default). Do not serve the frontend over plain HTTP.
+
+**Cause D: Device has no camera**
+The error will instead read:
+```
+NO CAMERA DETECTED ON THIS DEVICE.
+```
+Use **Manual Entry** mode instead — paste or type the QR token from the attendee's ticket screen.
+
+**Cause E: Another tab or app has exclusive camera lock**
+Some browsers / OSes prevent two apps from accessing the camera simultaneously.
+
+- **Fix:** Close other browser tabs, video call apps, or camera apps and click RETRY.
+
+---
+
+## 22. Camera stream stays active after closing scanner
+
+**Symptom**
+After closing the scanner modal, the browser still shows the camera-in-use indicator (red dot on macOS, camera indicator in browser tab). The camera was not properly released.
+
+**Root Cause**
+The `CameraScanner` component's cleanup was not running — typically because the scanner was unmounted before the `useEffect` cleanup could call `stopCamera()`.
+
+**Current fix in:** [`ScannerPanel.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/components/shared/ScannerPanel.jsx)
+
+The component correctly cleans up on unmount:
+```js
+useEffect(() => {
+  startCamera();
+  return () => stopCamera(); // runs on unmount
+}, [startCamera, stopCamera]);
+```
+
+`stopCamera` resets the ZXing reader and stops every `MediaStreamTrack`:
+```js
+const stopCamera = useCallback(() => {
+  try { if (readerRef.current) { readerRef.current.reset(); readerRef.current = null; } } catch {}
+  try {
+    const vid = videoRef.current;
+    if (vid && vid.srcObject) {
+      vid.srcObject.getTracks().forEach(t => { t.stop(); });
+      vid.srcObject = null;
+    }
+  } catch {}
+}, []);
+```
+
+If you notice a leak, check that `AnimatePresence` is still wrapping the scanner so that the exit animation completes and the component actually unmounts. If `scannerOpen` is toggled off but the component is not unmounted (e.g. you moved to CSS `display: none`), the cleanup never runs. Always use `AnimatePresence` with conditional rendering:
+
+```jsx
+<AnimatePresence>
+  {scannerOpen && <ScannerPanel onClose={handleScannerClose} />}
+</AnimatePresence>
+```
+
+---
+
+## 23. Scanner detects QR but check-in always fails
+
+**Symptom**
+The camera detects the QR code (result displayed in the token field), but the check-in API always returns an error — e.g. "TOKEN NOT FOUND" or "ALREADY CHECKED IN".
+
+**Possible Causes & Fixes**
+
+**Cause A: Token belongs to a different event**
+The QR token is global — it identifies a specific registration. If you are scanning a ticket for a different event than the one you're on the Event Details page for, the backend will still process it if the token is valid. However, if your backend scopes check-in to the current event, verify the attendee is registered for *this* event.
+
+**Cause B: Attendee is already CHECKED_IN**
+The backend guards against double check-in. The UI will display `CHECK-IN DENIED` with the message from the server. This is expected behaviour — the attendee is already inside.
+
+**Cause C: Registration was CANCELLED**
+Cancelled registrations cannot be checked in. The attendee must re-register.
+
+**Cause D: QR token is a partial scan**
+The camera occasionally reads a partial QR frame. The ZXing `BrowserMultiFormatReader` fires `onDetected` as soon as it gets a complete decode — but if you see garbled tokens in the token field, try switching to Manual Entry and pasting the token directly from the attendee's screen.
+
+---
+
+## 24. NotFoundException spam in browser console during Camera Scan
+
+**Symptom**
+While Camera Scan mode is active and no QR code is in frame, the browser console fills with errors like:
+```
+NotFoundException: No MultiFormat Readers were able to detect the code.
+```
+
+**Root Cause**
+`BrowserMultiFormatReader` continuously tries to decode frames from the video stream. When no QR code is present in the frame, it throws `NotFoundException` on every scan attempt. This is normal scanning behaviour, not a bug.
+
+**Current fix in:** [`ScannerPanel.jsx`](file:///d:/ANTIGRAVITY/Eventsphere/frontend/src/components/shared/ScannerPanel.jsx)
+
+The error callback already silences these:
+```js
+if (err && err.name !== "NotFoundException" && !/not found/i.test(err.message || "")) {
+  console.warn("[Scanner]", err);
+}
+```
+
+If you are still seeing them, check that you are running the latest version of `ScannerPanel.jsx`. Do **not** remove the `NotFoundException` filter — it would make the console unusable during normal scanner operation.
 
 ---
 
@@ -674,3 +810,5 @@ When something is broken after a code change:
 > **Tip:** After any Java change, always do `mvnw clean` — Maven's incremental compiler may miss changes to files with the same timestamp and skip recompilation, leading to stale `.class` files being run.
 
 > **Tip:** After any change to `application.properties` (especially the JWT secret), restart the backend AND log out all active sessions — existing tokens will be invalid.
+
+> **Tip:** After any change to `index.css` (theme tokens or utility classes), do a hard refresh (`Ctrl+Shift+R`) to ensure Vite picks up the latest CSS and doesn't serve a cached version.
