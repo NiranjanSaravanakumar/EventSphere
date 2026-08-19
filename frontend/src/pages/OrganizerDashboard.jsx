@@ -85,11 +85,29 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
 
   const handleCopyCode = (e) => {
     e.stopPropagation();
-    if (event.eventCode) {
-      navigator.clipboard.writeText(event.eventCode).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
+    if (!event.eventCode) return;
+
+    const onSuccess = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(event.eventCode).then(onSuccess).catch(console.error);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = event.eventCode;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        onSuccess();
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+      }
+      document.body.removeChild(textArea);
     }
   };
 
@@ -170,6 +188,7 @@ const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) =>
           background: 'rgba(var(--glass-rgb),0.04)',
           border: '1px solid rgba(var(--glass-rgb),0.08)',
           borderRadius: '0.875rem',
+          position: 'relative', zIndex: 2,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Key style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)' }} />
