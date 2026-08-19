@@ -54,10 +54,15 @@ public class RegistrationService {
             throw new IllegalStateException("This event is fully booked.");
         }
 
-        // ── Gate 4: Duplicate registration check ──────────────────────────────
-        if (registrationRepository.existsByEventAndAttendee(event, attendee)) {
+        // ── Gate 4: Duplicate / previously-cancelled check ──────────────────
+        registrationRepository.findByEventAndAttendee(event, attendee).ifPresent(existing -> {
+            if (existing.getStatus() == Registration.Status.CANCELLED) {
+                throw new IllegalStateException(
+                    "You previously cancelled your registration for this event. " +
+                    "Cancellations are permanent and you cannot re-register.");
+            }
             throw new IllegalStateException("You are already registered for this event.");
-        }
+        });
 
         // ── All gates passed — create registration ───────────────────────────
         Registration registration = Registration.builder()

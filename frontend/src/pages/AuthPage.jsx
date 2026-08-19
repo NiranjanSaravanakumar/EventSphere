@@ -1,181 +1,165 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Mail, Lock, User, ArrowRight, ArrowLeft,
-  Sparkles, Ticket, Mic2, ShieldCheck,
+  Ticket, Mic2, ShieldCheck,
 } from 'lucide-react';
 import { useAuth, emailToSlug } from '../context/AuthContext.jsx';
-import GlassInput from '../components/ui/GlassInput.jsx';
-import GlassButton from '../components/ui/GlassButton.jsx';
-import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
-import authHero from '../assets/auth_hero.png';
-import organizerHero from '../assets/organizer_hero.png';
 
-// â”€â”€ Animation configs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
+// ── Film Grain ────────────────────────────────────────────────────────────────
+const FilmGrain = () => (
+  <svg aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 997, opacity: 0.06, mixBlendMode: 'overlay' }}>
+    <filter id="auth-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+    <rect width="100%" height="100%" filter="url(#auth-grain)" />
+  </svg>
+);
 
-const slideLeft = {
-  initial: { opacity: 0, x: -28, filter: 'blur(8px)' },
-  animate: { opacity: 1, x: 0,   filter: 'blur(0px)', transition: SPRING },
-  exit:    { opacity: 0, x: -28, filter: 'blur(8px)', transition: { duration: 0.18 } },
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+const useTheme = () => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('es-theme') || 'dark');
+  const toggle = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('es-theme', next);
+      if (next === 'light') document.documentElement.dataset.theme = 'light';
+      else delete document.documentElement.dataset.theme;
+      return next;
+    });
+  }, []);
+  return { theme, toggle };
 };
 
-const slideRight = {
-  initial: { opacity: 0, x: 28,  filter: 'blur(8px)' },
-  animate: { opacity: 1, x: 0,   filter: 'blur(0px)', transition: SPRING },
-  exit:    { opacity: 0, x: 28,  filter: 'blur(8px)', transition: { duration: 0.18 } },
-};
-
-// â”€â”€ Portal card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const PortalCard = ({ id, icon: Icon, title, description, onClick }) => {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <motion.button
-      id={id}
-      type="button"
-      onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      transition={SPRING}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width: '100%',
-        padding: '1.5rem',
-        borderRadius: '1.125rem',
-        border: hovered ? '1px solid rgba(var(--glass-rgb),0.20)' : '1px solid rgba(var(--glass-rgb),0.07)',
-        background: hovered ? 'rgba(var(--glass-rgb),0.06)' : 'rgba(var(--glass-rgb),0.025)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1.125rem',
-        textAlign: 'left',
-        transition: 'border 0.25s, background 0.25s',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-      }}
-    >
-      <div style={{
-        flexShrink: 0,
-        width: '3rem', height: '3rem',
-        borderRadius: '0.875rem',
-        background: hovered ? 'rgba(var(--glass-rgb),0.12)' : 'rgba(var(--glass-rgb),0.06)',
-        border: `1px solid ${hovered ? 'rgba(var(--glass-rgb),0.20)' : 'rgba(var(--glass-rgb),0.08)'}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background 0.25s, border 0.25s',
-      }}>
-        <Icon style={{ width: '1.25rem', height: '1.25rem', color: hovered ? 'var(--color-text-primary)' : 'var(--color-text-subtle)' }} />
-      </div>
-
-      <div>
-        <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em' }}>
-          {title}
-        </p>
-        <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.25rem', lineHeight: 1.55 }}>
-          {description}
-        </p>
-      </div>
-
-      <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
-        <ArrowRight style={{ width: '1rem', height: '1rem', color: hovered ? 'var(--color-text-primary)' : 'var(--color-text-subtle)', transition: 'color 0.2s' }} />
-      </div>
-    </motion.button>
-  );
-};
-
-// â”€â”€ Ambient background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const Background = () => {
-  const tint = 'rgba(var(--glass-rgb),0.022)';
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden>
-      <motion.div
-        animate={{ background: tint }}
-        transition={{ duration: 0.8 }}
+// ── Form field ────────────────────────────────────────────────────────────────
+const Field = ({ label, type = 'text', name, value, onChange, placeholder, icon: Icon, required, autoComplete }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
+      {label}
+    </label>
+    <div style={{ position: 'relative' }}>
+      {Icon && <Icon size={13} color="var(--structure)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.35, pointerEvents: 'none' }} />}
+      <input
+        type={type} name={name} value={value} onChange={onChange}
+        placeholder={placeholder} required={required} autoComplete={autoComplete}
+        className="grit-input"
         style={{
-          position: 'absolute', top: '-20%', left: '-10%',
-          width: 640, height: 640, borderRadius: '50%',
-          filter: 'blur(110px)',
+          width: '100%', height: '3rem',
+          paddingLeft: Icon ? '2.75rem' : '1rem', paddingRight: '1rem',
+          fontSize: '0.8125rem',
         }}
       />
-      <div style={{
-        position: 'absolute', bottom: '-10%', right: '-5%',
-        width: 500, height: 500, borderRadius: '50%',
-        background: 'rgba(var(--glass-rgb),0.015)', filter: 'blur(80px)',
-      }} />
-      <div style={{
-        position: 'absolute', top: '40%', right: '18%',
-        width: 280, height: 280, borderRadius: '50%',
-        background: 'rgba(var(--glass-rgb),0.01)', filter: 'blur(60px)',
-      }} />
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.022 }}>
-        <defs>
-          <pattern id="auth-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#auth-grid)" />
+    </div>
+  </div>
+);
+
+// ── Portal card ───────────────────────────────────────────────────────────────
+const PortalCard = ({ id, icon: Icon, title, description, onClick }) => (
+  <button
+    id={id} type="button" onClick={onClick}
+    className="grit-btn grit-portal-card"
+    style={{
+      width: '100%', padding: '1.5rem',
+      border: '2px solid var(--dim-border)',
+      background: 'var(--dim-bg)',
+      display: 'flex', alignItems: 'center', gap: '1.25rem', textAlign: 'left',
+      boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
+    }}
+  >
+    <div style={{ flexShrink: 0, width: '3rem', height: '3rem', border: '1px solid var(--pop)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Icon size={16} color="var(--pop)" />
+    </div>
+    <div style={{ flex: 1 }}>
+      <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1, marginBottom: '0.375rem' }}>
+        {title}
+      </p>
+      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.55, lineHeight: 1.7, letterSpacing: '0.04em' }}>
+        {description}
+      </p>
+    </div>
+    <ArrowRight size={14} color="var(--structure)" style={{ flexShrink: 0, opacity: 0.4 }} />
+  </button>
+);
+
+// ── Terminal Log Panel (right side) ──────────────────────────────────────────
+const TerminalPanel = ({ role }) => {
+  const logs = role === 'ROLE_ORGANIZER' ? [
+    '> ORGANIZER STUDIO INITIALIZED',
+    '> LOADING EVENT SCHEMA... OK',
+    '> QR GENERATION ENGINE: ONLINE',
+    '> CAPACITY MONITOR: ARMED',
+    '> REGISTRATION WINDOWS: CONFIGURABLE',
+    '> JWT AUTH: VERIFIED',
+    '> SPRING SECURITY: ACTIVE',
+    '─────────────────────────────',
+    '> STUDIO READY. WELCOME BACK.',
+  ] : [
+    '> ATTENDEE PORTAL INITIALIZED',
+    '> LOADING INVITE CODE ENGINE... OK',
+    '> QR WALLET: ARMED',
+    '> EVENT REGISTRY: QUERYING...',
+    '> 3 EVENTS AVAILABLE',
+    '> JWT AUTH: VERIFIED',
+    '> SPRING SECURITY: ACTIVE',
+    '─────────────────────────────',
+    '> PORTAL READY. WELCOME BACK.',
+  ];
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      background: 'var(--anchor)',
+      display: 'flex', flexDirection: 'column', justifyContent: 'center',
+      padding: '3rem',
+      borderLeft: '2px solid var(--structure)',
+    }}>
+      {/* Grid texture */}
+      <svg aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04, pointerEvents: 'none' }}>
+        <defs><pattern id="auth-r-grid" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" /></pattern></defs>
+        <rect width="100%" height="100%" fill="url(#auth-r-grid)" style={{ color: 'var(--structure)' }} />
       </svg>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '1.5rem' }}>
+          SYS::EVENTSPHERE — AUTH TERMINAL v2.6
+        </p>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', lineHeight: 2.0, color: 'var(--structure)', opacity: 0.7 }}>
+          {logs.map((line, i) => (
+            <p key={i} style={{ letterSpacing: '0.04em' }}>{line}</p>
+          ))}
+          <span className="cursor-blink" style={{ display: 'inline-block', width: '0.5rem', height: '1rem', background: 'var(--pop)', verticalAlign: 'middle' }} />
+        </div>
+        <p style={{ marginTop: '3rem', fontFamily: "'VT323', monospace", fontSize: '5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1, opacity: 0.08 }}>
+          EVENTSPHERE
+        </p>
+      </div>
     </div>
   );
 };
 
-// â”€â”€ Main AuthPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main AuthPage ─────────────────────────────────────────────────────────────
 const AuthPage = () => {
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { theme, toggle } = useTheme();
 
-  const [step, setStep]       = useState('selection'); // 'selection' | 'login' | 'register'
+  const [step, setStep]       = useState('selection');
   const [role, setRole]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [form, setForm]       = useState({ name: '', email: '', password: '' });
 
   const portals = {
-    ROLE_ATTENDEE: {
-      icon: Ticket,
-      label: 'Attendee Portal',
-      loginTitle: 'Welcome back',
-      loginSub: 'Sign in to your Attendee Portal.',
-      registerTitle: 'Join EventSphere',
-      registerSub: 'Create your attendee account and start discovering events.',
-    },
-    ROLE_ORGANIZER: {
-      icon: Mic2,
-      label: 'Creator Studio',
-      loginTitle: 'Welcome back',
-      loginSub: 'Sign in to your Creator Studio workspace.',
-      registerTitle: 'Launch your Studio',
-      registerSub: 'Create an organizer account to host and manage events.',
-    },
+    ROLE_ATTENDEE:  { icon: Ticket, label: 'Attendee Portal', loginTitle: 'IDENTITY CHECK', loginSub: 'SIGN IN TO YOUR ATTENDEE PORTAL.', registerTitle: 'JOIN THE PLATFORM', registerSub: 'CREATE YOUR ATTENDEE ACCOUNT.' },
+    ROLE_ORGANIZER: { icon: Mic2,   label: 'Creator Studio',  loginTitle: 'STUDIO ACCESS',   loginSub: 'SIGN IN TO YOUR CREATOR STUDIO.', registerTitle: 'LAUNCH YOUR STUDIO', registerSub: 'CREATE AN ORGANIZER ACCOUNT.' },
   };
 
   const portal  = role ? portals[role] : null;
   const isLogin = step === 'login';
 
-  const selectPortal = (selectedRole) => {
-    setRole(selectedRole);
-    setStep('login');
-    setError('');
-    setForm({ name: '', email: '', password: '' });
-  };
-
-  const goBack = () => {
-    setStep('selection');
-    setRole(null);
-    setError('');
-    setForm({ name: '', email: '', password: '' });
-  };
-
-  const toggleMode = () => {
-    setStep(isLogin ? 'register' : 'login');
-    setError('');
-    setForm({ name: '', email: '', password: '' });
-  };
-
-  const handleChange = (e) =>
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const selectPortal = (r) => { setRole(r); setStep('login'); setError(''); setForm({ name: '', email: '', password: '' }); };
+  const goBack       = () => { setStep('selection'); setRole(null); setError(''); setForm({ name: '', email: '', password: '' }); };
+  const toggleMode   = () => { setStep(isLogin ? 'register' : 'login'); setError(''); setForm({ name: '', email: '', password: '' }); };
+  const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const navigateAfterAuth = (authUser) => {
     const slug = emailToSlug(authUser.email);
@@ -185,9 +169,7 @@ const AuthPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+    e.preventDefault(); setError(''); setLoading(true);
     try {
       if (isLogin) {
         const authUser = await login(form.email, form.password);
@@ -199,468 +181,191 @@ const AuthPage = () => {
         else                           navigate(`/attendee/${slug}/dashboard`,  { replace: true });
       }
     } catch (err) {
-      const msg = err?.response?.data?.message
-        || err?.response?.data
-        || err?.message
-        || 'Something went wrong. Please try again.';
-      setError(typeof msg === 'string' ? msg : 'Authentication failed.');
-    } finally {
-      setLoading(false);
-    }
+      const msg = err?.response?.data?.message || err?.response?.data || err?.message || 'AUTHENTICATION FAILED.';
+      setError(typeof msg === 'string' ? msg.toUpperCase() : 'AUTHENTICATION FAILED.');
+    } finally { setLoading(false); }
+  };
+
+  const fadeVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: { duration: 0.1, ease: 'linear' } },
+    exit:    { opacity: 0, transition: { duration: 0.08, ease: 'linear' } },
   };
 
   return (
-    <div
-      id="auth-page"
-      style={{
-        minHeight: '100vh',
-        width: '100%',
-        display: 'flex',
-        background: 'var(--color-bg-primary)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* ── Left Panel — Login Form ─────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, x: -40 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+    <div id="auth-page" style={{ minHeight: '100vh', width: '100%', display: 'flex', background: 'var(--anchor)', overflow: 'hidden' }}>
+      <FilmGrain />
+
+      {/* Theme toggle — top right corner */}
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 200 }}>
+        <button className="theme-toggle" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
+      </div>
+
+      {/* ── LEFT PANEL — Form ───────────────────────────────────────────── */}
+      <div
         className="auth-left-panel"
         style={{
           flex: step === 'selection' ? '0 0 100%' : '0 0 50%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2rem',
-          position: 'relative',
-          overflow: 'hidden',
+          transition: 'flex 0.1s linear',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '3rem 2rem', position: 'relative',
+          borderRight: step !== 'selection' ? '2px solid var(--structure)' : 'none',
         }}
       >
-      <Background />
-
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, ...SPRING }}
-        style={{
-          position: 'relative', zIndex: 10,
-          display: 'flex', alignItems: 'center', gap: '0.625rem',
-          marginBottom: '2rem',
-        }}
-      >
-        <div style={{
-          width: '2.25rem', height: '2.25rem',
-          borderRadius: '0.625rem',
-          background: 'rgba(var(--glass-rgb),0.07)',
-          border: '1px solid rgba(var(--glass-rgb),0.11)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 20px rgba(var(--glass-rgb),0.05)',
-        }}>
-          <Sparkles style={{ width: '1.1rem', height: '1.1rem', color: 'var(--color-text-primary)' }} />
-        </div>
-        <span style={{ fontSize: '1.375rem', fontWeight: 700, letterSpacing: '-0.025em', color: 'var(--color-text-primary)' }}>
-          Event<span style={{ color: 'var(--color-text-muted)' }}>Sphere</span>
-        </span>
-      </motion.div>
-
-      {/* Glass card */}
-      <motion.div
-        layout
-        transition={SPRING}
-        style={{
-          position: 'relative', zIndex: 10,
-          width: '100%', maxWidth: '440px',
-          margin: '0 1rem',
-          borderRadius: '1.75rem',
-          overflow: 'hidden',
-          background: 'rgba(var(--glass-rgb),0.038)',
-          backdropFilter: 'blur(36px)',
-          WebkitBackdropFilter: 'blur(36px)',
-          border: '1px solid rgba(var(--glass-rgb),0.08)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.65), inset 0 1px 0 0 rgba(var(--glass-rgb),0.1)',
-        }}
-      >
-        {/* Specular highlight */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
-          background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.2), transparent)',
-        }} />
-
-        <div style={{ padding: '2rem' }}>
-          <AnimatePresence mode="wait">
-
-            {/* â”€â”€ STEP 1: Portal selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            {step === 'selection' && (
-              <motion.div
-                key="selection"
-                variants={slideLeft}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
-              >
-                <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
-                  <motion.button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.93 }}
-                    transition={SPRING}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '2rem', height: '2rem',
-                      borderRadius: '0.5rem',
-                      background: 'rgba(var(--glass-rgb),0.05)',
-                      border: '1px solid rgba(var(--glass-rgb),0.08)',
-                      cursor: 'pointer', color: 'var(--color-text-subtle)',
-                      flexShrink: 0,
-                      marginTop: '0.125rem', // aligns button nicely with the first line of text
-                    }}
-                    title="Back to Home"
-                  >
-                    <ArrowLeft style={{ width: '0.875rem', height: '0.875rem' }} />
-                  </motion.button>
-                  
-                  <div>
-                    <h1 style={{
-                      fontSize: '1.5rem', fontWeight: 600,
-                      letterSpacing: '-0.025em', color: 'var(--color-text-primary)',
-                      marginBottom: '0.375rem',
-                      lineHeight: 1.2,
-                    }}>
-                      <ScrollBounceText as="span" intensity={0.85} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
-                        Choose your portal
-                      </ScrollBounceText>
-                    </h1>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', lineHeight: 1.6 }}>
-                      Select how you'd like to use EventSphere.
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <PortalCard
-                    id="portal-attendee"
-                    icon={Ticket}
-                    title="Attendee Portal"
-                    description="Discover events, register with invite codes, and manage your QR passes."
-                    onClick={() => selectPortal('ROLE_ATTENDEE')}
-                  />
-                  <PortalCard
-                    id="portal-organizer"
-                    icon={Mic2}
-                    title="Creator Studio"
-                    description="Host events, manage capacity, track check-ins, and scan tickets."
-                    onClick={() => selectPortal('ROLE_ORGANIZER')}
-                  />
-                </div>
-
-                {/* Admin link */}
-                <div style={{ textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    id="admin-portal-link"
-                    onClick={() => navigate('/adminlogin')}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-                      fontSize: '0.75rem', color: '#3f3f46',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-subtle)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#3f3f46')}
-                  >
-                    <ShieldCheck style={{ width: '0.75rem', height: '0.75rem' }} />
-                    Admin portal
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* â”€â”€ STEP 2: Login / Register form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            {step !== 'selection' && (
-              <motion.div
-                key={`form-${step}`}
-                variants={slideRight}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                style={{ display: 'flex', flexDirection: 'column' }}
-              >
-                {/* Back + portal badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.75rem' }}>
-                  <motion.button
-                    id="back-to-selection"
-                    type="button"
-                    onClick={goBack}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.93 }}
-                    transition={SPRING}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '2rem', height: '2rem',
-                      borderRadius: '0.5rem',
-                      background: 'rgba(var(--glass-rgb),0.05)',
-                      border: '1px solid rgba(var(--glass-rgb),0.08)',
-                      cursor: 'pointer', color: 'var(--color-text-subtle)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <ArrowLeft style={{ width: '0.875rem', height: '0.875rem' }} />
-                  </motion.button>
-
-                  {portal && (
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-                      padding: '0.3rem 0.75rem',
-                      borderRadius: '999px',
-                      background: 'rgba(var(--glass-rgb),0.06)',
-                      border: '1px solid rgba(var(--glass-rgb),0.15)',
-                      fontSize: '0.75rem', fontWeight: 600,
-                      color: 'var(--color-text-primary)',
-                    }}>
-                      <portal.icon style={{ width: '0.75rem', height: '0.75rem' }} />
-                      {portal.label}
-                    </div>
-                  )}
-                </div>
-
-                {/* Heading */}
-                <motion.div layout style={{ marginBottom: '1.75rem' }}>
-                  <motion.h1 layout style={{ fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.025em', color: 'var(--color-text-primary)' }}>
-                    <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={1.8} maxTranslateY={3} stiffness={340} damping={36}>
-                      {isLogin ? portal?.loginTitle : portal?.registerTitle}
-                    </ScrollBounceText>
-                  </motion.h1>
-                  <motion.p layout style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem', lineHeight: 1.6 }}>
-                    {isLogin ? portal?.loginSub : portal?.registerSub}
-                  </motion.p>
-                </motion.div>
-
-                {/* Form */}
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.form
-                    key={step}
-                    id={isLogin ? 'login-form' : 'register-form'}
-                    initial={{ opacity: 0, filter: 'blur(10px)', y: 16 }}
-                    animate={{ opacity: 1, filter: 'blur(0px)',  y: 0,   transition: SPRING }}
-                    exit={{    opacity: 0, filter: 'blur(10px)', y: -12, transition: { duration: 0.16 } }}
-                    onSubmit={handleSubmit}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
-                  >
-                    {!isLogin && (
-                      <motion.div layout>
-                        <GlassInput
-                          id="name"
-                          name="name"
-                          type="text"
-                          placeholder="Full name"
-                          autoComplete="name"
-                          required
-                          value={form.name}
-                          onChange={handleChange}
-                          icon={User}
-                        />
-                      </motion.div>
-                    )}
-
-                    <GlassInput
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="Email address"
-                      autoComplete="email"
-                      required
-                      value={form.email}
-                      onChange={handleChange}
-                      icon={Mail}
-                    />
-
-                    <GlassInput
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Password"
-                      autoComplete={isLogin ? 'current-password' : 'new-password'}
-                      required
-                      value={form.password}
-                      onChange={handleChange}
-                      icon={Lock}
-                    />
-
-                    {/* Error */}
-                    <AnimatePresence>
-                      {error && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          style={{
-                            fontSize: '0.8125rem',
-                            color: '#f87171',
-                            background: 'rgba(239,68,68,0.08)',
-                            border: '1px solid rgba(239,68,68,0.2)',
-                            borderRadius: '0.75rem',
-                            padding: '0.75rem 1rem',
-                          }}
-                        >
-                          {error}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Submit */}
-                    <div style={{ paddingTop: '0.5rem' }}>
-                      <GlassButton
-                        type="submit"
-                        loading={loading}
-                        variant="primary"
-                        id={isLogin ? 'login-submit' : 'register-submit'}
-                        style={{ width: '100%' }}
-                      >
-                        {isLogin ? 'Sign in' : 'Create account'}
-                        <ArrowRight style={{ width: '1rem', height: '1rem' }} />
-                      </GlassButton>
-                    </div>
-                  </motion.form>
-                </AnimatePresence>
-
-                {/* Toggle */}
-                <motion.div layout style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    id="auth-toggle"
-                    onClick={toggleMode}
-                    style={{
-                      fontSize: '0.875rem', color: 'var(--color-text-subtle)',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text-primary)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-subtle)')}
-                  >
-                    {isLogin
-                      ? "Don't have an account? Sign up"
-                      : 'Already have an account? Sign in'}
-                  </button>
-                </motion.div>
-              </motion.div>
-            )}
-
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* Footer */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        style={{
-          position: 'relative', zIndex: 10,
-          marginTop: '2rem',
-          fontSize: '0.75rem',
-          color: '#3f3f46',
-        }}
-      >
-        &copy; 2026 EventSphere &middot; Enterprise Event Platform
-      </motion.p>
-      </motion.div>
-
-      {/* ── Right Panel — Hero Image ──────────────────────────────────────────── */}
-      <AnimatePresence>
-      {step !== 'selection' && (
-        <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 40 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="auth-right-panel"
-          style={{
-            flex: '0 0 50%',
-            position: 'relative',
-            overflow: 'hidden',
-            minHeight: '100vh',
-          }}
-        >
-          {/* Background image */}
-          <img
-            src={role === 'ROLE_ORGANIZER' ? organizerHero : authHero}
-            alt="EventSphere Platform"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-          }}
-        />
-
-        {/* Dark gradient overlay */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(225deg, rgba(0,0,0,0.2) 0%, rgba(15,10,40,0.6) 100%)',
-        }} />
-
-        {/* Top — Logo Overlay */}
-        <div style={{
-          position: 'absolute',
-          top: '2.5rem',
-          left: '2.5rem',
-          zIndex: 10,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.625rem'
-        }}>
-          <div style={{
-            width: '2.25rem', height: '2.25rem',
-            borderRadius: '0.625rem',
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backdropFilter: 'blur(12px)',
-          }}>
-            <Sparkles style={{ width: '1.1rem', height: '1.1rem', color: '#fff' }} />
-          </div>
-          <span style={{
-            fontSize: '1.25rem', fontWeight: 700,
-            letterSpacing: '-0.025em', color: '#fff',
-          }}>
-            Event<span style={{ color: 'rgba(255,255,255,0.5)' }}>Sphere</span>
-          </span>
-        </div>
-
-        {/* Subtle grid */}
-        <svg
-          aria-hidden
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04 }}
-        >
-          <defs>
-            <pattern id="auth-right-grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#auth-right-grid)" />
+        {/* Grid texture */}
+        <svg aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.025, pointerEvents: 'none' }}>
+          <defs><pattern id="auth-l-grid" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" /></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#auth-l-grid)" style={{ color: 'var(--structure)' }} />
         </svg>
 
-        {/* Vertical divider */}
-        <div style={{
-          position: 'absolute', left: 0, top: '10%', bottom: '10%', width: '1px',
-          background: 'linear-gradient(to bottom, transparent, rgba(var(--glass-rgb),0.12), transparent)',
-        }} />
-        </motion.div>
-      )}
+        {/* Brand */}
+        <div style={{ position: 'relative', zIndex: 10, marginBottom: '2.5rem', textAlign: 'center' }}>
+          <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.75rem', textTransform: 'uppercase', color: 'var(--structure)', letterSpacing: '0.05em', lineHeight: 1 }}>EVENTSPHERE</p>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', color: 'var(--pop)', letterSpacing: '0.18em', textTransform: 'uppercase', marginTop: '0.375rem' }}>IDENTITY GATEWAY</p>
+        </div>
+
+        {/* Card */}
+        <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '440px', background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: '12px 12px 0px var(--ink)' }}>
+
+          {/* Card header bar */}
+          <div style={{ borderBottom: '1px solid var(--dim-border)', padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)' }}>
+              {step === 'selection' ? '// CHOOSE PORTAL' : isLogin ? '// SIGN IN' : '// REGISTER'}
+            </p>
+            {step !== 'selection' && (
+              <button id="back-to-selection" className="grit-btn" type="button" onClick={goBack}
+                style={{ width: '2rem', height: '2rem', background: 'transparent', border: '1px solid var(--dim-border)', color: 'var(--structure)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+                <ArrowLeft size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Card body */}
+          <div style={{ padding: '2rem' }}>
+            <AnimatePresence mode="wait">
+
+              {/* Selection */}
+              {step === 'selection' && (
+                <motion.div key="selection" variants={fadeVariants} initial="initial" animate="animate" exit="exit"
+                  style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <h1 style={{ fontFamily: "'VT323', monospace", fontSize: '2.5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1.0, marginBottom: '0.625rem' }}>
+                      SELECT YOUR PORTAL
+                    </h1>
+                    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.5, letterSpacing: '0.06em', lineHeight: 1.7 }}>
+                      CHOOSE HOW YOU WANT TO USE EVENTSPHERE.
+                    </p>
+                  </div>
+                  <PortalCard id="portal-attendee" icon={Ticket} title="ATTENDEE PORTAL"
+                    description="Discover events, register with invite codes, and collect your QR passes."
+                    onClick={() => selectPortal('ROLE_ATTENDEE')} />
+                  <PortalCard id="portal-organizer" icon={Mic2} title="CREATOR STUDIO"
+                    description="Host events, manage capacity, track check-ins, and scan tickets."
+                    onClick={() => selectPortal('ROLE_ORGANIZER')} />
+                  <div style={{ textAlign: 'center', paddingTop: '0.5rem' }}>
+                    <button type="button" id="admin-portal-link" onClick={() => navigate('/adminlogin')}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.3'}
+                    >
+                      <ShieldCheck size={11} /> ADMIN PORTAL →
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Login / Register */}
+              {step !== 'selection' && (
+                <motion.div key={`form-${step}`} variants={fadeVariants} initial="initial" animate="animate" exit="exit"
+                  style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  {portal && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', border: '1px solid var(--dim-border)', padding: '0.3rem 0.75rem', width: 'fit-content' }}>
+                      <portal.icon size={12} color="var(--pop)" />
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)' }}>{portal.label}</span>
+                    </div>
+                  )}
+                  <div>
+                    <h1 style={{ fontFamily: "'VT323', monospace", fontSize: '2.5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1.0, marginBottom: '0.5rem' }}>
+                      {isLogin ? portal?.loginTitle : portal?.registerTitle}
+                    </h1>
+                    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.5, letterSpacing: '0.06em', lineHeight: 1.7 }}>
+                      {isLogin ? portal?.loginSub : portal?.registerSub}
+                    </p>
+                  </div>
+
+                  <form id={isLogin ? 'login-form' : 'register-form'} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {!isLogin && (
+                      <Field label="FULL NAME" name="name" value={form.name} onChange={handleChange} placeholder="Jane Smith" autoComplete="name" required icon={User} />
+                    )}
+                    <Field label="EMAIL ADDRESS" type="email" name="email" value={form.email} onChange={handleChange} placeholder="jane@company.com" autoComplete="email" required icon={Mail} />
+                    <Field label="PASSWORD" type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" autoComplete={isLogin ? 'current-password' : 'new-password'} required icon={Lock} />
+
+                    {error && (
+                      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', border: '1px solid var(--structure)', padding: '0.75rem 1rem', letterSpacing: '0.04em', opacity: 0.8 }}>
+                        !! {error}
+                      </p>
+                    )}
+
+                    <button
+                      id={isLogin ? 'login-submit' : 'register-submit'}
+                      type="submit" className="grit-btn" disabled={loading}
+                      style={{
+                        width: '100%', height: '3rem',
+                        background: 'var(--pop)', border: '2px solid var(--pop)',
+                        color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+                        boxShadow: 'var(--shadow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                        opacity: loading ? 0.65 : 1, cursor: loading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {loading ? (
+                        <span className="spin-grit" style={{ display: 'inline-block', width: '0.875rem', height: '0.875rem', border: '2px solid var(--anchor)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                      ) : (
+                        <>{isLogin ? 'SIGN IN' : 'CREATE ACCOUNT'} <ArrowRight size={12} /></>
+                      )}
+                    </button>
+                  </form>
+
+                  <div style={{ textAlign: 'center', paddingTop: '0.25rem' }}>
+                    <button id="auth-toggle" type="button" onClick={toggleMode}
+                      style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4, background: 'none', border: 'none', cursor: 'pointer' }}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.4'}
+                    >
+                      {isLogin ? 'NO ACCOUNT? REGISTER →' : 'ALREADY REGISTERED? SIGN IN →'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <p style={{ position: 'relative', zIndex: 10, marginTop: '2rem', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.2 }}>
+          © 2026 EVENTSPHERE · ENTERPRISE EVENT PLATFORM
+        </p>
+      </div>
+
+      {/* ── RIGHT PANEL — Terminal log ──────────────────────────────────── */}
+      <AnimatePresence>
+        {step !== 'selection' && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.1, ease: 'linear' }}
+            className="auth-right-panel"
+            style={{ flex: '0 0 50%', position: 'relative', overflow: 'hidden', minHeight: '100vh' }}
+          >
+            <TerminalPanel role={role} />
+          </motion.div>
+        )}
       </AnimatePresence>
 
-      {/* ── Responsive styles ──────────────────────────── */}
       <style>{`
         @media (max-width: 768px) {
           .auth-right-panel { display: none !important; }
-          .auth-left-panel  { flex: 0 0 100% !important; }
+          .auth-left-panel  { flex: 0 0 100% !important; border-right: none !important; }
         }
       `}</style>
     </div>
@@ -668,4 +373,3 @@ const AuthPage = () => {
 };
 
 export default AuthPage;
-

@@ -1,485 +1,389 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Sparkles, Lock, ScanLine, Users, Calendar, ArrowRight,
-  Zap, ShieldCheck, BarChart3, Globe, Sun, Moon
+  Lock, ScanLine, BarChart3, Zap, ShieldCheck, Globe, ArrowRight,
 } from 'lucide-react';
-import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
-import heroImage from '../assets/hero.png';
 
-const SPRING = { type: 'spring', stiffness: 300, damping: 30 };
-
-// ── Ambient particle orbs ───────────────────────────────────────────────────
-const AmbientBackground = () => (
-  <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }} aria-hidden>
-    <div style={{ position: 'absolute', top: '-15%', left: '-8%', width: 700, height: 700, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.018)', filter: 'blur(120px)' }} />
-    <div style={{ position: 'absolute', top: '30%',  right: '-10%', width: 500, height: 500, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.012)', filter: 'blur(80px)' }} />
-    <div style={{ position: 'absolute', bottom: '-5%', left: '30%', width: 600, height: 400, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.010)', filter: 'blur(100px)' }} />
-    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.018 }}>
-      <defs>
-        <pattern id="landing-grid" width="72" height="72" patternUnits="userSpaceOnUse">
-          <path d="M 72 0 L 0 0 0 72" fill="none" stroke="white" strokeWidth="0.6" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#landing-grid)" />
-    </svg>
-  </div>
+// ── Film Grain ────────────────────────────────────────────────────────────────
+const FilmGrain = () => (
+  <svg aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 997, opacity: 0.06, mixBlendMode: 'overlay' }}>
+    <filter id="lp-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#lp-grain)" />
+  </svg>
 );
 
-// ── Feature Row ────────────────────────────────────────────────────────────
-const FeatureRow = ({ icon: Icon, title, description, index }) => {
-  const isEven = index % 2 === 0;
-  
+// ── Hero grid texture ─────────────────────────────────────────────────────────
+const GridTexture = () => (
+  <svg aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.04, pointerEvents: 'none' }}>
+    <defs>
+      <pattern id="hero-grid" width="80" height="80" patternUnits="userSpaceOnUse">
+        <path d="M 80 0 L 0 0 0 80" fill="none" stroke="currentColor" strokeWidth="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#hero-grid)" style={{ color: 'var(--structure)' }} />
+  </svg>
+);
+
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+const useTheme = () => {
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('es-theme') || 'dark');
+  const toggle = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('es-theme', next);
+      if (next === 'light') document.documentElement.dataset.theme = 'light';
+      else delete document.documentElement.dataset.theme;
+      return next;
+    });
+  }, []);
+  return { theme, toggle };
+};
+
+// ── Top Nav ───────────────────────────────────────────────────────────────────
+const TopNav = ({ onSignIn }) => {
+  const { theme, toggle } = useTheme();
   return (
-    <motion.div
-      initial={{ opacity: 0, x: isEven ? -60 : 60, filter: 'blur(8px)' }}
-      whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-      viewport={{ once: false, amount: 0.3 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-      className={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8 md:gap-16 py-8 md:py-12`}
-    >
-      <div className={`flex-1 flex flex-col ${isEven ? 'md:items-start md:text-left' : 'md:items-end md:text-right'} items-center text-center`}>
-        <h3 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', marginBottom: '0.75rem' }}>
-          {title}
-        </h3>
-        <p style={{ fontSize: '1.0625rem', color: 'var(--color-text-subtle)', lineHeight: 1.7, maxWidth: '450px' }}>
-          {description}
+    <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 3rem', height: '64px',
+      background: 'var(--anchor)', borderBottom: '2px solid var(--structure)',
+    }}>
+      <div>
+        <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.625rem', color: 'var(--structure)', letterSpacing: '0.05em', lineHeight: 1, textTransform: 'uppercase' }}>
+          EVENTSPHERE
+        </p>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', color: 'var(--structure)', letterSpacing: '0.18em', opacity: 0.4, textTransform: 'uppercase' }}>
+          ENTERPRISE EVENT PLATFORM
         </p>
       </div>
+      <nav style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {['ADMIN', 'ORGANIZER', 'ATTENDEE'].map(label => (
+          <span key={label} style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.14em',
+            color: 'var(--structure)', opacity: label === 'ADMIN' ? 1 : 0.4,
+            border: `1px solid ${label === 'ADMIN' ? 'var(--pop)' : 'var(--dim-border)'}`,
+            padding: '0.25rem 0.625rem',
+          }}>
+            {label}
+          </span>
+        ))}
 
-      <div className="flex-1 w-full">
-        <div style={{
-          width: '100%', aspectRatio: '16/9', borderRadius: '1.5rem',
-          background: 'rgba(var(--glass-rgb),0.02)',
-          backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(var(--glass-rgb),0.3)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', overflow: 'hidden'
-        }}>
-           <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.5), transparent)' }} />
-           <Icon style={{ width: '6rem', height: '6rem', color: 'rgba(var(--glass-rgb),0.6)' }} />
-        </div>
-      </div>
-    </motion.div>
+        {/* Theme toggle */}
+        <button className="theme-toggle" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
+
+        <button
+          id="landing-signin-btn"
+          className="grit-btn"
+          onClick={onSignIn}
+          style={{
+            height: '2.5rem', padding: '0 1.5rem',
+            background: 'var(--pop)', border: '2px solid var(--pop)',
+            color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+            boxShadow: 'var(--shadow)', cursor: 'pointer',
+          }}
+        >
+          SIGN IN
+        </button>
+      </nav>
+    </header>
   );
 };
 
-// ── Stat pill ───────────────────────────────────────────────────────────────
-const StatPill = ({ value, label, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.92 }}
-    whileInView={{ opacity: 1, scale: 1 }}
-    viewport={{ once: true }}
-    transition={{ ...SPRING, delay }}
+// ── Feature tile ──────────────────────────────────────────────────────────────
+const FeatureTile = ({ icon: Icon, title, body, spanTwo }) => (
+  <article
+    className="grit-feature-card"
     style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
-      padding: '1.25rem 2rem',
-      borderRadius: '1.25rem',
-      background: 'rgba(var(--glass-rgb),0.04)',
-      border: '1px solid rgba(var(--glass-rgb),0.07)',
+      background: 'var(--anchor)', border: '2px solid var(--structure)',
+      boxShadow: 'var(--shadow)', padding: '2rem',
+      display: 'flex', flexDirection: 'column', gap: '1rem',
+      gridColumn: spanTwo ? 'span 2' : 'span 1',
     }}
   >
-    <span style={{ fontSize: '2rem', fontWeight: 300, color: 'var(--color-text-primary)', letterSpacing: '-0.03em', lineHeight: 1 }}>
-      {value}
-    </span>
-    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-      {label}
-    </span>
-  </motion.div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+      <div style={{
+        width: '2.5rem', height: '2.5rem',
+        border: '1px solid var(--pop)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <Icon size={16} color="var(--pop)" />
+      </div>
+      <h3 style={{
+        fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase',
+        color: 'var(--structure)', lineHeight: 1,
+      }}>
+        {title}
+      </h3>
+    </div>
+    <p style={{
+      fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem',
+      lineHeight: 1.9, letterSpacing: '0.04em', color: 'var(--structure)', opacity: 0.65,
+    }}>
+      {body}
+    </p>
+  </article>
 );
 
-// ── Role badge ──────────────────────────────────────────────────────────────
-const RoleBadge = ({ icon: Icon, label, color }) => (
-  <div style={{
-    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-    padding: '0.375rem 0.875rem', borderRadius: '999px',
-    background: `${color}10`, border: `1px solid ${color}22`,
-    fontSize: '0.75rem', fontWeight: 600, color,
-  }}>
-    <Icon style={{ width: '0.75rem', height: '0.75rem' }} />
-    {label}
-  </div>
+// ── Role card ─────────────────────────────────────────────────────────────────
+const RoleCard = ({ role, path, perks, isAdmin }) => (
+  <article
+    className="grit-role-card"
+    style={{
+      background: 'var(--anchor)',
+      border: `2px solid ${isAdmin ? 'var(--pop)' : 'var(--dim-border)'}`,
+      boxShadow: 'var(--shadow)', padding: '2rem',
+      display: 'flex', flexDirection: 'column', gap: '1.25rem',
+    }}
+  >
+    <div>
+      <p style={{
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700,
+        letterSpacing: '0.16em', textTransform: 'uppercase',
+        color: isAdmin ? 'var(--pop)' : 'var(--structure)', opacity: isAdmin ? 1 : 0.5, marginBottom: '0.5rem',
+      }}>
+        PORTAL
+      </p>
+      <h3 style={{ fontFamily: "'VT323', monospace", fontSize: '2.5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 0.95 }}>
+        {role}
+      </h3>
+    </div>
+    <code style={{
+      fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem',
+      color: 'var(--structure)', opacity: 0.4, letterSpacing: '0.06em',
+      border: '1px solid var(--dim-border)', padding: '0.375rem 0.625rem', display: 'block',
+    }}>
+      {path}
+    </code>
+    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {perks.map(p => (
+        <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.7, letterSpacing: '0.04em' }}>
+          <span style={{ color: 'var(--pop)', fontWeight: 700, flexShrink: 0 }}>—</span>
+          {p}
+        </li>
+      ))}
+    </ul>
+  </article>
 );
 
-// ── Floating glass Navbar ───────────────────────────────────────────────────
-const TopNav = () => {
-  const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
-  return (
-    <motion.nav
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1, ...SPRING }}
-      style={{
-        position: 'fixed',
-        top: '1.25rem',
-        /* left:0 + right:0 + margin:auto is the browser-native
-           way to centre a fixed element — no transform math,
-           no interaction with Framer Motion's own transforms. */
-        left: 0,
-        right: 0,
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        zIndex: 100,
-        width: 'min(760px, calc(100vw - 2rem))',
-        boxSizing: 'border-box',
-        /* CSS Grid 1fr | auto | 1fr keeps badges at dead-centre */
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center',
-        gap: '0.75rem',
-        padding: '0.625rem 1.25rem',
-        borderRadius: '2rem',
-        background: theme === 'dark' ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-        boxShadow: theme === 'dark' ? '0 4px 24px rgba(0,0,0,0.5)' : '0 4px 24px rgba(0,0,0,0.08)',
-      }}
-    >
-      {/* Col 1 — Logo (left-aligned) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
-        <Sparkles style={{ width: '1rem', height: '1rem', color: 'var(--color-text-subtle)', flexShrink: 0 }} />
-        <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-          Event<span style={{ color: 'var(--color-text-muted)' }}>Sphere</span>
-        </span>
-      </div>
-
-      {/* Col 2 — Role badges (always at geometric centre) */}
-      <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'center' }}>
-        <RoleBadge icon={ShieldCheck} label="Admin"     color="#a78bfa" />
-        <RoleBadge icon={Calendar}   label="Organizer" color="#60a5fa" />
-        <RoleBadge icon={Users}      label="Attendee"  color="#34d399" />
-      </div>
-
-      {/* Col 3 — Sign In (right-aligned) */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem' }}>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={toggleTheme}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '2rem', height: '2rem',
-            borderRadius: '0.625rem',
-            background: 'rgba(var(--glass-rgb),0.05)',
-            border: '1px solid rgba(var(--glass-rgb),0.08)',
-            color: 'var(--color-text-subtle)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.08)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-subtle)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.05)'; }}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun style={{ width: '0.875rem', height: '0.875rem' }} /> : <Moon style={{ width: '0.875rem', height: '0.875rem' }} />}
-        </motion.button>
-        <motion.button
-          id="landing-signin-btn"
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          transition={SPRING}
-          onClick={() => navigate('/login')}
-          style={{
-            height: '2.125rem', padding: '0 1.125rem',
-            borderRadius: '999px', border: 'none',
-            background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
-            fontSize: '0.875rem', fontWeight: 600,
-            cursor: 'pointer', whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          Sign In
-        </motion.button>
-      </div>
-    </motion.nav>
-  );
-};
-
-// ── Main LandingPage ────────────────────────────────────────────────────────
+// ── LandingPage ───────────────────────────────────────────────────────────────
 const LandingPage = () => {
-  const navigate    = useNavigate();
-  const { theme }   = useTheme();
-  const heroRef     = useRef(null);
-  const { scrollY } = useScroll();
-  const heroY       = useSpring(useTransform(scrollY, [0, 400], [0, -60]), { stiffness: 80, damping: 20 });
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  const navigate = useNavigate();
 
   const features = [
-    { icon: Lock,       title: 'Invite-Only Access',     description: 'Every event generates a unique alphanumeric code. Attendees must enter the correct code to register — no leaks, no gatecrashers.',         delay: 0 },
-    { icon: ScanLine,   title: 'QR Ticket Wallet',       description: 'Registration instantly mints a secure QR ticket. Organizers scan it at the door in real time to mark attendance and prevent duplicates.',    delay: 0.06 },
-    { icon: BarChart3,  title: 'Live Analytics',         description: 'Monitor fill rates, check-in velocity, and capacity pressure from your organizer dashboard — updated live as guests arrive.',                 delay: 0.12 },
-    { icon: Zap,        title: 'Registration Windows',   description: 'Define exact open and close datetimes for registration. Attempts outside the window are blocked server-side — no client-side workarounds.',  delay: 0.18 },
-    { icon: ShieldCheck,title: 'JWT-Secured Routing',    description: 'Every API call extracts identity from the verified JWT token. Usernames appear in browser URLs for UX — never for authorization.',           delay: 0.24 },
-    { icon: Globe,      title: 'Role-Scoped Dashboards', description: 'Admins, Organizers, and Attendees each get their own URL namespace and API surface — fully isolated, cleanly separated by Spring Security.',  delay: 0.30 },
+    { icon: Lock,        title: 'INVITE-ONLY ACCESS',     body: 'Every event generates a unique 6-char code. Enter the correct code to register — no leaks, no gate-crashers, no exceptions.', spanTwo: true },
+    { icon: ScanLine,    title: 'QR TICKET WALLET',       body: 'Registration mints a secure QR pass instantly. Organizers scan it at the door to block duplicates and ghost registrations.' },
+    { icon: BarChart3,   title: 'LIVE ANALYTICS',         body: 'Monitor fill rates, check-in velocity, and capacity pressure from your dashboard — updated live as guests arrive.' },
+    { icon: Zap,         title: 'REGISTRATION WINDOWS',   body: 'Set exact open/close datetimes server-side. Attempts outside the window are rejected cold — no client-side workarounds.' },
+    { icon: ShieldCheck, title: 'JWT-SECURED ROUTING',    body: 'Every API call extracts identity from a verified JWT. Usernames appear in the URL for UX — never for authorization.' },
+    { icon: Globe,       title: 'ROLE-SCOPED WORKSPACES', body: 'Admin, Organizer, and Attendee each own their URL namespace and API surface — fully isolated by Spring Security.' },
+  ];
+
+  const roles = [
+    { role: 'ADMIN',     path: '/admin/dashboard',               isAdmin: true,  perks: ['Global platform analytics', 'All event codes + audit log', 'Full user directory'] },
+    { role: 'ORGANIZER', path: '/organizer/:username/dashboard', isAdmin: false, perks: ['Create & manage events', 'Set registration windows', 'QR scanner & guest list'] },
+    { role: 'ATTENDEE',  path: '/attendee/:username/dashboard',  isAdmin: false, perks: ['Browse available events', 'Enter invite codes', 'QR ticket wallet'] },
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Quantico, system-ui, sans-serif', overflowX: 'hidden' }}>
-      <AmbientBackground />
-      <TopNav />
+    <div style={{ minHeight: '100vh', background: 'var(--anchor)', color: 'var(--structure)', position: 'relative', overflowX: 'hidden' }}>
+      <FilmGrain />
+      <TopNav onSignIn={() => navigate('/login')} />
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section
-        ref={heroRef}
-        style={{
-          position: 'relative', zIndex: 1,
-          minHeight: '100vh',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          textAlign: 'center',
-          padding: '8rem 1.5rem 4rem',
-        }}
-      >
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundImage: `url(${heroImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: theme === 'dark' ? 0.3 : 0.15,
-          zIndex: -1,
-          maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-        }} />
-        <motion.div style={{ y: heroY, opacity: heroOpacity }}>
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <section style={{
+        minHeight: '100vh', paddingTop: '64px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: '8rem 3rem 5rem',
+        position: 'relative',
+      }}>
+        <GridTexture />
 
-          {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, ...SPRING }}
+        {/* Eyebrow */}
+        <p style={{
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase',
+          color: 'var(--pop)', border: '1px solid var(--pop)', padding: '0.375rem 1rem',
+          marginBottom: '2.5rem', display: 'inline-block',
+        }}>
+          SYS::EVENTSPHERE v2.6 — PLATFORM UPTIME: 99.97%
+        </p>
+
+        {/* Headline */}
+        <h1 style={{
+          fontFamily: "'VT323', monospace", textTransform: 'uppercase',
+          fontSize: 'clamp(4rem, 11vw, 9rem)',
+          color: 'var(--structure)', letterSpacing: '0.04em', lineHeight: 1.0,
+          marginBottom: '2.5rem', maxWidth: '900px',
+        }}>
+          EVENTS /<br />BUILT ON /<br /><span style={{ color: 'var(--pop)' }}>DISCIPLINE.</span>
+        </h1>
+
+        {/* Sub */}
+        <p style={{
+          fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.8125rem',
+          lineHeight: 1.9, letterSpacing: '0.06em',
+          color: 'var(--structure)', opacity: 0.6,
+          maxWidth: '560px', marginBottom: '3rem',
+        }}>
+          Invite-gated. QR-verified. JWT-locked.<br />
+          No guest lists lost. No capacity blown. No excuses.
+        </p>
+
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            id="landing-get-started"
+            className="grit-btn"
+            onClick={() => navigate('/login')}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.375rem 1rem', borderRadius: '999px',
-              background: 'rgba(var(--glass-rgb),0.05)', border: '1px solid rgba(var(--glass-rgb),0.08)',
-              fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-subtle)',
-              letterSpacing: '0.05em', textTransform: 'uppercase',
-              marginBottom: '2rem',
+              display: 'flex', alignItems: 'center', gap: '0.625rem',
+              height: '3.25rem', padding: '0 2rem',
+              background: 'var(--pop)', border: '2px solid var(--pop)',
+              color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+              boxShadow: 'var(--shadow)', cursor: 'pointer',
             }}
           >
-            <Sparkles style={{ width: '0.75rem', height: '0.75rem' }} />
-            Enterprise Event Management Platform
-          </motion.div>
-
-          {/* Headline — wrapped in ScrollBounceText for velocity-driven elastic distortion */}
-          <motion.h1
-            initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            GET STARTED <ArrowRight size={13} />
+          </button>
+          <button
+            id="landing-admin-btn"
+            className="grit-btn"
+            onClick={() => navigate('/adminlogin')}
             style={{
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-              fontWeight: 300,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.08,
-              color: 'var(--color-text-primary)',
-              maxWidth: '800px',
-              margin: '0 auto 1.5rem',
+              height: '3.25rem', padding: '0 2rem',
+              background: 'transparent', border: '2px solid var(--dim-border)',
+              color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+              boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
             }}
           >
-            <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2.5} maxTranslateY={5}>
-              Events that run on
-              <br />
-              <span style={{ fontWeight: 700 }}>INTELLIGENCE</span>
-            </ScrollBounceText>
-          </motion.h1>
+            ADMIN PORTAL
+          </button>
+        </div>
 
-          {/* Sub */}
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45, ...SPRING }}
-            style={{
-              fontSize: 'clamp(1rem, 2vw, 1.1875rem)',
-              color: 'var(--color-text-muted)',
-              maxWidth: '560px',
-              margin: '0 auto 3rem',
-              lineHeight: 1.7,
-            }}
-          >
-            Secure invite-only registration with unique QR codes, real-time analytics, and role-scoped workspaces — built for professional event management.
-          </motion.p>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, ...SPRING }}
-            style={{ display: 'flex', gap: '0.875rem', justifyContent: 'center', flexWrap: 'wrap' }}
-          >
-            <motion.button
-              id="landing-get-started"
-              className="selection:bg-white selection:text-black"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              transition={SPRING}
-              onClick={() => navigate('/login')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                height: '3rem', padding: '0 1.75rem',
-                borderRadius: '999px', border: 'none',
-                background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
-                fontSize: '0.9375rem', fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 0 32px rgba(var(--glass-rgb),0.12)',
-              }}
-            >
-              Get Started Free
-              <ArrowRight style={{ width: '1rem', height: '1rem' }} />
-            </motion.button>
-
-           
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll cue */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          style={{ position: 'absolute', bottom: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-            style={{ width: '1px', height: '2rem', background: 'linear-gradient(to bottom, rgba(var(--glass-rgb),0.2), transparent)' }}
-          />
-        </motion.div>
-      </section>
-
-      {/* ── Stats ─────────────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '4rem 1.5rem', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <StatPill value="3"      label="User Roles"         delay={0} />
-          <StatPill value="6-char" label="Invite Codes"       delay={0.07} />
-          <StatPill value="Live"   label="QR Check-In"        delay={0.14} />
-          <StatPill value="JWT"    label="Secured Routing"    delay={0.21} />
+        {/* Scroll indicator */}
+        <div style={{ position: 'absolute', bottom: '3rem', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '1px', height: '3rem', background: 'var(--structure)', opacity: 0.2, animation: 'tick-line 2s steps(2, end) infinite' }} />
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>SCROLL</span>
         </div>
       </section>
 
-      {/* ── Features grid ─────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '6rem 1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={SPRING}
-          style={{ textAlign: 'center', marginBottom: '4rem' }}
-        >
-          <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#3f3f46', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-            Platform Capabilities
-          </p>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)', fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--color-text-primary)', lineHeight: 1.15 }}>
-            {/* ScrollBounceText: block wrap — skews the whole heading as a unit */}
-            <ScrollBounceText intensity={1.1} maxSkewDeg={3} maxTranslateY={4} stiffness={380} damping={32}>
-              Everything you need,<br /><strong>nothing you don't.</strong>
-            </ScrollBounceText>
-          </h2>
-        </motion.div>
-
-        <div className="flex flex-col">
-          {features.map((f, i) => <FeatureRow key={f.title} index={i} {...f} />)}
-        </div>
-      </section>
-
-      {/* ── Role architecture diagram ──────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '6rem 1.5rem', maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.3 }}
-          transition={SPRING}
-          style={{ marginBottom: '3rem' }}
-        >
-          <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-            {/* Lighter intensity — this section has more surrounding motion already */}
-            <ScrollBounceText intensity={0.7} maxSkewDeg={2} maxTranslateY={3} stiffness={320} damping={38}>
-              One platform,<br /><strong>three workspaces.</strong>
-            </ScrollBounceText>
-          </h2>
-        </motion.div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+      {/* ── STATS ROW ─────────────────────────────────────────────────────── */}
+      <section style={{ borderTop: '2px solid var(--structure)', borderBottom: '2px solid var(--structure)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {[
-            {
-              role: 'Admin', color: '#a78bfa', icon: ShieldCheck,
-              path: '/admin/dashboard',
-              perks: ['Global analytics', 'All event codes', 'Full user directory'],
-            },
-            {
-              role: 'Organizer', color: '#60a5fa', icon: Calendar,
-              path: '/organizer/:username/dashboard',
-              perks: ['Create & manage events', 'Set registration windows', 'QR scanner & guest list'],
-            },
-            {
-              role: 'Attendee', color: '#34d399', icon: Users,
-              path: '/attendee/:username/dashboard',
-              perks: ['Browse available events', 'Enter invite codes', 'QR ticket wallet'],
-            },
-          ].map(({ role, color, icon: Icon, path, perks }, i) => (
-            <motion.div
-              key={role}
-              initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
-              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              viewport={{ once: false, amount: 0.2 }}
-              transition={{ ...SPRING, delay: i * 0.1 }}
-              style={{
-                padding: '1.75rem', borderRadius: '1.5rem',
-                background: 'rgba(var(--glass-rgb),0.03)',
-                border: `1px solid ${color}18`,
-                boxShadow: `inset 0 1px 0 ${color}10`,
-                textAlign: 'left',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
-                <div style={{ width: '2rem', height: '2rem', borderRadius: '0.625rem', background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon style={{ width: '0.875rem', height: '0.875rem', color }} />
-                </div>
-                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)', fontSize: '0.9375rem' }}>{role}</span>
-              </div>
-              <code style={{
-                display: 'block', fontSize: '0.6875rem', color: '#3f3f46',
-                fontFamily: 'Quantico, monospace',
-                background: 'rgba(var(--glass-rgb),0.03)', border: '1px solid rgba(var(--glass-rgb),0.05)',
-                borderRadius: '0.375rem', padding: '0.375rem 0.625rem',
-                marginBottom: '1.125rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {path}
-              </code>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                {perks.map(p => (
-                  <li key={p} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--color-text-subtle)' }}>
-                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
+            { value: '3',      label: 'USER ROLES' },
+            { value: '6-CHAR', label: 'INVITE CODES' },
+            { value: 'LIVE',   label: 'QR CHECK-IN' },
+            { value: 'JWT',    label: 'SECURED ROUTING' },
+          ].map(({ value, label }, i) => (
+            <div key={label} style={{
+              padding: '2.5rem 2rem',
+              borderRight: i < 3 ? '1px solid var(--dim-border)' : 'none',
+              display: 'flex', flexDirection: 'column', gap: '0.5rem',
+            }}>
+              <p style={{ fontFamily: "'VT323', monospace", fontSize: '3rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>
+                {value}
+              </p>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4 }}>
+                {label}
+              </p>
+            </div>
           ))}
         </div>
       </section>
 
-      
-
-      {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <footer style={{
-        position: 'relative', zIndex: 1,
-        borderTop: '1px solid rgba(var(--glass-rgb),0.04)',
-        padding: '2rem 1.5rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
-        maxWidth: '1100px', margin: '0 auto',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Sparkles style={{ width: '0.875rem', height: '0.875rem', color: '#3f3f46' }} />
-          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#3f3f46', letterSpacing: '-0.01em' }}>EventSphere</span>
+      {/* ── FEATURES BENTO GRID ───────────────────────────────────────────── */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '6rem 3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2rem', marginBottom: '3rem' }}>
+          <h2 style={{
+            fontFamily: "'VT323', monospace", textTransform: 'uppercase',
+            fontSize: 'clamp(3rem, 6vw, 5.5rem)',
+            color: 'var(--structure)', lineHeight: 1.0, whiteSpace: 'nowrap',
+          }}>
+            PLATFORM<br />CAPABILITIES
+          </h2>
+          <div style={{ flex: 1, height: '2px', background: 'var(--structure)', opacity: 0.15, marginBottom: '0.5rem' }} />
         </div>
-        <p style={{ fontSize: '0.75rem', color: '#27272a' }}>
-          © 2026 EventSphere · Enterprise Event Platform
+
+        {/* Asymmetric bento: first tile spans 2 cols */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+          {features.map((f, i) => (
+            <FeatureTile key={f.title} {...f} spanTwo={i === 0} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── ROLE ARCHITECTURE ─────────────────────────────────────────────── */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 3rem 6rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2rem', marginBottom: '3rem' }}>
+          <h2 style={{
+            fontFamily: "'VT323', monospace", textTransform: 'uppercase',
+            fontSize: 'clamp(3rem, 6vw, 5.5rem)',
+            color: 'var(--structure)', lineHeight: 1.0, whiteSpace: 'nowrap',
+          }}>
+            THREE<br />WORKSPACES
+          </h2>
+          <div style={{ flex: 1, height: '2px', background: 'var(--structure)', opacity: 0.15, marginBottom: '0.5rem' }} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+          {roles.map(r => <RoleCard key={r.role} {...r} />)}
+        </div>
+      </section>
+
+      {/* -- CTA BANNER -- 60/30/10 FIX: was background: var(--pop) - VIOLATION */}
+      {/* Now: --anchor bg (60%), --pop border + CTA button (10%) */}
+      <section style={{
+        margin: '0 auto 6rem', maxWidth: 'calc(1200px - 6rem)',
+        background: 'var(--anchor)', border: '2px solid var(--pop)', boxShadow: 'var(--shadow)',
+        padding: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem',
+      }}>
+        <div>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '0.75rem' }}>
+            READY?
+          </p>
+          <h2 style={{ fontFamily: "'VT323', monospace", textTransform: 'uppercase', fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', color: 'var(--structure)', lineHeight: 1.0 }}>
+            STOP MANAGING SPREADSHEETS.
+          </h2>
+        </div>
+        <button
+          className="grit-btn"
+          onClick={() => navigate('/login')}
+          style={{
+            height: '3.25rem', padding: '0 2.5rem', flexShrink: 0,
+            background: 'var(--pop)', border: '2px solid var(--pop)',
+            color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+            boxShadow: 'var(--shadow)',
+            display: 'flex', alignItems: 'center', gap: '0.625rem', cursor: 'pointer',
+          }}
+        >
+          SUBMIT YOUR FIRST EVENT <ArrowRight size={13} />
+        </button>
+      </section>
+
+      {/* ── FOOTER ────────────────────────────────────────────────────────── */}
+      <footer style={{
+        borderTop: '2px solid var(--structure)',
+        padding: '2rem 3rem',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase', color: 'var(--structure)', letterSpacing: '0.05em' }}>
+          EVENTSPHERE
         </p>
-        
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>
+          © 2026 EVENTSPHERE · BUILD #a4f1c9 · 2026-08-19
+        </p>
       </footer>
     </div>
   );

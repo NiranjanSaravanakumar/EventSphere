@@ -1,319 +1,294 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useSpring, useTransform, useMotionValue } from 'framer-motion';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Calendar, MapPin, Users, Trash2, Edit3, X,
-  CheckCircle, AlertCircle, ScanLine, BarChart3, Layers, TrendingUp,
-  Key, Copy, Check, LogOut, Sun, Moon
+  Plus, Calendar, MapPin, Key, Copy, Check, LogOut,
+  Trash2, Edit3, X, CheckCircle, AlertCircle, ScanLine,
 } from 'lucide-react';
-import ScannerPanel from '../components/shared/ScannerPanel.jsx';
 import { eventsApi, organizerApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
-import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
+import { useTheme } from '../components/shared/Navbar.jsx';
 
-const SPRING = { type: 'spring', stiffness: 320, damping: 26 };
+// ── Film Grain ────────────────────────────────────────────────────────────────
+const FilmGrain = () => (
+  <svg aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 997, opacity: 0.06, mixBlendMode: 'overlay' }}>
+    <filter id="grit-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#grit-grain)" />
+  </svg>
+);
 
-// ── Glass form field ───────────────────────────────────────────────────────────
+// ── Form Field Components ─────────────────────────────────────────────────────
 const FieldInput = ({ label, type = 'text', value, onChange, placeholder, required, ...rest }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-      {label}{required && <span style={{ color: '#f87171', marginLeft: '0.25rem' }}>*</span>}
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: 'var(--structure)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+      {label}{required && <span style={{ color: 'var(--pop)', marginLeft: '0.375rem' }}>*</span>}
     </label>
     <input
       type={type} value={value} onChange={onChange}
       placeholder={placeholder} required={required}
-      style={{
-        width: '100%', height: '3rem', padding: '0 1rem',
-        background: 'rgba(var(--glass-rgb),0.05)',
-        border: '1px solid rgba(var(--glass-rgb),0.08)',
-        borderRadius: '1rem', color: 'var(--color-text-primary)', fontSize: '0.9375rem',
-        outline: 'none', transition: 'border-color 0.2s', backdropFilter: 'blur(8px)',
-      }}
-      onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}
-      onBlur={e  => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.08)'; }}
+      className="grit-input"
+      style={{ width: '100%', height: '3rem', padding: '0 1rem', fontSize: '0.8125rem' }}
       {...rest}
     />
   </div>
 );
 
 const FieldTextarea = ({ label, value, onChange, placeholder, required }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-    <label style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-      {label}{required && <span style={{ color: '#f87171', marginLeft: '0.25rem' }}>*</span>}
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: 'var(--structure)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+      {label}{required && <span style={{ color: 'var(--pop)', marginLeft: '0.375rem' }}>*</span>}
     </label>
     <textarea
       value={value} onChange={onChange} placeholder={placeholder} required={required} rows={3}
-      style={{
-        width: '100%', padding: '0.75rem 1rem',
-        background: 'rgba(var(--glass-rgb),0.05)',
-        border: '1px solid rgba(var(--glass-rgb),0.08)',
-        borderRadius: '1rem', color: 'var(--color-text-primary)', fontSize: '0.9375rem',
-        outline: 'none', resize: 'vertical', transition: 'border-color 0.2s',
-        fontFamily: 'inherit', backdropFilter: 'blur(8px)',
-      }}
-      onFocus={e => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.22)'; }}
-      onBlur={e  => { e.target.style.borderColor = 'rgba(var(--glass-rgb),0.08)'; }}
+      className="grit-input"
+      style={{ width: '100%', padding: '0.875rem 1rem', fontSize: '0.8125rem', resize: 'vertical' }}
     />
   </div>
 );
 
-// ── Capacity bar ───────────────────────────────────────────────────────────────
-const CapacityBar = ({ registered, capacity, delay = 0 }) => {
-  const pct   = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
-  const color = pct >= 90 ? '#f87171' : pct >= 70 ? '#fbbf24' : 'rgba(var(--glass-rgb),0.4)';
+// ── Capacity Bar ──────────────────────────────────────────────────────────────
+const CapacityBar = ({ registered, capacity }) => {
+  const pct = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
+  const atCap = pct >= 90;
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-        <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{registered} / {capacity}</span>
-        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color }}>{pct}%</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.6 }}>
+          {registered.toLocaleString()}&thinsp;/&thinsp;{capacity.toLocaleString()} SEATS
+        </span>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: atCap ? 'var(--pop)' : 'var(--structure)' }}>
+          {pct}%
+        </span>
       </div>
-      <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.07)', borderRadius: '2px', overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-          transition={{ duration: 1.3, ease: 'easeOut', delay }}
-          style={{ height: '100%', background: color, borderRadius: '2px' }}
-        />
+      <div style={{ width: '100%', height: '3px', background: 'var(--dim-border)' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: atCap ? 'var(--pop)' : 'var(--structure)', transition: 'width 0.15s linear' }} />
       </div>
     </div>
   );
 };
 
-const TactileCard = ({ event, index, onEdit, onDelete, deletingId, fmtDate }) => {
-  const cardRef = useRef(null);
-  const [copied, setCopied] = useState(false);
+// ── Stat Tile ─────────────────────────────────────────────────────────────────
+const StatTile = ({ label, value, accent = false }) => (
+  <div style={{
+    background: 'var(--anchor)',
+    border: `2px solid ${accent ? 'var(--pop)' : 'var(--structure)'}`,
+    boxShadow: 'var(--shadow)',
+    padding: '1.75rem',
+    display: 'flex', flexDirection: 'column', gap: '0.625rem',
+  }}>
+    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent ? 'var(--pop)' : 'var(--structure)', opacity: accent ? 0.85 : 0.55 }}>
+      {label}
+    </p>
+    <p style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', lineHeight: 1, textTransform: 'uppercase', color: accent ? 'var(--pop)' : 'var(--structure)' }}>
+      {value}
+    </p>
+  </div>
+);
 
-  const handleCopyCode = (e) => {
+// ── Event Card ────────────────────────────────────────────────────────────────
+const TactileCard = ({ event, isLarge, onEdit, onDelete, deletingId, fmtDate, onCardClick }) => {
+  const [copied, setCopied] = useState(false);
+  const pct = event.capacity > 0 ? Math.round((event.registeredCount ?? 0) / event.capacity * 100) : 0;
+  const atCapacity = pct >= 90;
+
+  const handleCopy = (e) => {
     e.stopPropagation();
     if (!event.eventCode) return;
-
-    const onSuccess = () => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(event.eventCode).then(onSuccess).catch(console.error);
+      navigator.clipboard.writeText(event.eventCode).then(done).catch(console.error);
     } else {
-      const textArea = document.createElement("textarea");
-      textArea.value = event.eventCode;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-9999px";
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        onSuccess();
-      } catch (err) {
-        console.error('Fallback copy failed', err);
-      }
-      document.body.removeChild(textArea);
+      const ta = Object.assign(document.createElement('textarea'), { value: event.eventCode, style: 'position:fixed;left:-9999px' });
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch { }
+      document.body.removeChild(ta);
     }
   };
 
-  const pct   = event.capacity > 0 ? Math.round((event.registeredCount ?? 0) / event.capacity * 100) : 0;
-  const isFull = pct >= 90;
-
   return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{ ...SPRING, delay: index * 0.07 }}
+    <article
+      className="grit-card"
+      onClick={() => onCardClick(event.id)}
       style={{
+        background: 'var(--anchor)',
+        border: `2px solid ${atCapacity ? 'var(--pop)' : 'var(--structure)'}`,
+        boxShadow: 'var(--shadow)',
+        padding: isLarge ? '2.5rem' : '1.75rem',
+        display: 'flex', flexDirection: 'column', gap: '1.5rem',
         position: 'relative',
-        borderRadius: '2rem',
-        background: 'rgba(var(--glass-rgb),0.055)',
-        backdropFilter: 'blur(32px)',
-        WebkitBackdropFilter: 'blur(32px)',
-        border: '1px solid rgba(var(--glass-rgb),0.10)',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
-        padding: '1.75rem',
-        display: 'flex', flexDirection: 'column', gap: '1.25rem',
-        overflow: 'hidden', cursor: 'default',
+        minHeight: isLarge ? '340px' : '260px',
+        height: '100%',
       }}
     >
-      {/* Top specular */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.22), transparent)' }} />
-
-      {/* Static subtle glare */}
-      <div
-        style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: '2rem',
-          background: `radial-gradient(circle at 50% 0%, rgba(var(--glass-rgb),0.05) 0%, transparent 65%)`,
-        }}
-      />
-
-      {/* Clickable Overlay */}
-      <div 
-        onClick={() => event.onClickCard && event.onClickCard(event.id)}
-        style={{ position: 'absolute', inset: 0, zIndex: 1, cursor: 'pointer' }}
-      />
-
-      {/* Status dot */}
-      {isFull && (
-        <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', width: '8px', height: '8px', borderRadius: '50%', background: '#f87171', boxShadow: '0 0 8px rgba(248,113,113,0.7)' }} />
+      {/* Capacity status tag */}
+      {atCapacity && (
+        <div style={{
+          position: 'absolute',
+          top: isLarge ? '2.5rem' : '1.75rem',
+          right: isLarge ? '2.5rem' : '1.75rem',
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase',
+          color: 'var(--pop)', border: '1px solid var(--pop)', padding: '0.25rem 0.625rem',
+        }}>
+          AT CAPACITY
+        </div>
       )}
 
       {/* Title */}
-      <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+      <h3 style={{
+        fontFamily: "'VT323', monospace", textTransform: 'uppercase',
+        fontSize: isLarge ? 'clamp(2rem, 3vw, 2.75rem)' : '1.625rem',
+        color: 'var(--structure)',
+        lineHeight: 1.0,
+        paddingRight: atCapacity ? '7rem' : 0,
+        marginTop: 'auto',
+      }}>
         {event.title}
       </h3>
 
       {/* Meta */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {[
-          { Icon: Calendar, text: fmtDate(event.date) },
-          { Icon: MapPin,   text: event.location },
-        ].map(({ Icon, text }) => (
-          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)' }}>{text}</span>
-          </div>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+        <time style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.6 }}>
+          {fmtDate(event.date)}
+        </time>
+        <address style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.6, fontStyle: 'normal' }}>
+          {event.location}
+        </address>
       </div>
 
-      {/* Capacity bar */}
-      <CapacityBar
-        registered={event.registeredCount ?? 0}
-        capacity={event.capacity}
-        delay={0.25 + index * 0.06}
-      />
+      <CapacityBar registered={event.registeredCount ?? 0} capacity={event.capacity} />
 
-      {/* Access Code badge */}
+      {/* Access code badge */}
       {event.eventCode && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.625rem 0.875rem',
-          background: 'rgba(var(--glass-rgb),0.04)',
-          border: '1px solid rgba(var(--glass-rgb),0.08)',
-          borderRadius: '0.875rem',
-          position: 'relative', zIndex: 2,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Key style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)' }} />
-            <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Access Code</span>
-            <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em' }}>{event.eventCode}</span>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            onClick={handleCopyCode}
-            title="Copy code"
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', border: '1px solid var(--dim-border)', position: 'relative', zIndex: 2 }}
+          onClick={e => e.stopPropagation()}
+        >
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.14em', color: 'var(--structure)' }}>
+            ACCESS&thinsp;//&thinsp;{event.eventCode}
+          </span>
+          <button
+            id={`copy-code-${event.id}`}
+            className="grit-btn"
+            onClick={handleCopy}
+            title="Copy access code"
             style={{
-              width: '1.75rem', height: '1.75rem', borderRadius: '0.5rem',
-              background: copied ? 'rgba(16,185,129,0.12)' : 'rgba(var(--glass-rgb),0.06)',
-              border: `1px solid ${copied ? 'rgba(16,185,129,0.25)' : 'rgba(var(--glass-rgb),0.08)'}`,
+              width: '2rem', height: '2rem',
+              background: copied ? 'var(--pop)' : 'transparent',
+              border: `1px solid ${copied ? 'var(--pop)' : 'var(--dim-border)'}`,
+              color: copied ? 'var(--anchor)' : 'var(--structure)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: copied ? '#6ee7b7' : 'var(--color-text-subtle)',
-              transition: 'all 0.2s',
+              boxShadow: copied ? 'none' : 'var(--shadow-sm)', cursor: 'pointer',
             }}
           >
-            {copied
-              ? <Check style={{ width: '0.75rem', height: '0.75rem' }} />
-              : <Copy style={{ width: '0.75rem', height: '0.75rem' }} />}
-          </motion.button>
+            {copied ? <Check size={11} /> : <Copy size={11} />}
+          </button>
         </div>
       )}
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.5rem', position: 'relative', zIndex: 2 }}>
-        <motion.button
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={(e) => { e.stopPropagation(); onEdit(event); }}
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: '0.75rem', position: 'relative', zIndex: 2 }} onClick={e => e.stopPropagation()}>
+        <button
+          id={`edit-event-${event.id}`}
+          className="grit-btn"
+          onClick={() => onEdit(event)}
           style={{
-            flex: 1, height: '2.5rem', borderRadius: '0.875rem',
-            background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.09)',
-            color: '#D4D4D8', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+            flex: 1, height: '2.75rem',
+            background: 'var(--dim-bg)', border: '1px solid var(--dim-border)',
+            color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+            boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
           }}
         >
-          <Edit3 style={{ width: '0.8125rem', height: '0.8125rem' }} />
-          Edit
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          onClick={(e) => { e.stopPropagation(); onDelete(event.id); }}
+          <Edit3 size={11} /> EDIT
+        </button>
+        <button
+          id={`delete-event-${event.id}`}
+          className="grit-btn"
+          onClick={() => onDelete(event.id)}
           disabled={deletingId === event.id}
           style={{
-            width: '2.5rem', height: '2.5rem', borderRadius: '0.875rem',
-            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)',
-            color: '#f87171', cursor: 'pointer',
+            width: '2.75rem', height: '2.75rem',
+            background: 'var(--dim-bg)', border: '1px solid var(--structure)',
+            color: 'var(--structure)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--shadow-sm)',
             opacity: deletingId === event.id ? 0.4 : 1,
+            cursor: deletingId === event.id ? 'not-allowed' : 'pointer',
           }}
         >
-          <Trash2 style={{ width: '0.8125rem', height: '0.8125rem' }} />
-        </motion.button>
+          <Trash2 size={12} />
+        </button>
       </div>
-    </motion.div>
+    </article>
   );
 };
 
-// ── Toast ──────────────────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40, scale: 0.9 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: 40, scale: 0.9 }}
-    transition={SPRING}
+  <motion.aside
+    role="alert"
+    initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+    transition={{ duration: 0.1, ease: 'linear' }}
     style={{
-      position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-      zIndex: 200, display: 'flex', alignItems: 'center', gap: '0.625rem',
-      padding: '0.75rem 1.5rem', borderRadius: '2rem',
-      background: type === 'success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.10)',
-      border: `1px solid ${type === 'success' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.22)'}`,
-      backdropFilter: 'blur(24px)',
-      color: type === 'success' ? '#6ee7b7' : '#f87171',
-      fontSize: '0.875rem', fontWeight: 500,
-      boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+      position: 'fixed', bottom: '2rem', left: '2rem', zIndex: 999,
+      display: 'flex', alignItems: 'center', gap: '0.875rem',
+      padding: '1rem 1.5rem',
+      background: 'var(--anchor)',
+      border: `2px solid ${type === 'success' ? 'var(--pop)' : 'var(--structure)'}`,
+      boxShadow: 'var(--shadow)',
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+      color: 'var(--structure)',
     }}
   >
     {type === 'success'
-      ? <CheckCircle style={{ width: '1rem', height: '1rem' }} />
-      : <AlertCircle style={{ width: '1rem', height: '1rem' }} />}
+      ? <CheckCircle size={14} color="var(--pop)" />
+      : <AlertCircle size={14} color="var(--structure)" />}
     {message}
-  </motion.div>
+  </motion.aside>
 );
 
-// ── Create / Edit Modal ────────────────────────────────────────────────────────
+// ── Event Modal ───────────────────────────────────────────────────────────────
 const EventModal = ({ editingEvent, onClose, onSaved }) => {
   const isEditing = !!editingEvent;
   const [form, setForm] = useState({
-    title:             editingEvent?.title             || '',
-    description:       editingEvent?.description       || '',
-    date:              editingEvent?.date ? editingEvent.date.slice(0, 16) : '',
-    location:          editingEvent?.location          || '',
-    capacity:          editingEvent?.capacity          || '',
+    title: editingEvent?.title || '',
+    description: editingEvent?.description || '',
+    date: editingEvent?.date ? editingEvent.date.slice(0, 16) : '',
+    location: editingEvent?.location || '',
+    capacity: editingEvent?.capacity || '',
     registrationStart: editingEvent?.registrationStart ? editingEvent.registrationStart.slice(0, 16) : '',
-    registrationEnd:   editingEvent?.registrationEnd   ? editingEvent.registrationEnd.slice(0, 16)   : '',
+    registrationEnd: editingEvent?.registrationEnd ? editingEvent.registrationEnd.slice(0, 16) : '',
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState('');
+  const [error, setError] = useState('');
 
   const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(''); setSaving(true);
+    e.preventDefault(); setError(''); setSaving(true);
     try {
       const payload = {
         ...form,
-        date:              form.date              + ':00',
+        date: form.date + ':00',
         registrationStart: form.registrationStart + ':00',
-        registrationEnd:   form.registrationEnd   + ':00',
+        registrationEnd: form.registrationEnd + ':00',
         capacity: parseInt(form.capacity, 10),
-        // Always auto-generate the access code on create; preserve on edit
         eventCode: isEditing ? (editingEvent.eventCode || null) : null,
       };
       if (isEditing) await eventsApi.update(editingEvent.id, payload);
-      else           await eventsApi.create(payload);
-      onSaved(isEditing ? 'Event updated.' : 'Event created!');
+      else await eventsApi.create(payload);
+      onSaved(isEditing ? 'EVENT UPDATED.' : 'EVENT CREATED!');
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to save.');
+      setError((err?.response?.data?.message || err?.message || 'FAILED TO SAVE.').toUpperCase());
     } finally { setSaving(false); }
   };
 
-  // Lock body scroll while modal is open so the page behind never scrolls
   React.useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -323,108 +298,89 @@ const EventModal = ({ editingEvent, onClose, onSaved }) => {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(12px)', padding: '1rem' }}
+      transition={{ duration: 0.1, ease: 'linear' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.88)',
+        padding: '1.5rem',
+      }}
       onClick={onClose}
     >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.93, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.93, y: 24 }}
-        transition={SPRING}
+      <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%', maxWidth: '520px', borderRadius: '2rem',
-          background: 'rgba(8,8,8,0.92)', backdropFilter: 'blur(48px)',
-          border: '1px solid rgba(var(--glass-rgb),0.10)',
-          boxShadow: '0 48px 120px rgba(0,0,0,0.9), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
-          overflow: 'hidden',
+          width: '100%', maxWidth: '560px',
+          background: 'var(--anchor)',
+          border: '2px solid var(--structure)',
+          boxShadow: '12px 12px 0px var(--ink)',
         }}
       >
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.2), transparent)' }} />
-        <div style={{ padding: '2rem', overflowY: 'auto', maxHeight: 'calc(100vh - 4rem)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-            <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>
-                <ScrollBounceText as="span" intensity={0.8} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={36}>
-                  {isEditing ? 'Edit Event' : 'Draft New Event'}
-                </ScrollBounceText>
-              </h2>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                {isEditing ? 'Update the event details.' : 'Fill in the details for your event.'}
-              </p>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }} transition={SPRING}
-              onClick={onClose}
-              style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.07)', border: '1px solid rgba(var(--glass-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--color-text-subtle)' }}
-            >
-              <X style={{ width: '1rem', height: '1rem' }} />
-            </motion.button>
+        {/* Modal header */}
+        <div style={{ padding: '2.25rem 2.5rem 1.75rem', borderBottom: '1px solid var(--dim-border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '0.625rem' }}>
+              EVENTSPHERE&thinsp;//&thinsp;STUDIO
+            </p>
+            <h2 style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(2rem, 3vw, 2.75rem)', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>
+              {isEditing ? 'EDIT EVENT' : 'DRAFT NEW EVENT'}
+            </h2>
           </div>
+          <button id="modal-close-btn" className="grit-btn" onClick={onClose} aria-label="Close modal"
+            style={{ width: '2.5rem', height: '2.5rem', flexShrink: 0, background: 'transparent', border: '1px solid var(--dim-border)', color: 'var(--structure)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+            <X size={14} />
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
-            <FieldInput label="Event Title" value={form.title} onChange={set('title')} placeholder="e.g. VisionOS Summit" required />
-            <FieldTextarea label="Description" value={form.description} onChange={set('description')} placeholder="Describe your event…" />
+        {/* Modal form body */}
+        <div style={{ padding: '2rem 2.5rem 2.5rem', overflowY: 'auto', maxHeight: 'calc(100vh - 14rem)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <FieldInput label="Event Title" value={form.title} onChange={set('title')} placeholder="e.g. SYSTEMS DESIGN SUMMIT 2026" required />
+            <FieldTextarea label="Description" value={form.description} onChange={set('description')} placeholder="What happens, who should attend, what to expect." />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <FieldInput label="Date & Time" type="datetime-local" value={form.date} onChange={set('date')} required />
-              <FieldInput label="Capacity" type="number" value={form.capacity} onChange={set('capacity')} placeholder="e.g. 500" required min="1" />
+              <FieldInput label="Capacity" type="number" value={form.capacity} onChange={set('capacity')} placeholder="500" required min="1" />
             </div>
-            <FieldInput label="Location" value={form.location} onChange={set('location')} placeholder="e.g. Cupertino, CA" required />
-
-            {/* Registration window — stacked so inputs never clip */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <FieldInput label="Location" value={form.location} onChange={set('location')} placeholder="e.g. CHENNAI TRADE CENTRE, HALL 3" required />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <FieldInput label="Reg. Opens" type="datetime-local" value={form.registrationStart} onChange={set('registrationStart')} required />
-              <FieldInput label="Reg. Closes" type="datetime-local" value={form.registrationEnd}   onChange={set('registrationEnd')}   required />
+              <FieldInput label="Reg. Closes" type="datetime-local" value={form.registrationEnd} onChange={set('registrationEnd')} required />
             </div>
 
-            {/* Access code is always auto-generated — shown on the event card after creation */}
+            {error && (
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', border: '1px solid var(--structure)', padding: '0.75rem 1rem', letterSpacing: '0.04em', opacity: 0.8 }}>
+                !! {error}
+              </p>
+            )}
 
-            <AnimatePresence>
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  style={{ fontSize: '0.8125rem', color: '#f87171', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '0.75rem', padding: '0.625rem 0.875rem' }}
-                >
-                  {error}
-                </motion.p>
-              )}
-            </AnimatePresence>
-
-            <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
-              <button
-                type="button" onClick={onClose}
-                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: 'rgba(var(--glass-rgb),0.05)', border: '1px solid rgba(var(--glass-rgb),0.08)', color: 'var(--color-text-subtle)', fontSize: '0.9375rem', cursor: 'pointer' }}
-              >
-                Cancel
+            <div style={{ display: 'flex', gap: '0.875rem', paddingTop: '0.5rem' }}>
+              <button id="modal-cancel-btn" type="button" onClick={onClose} className="grit-btn"
+                style={{ flex: 1, height: '3.25rem', background: 'transparent', border: '2px solid var(--dim-border)', color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+                CANCEL
               </button>
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.97 }} transition={SPRING}
-                disabled={saving}
-                style={{ flex: 1, height: '3rem', borderRadius: '1rem', background: saving ? 'rgba(var(--glass-rgb),0.3)' : 'var(--color-text-primary)', border: 'none', color: 'var(--color-bg-primary)', fontSize: '0.9375rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}
-              >
-                {saving ? 'Saving…' : (isEditing ? 'Update Event' : 'Create Event')}
-              </motion.button>
+              <button id="modal-submit-btn" type="submit" className="grit-btn" disabled={saving}
+                style={{ flex: 1, height: '3.25rem', background: 'var(--pop)', border: '2px solid var(--pop)', color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', boxShadow: 'var(--shadow)', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.65 : 1 }}>
+                {saving ? 'SAVING...' : (isEditing ? 'UPDATE EVENT' : 'CREATE EVENT')}
+              </button>
             </div>
           </form>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 };
 
-// ── Main Organizer Dashboard ───────────────────────────────────────────────────
+// ── Main Organizer Dashboard ──────────────────────────────────────────────────
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const [events, setEvents]             = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [modalOpen, setModalOpen]       = useState(false);
+  const { theme, toggle } = useTheme();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [toast, setToast]               = useState(null);
-  const [deletingId, setDeletingId]     = useState(null);
-  const [scannerOpen, setScannerOpen]   = useState(false);
+  const [toast, setToast] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -436,225 +392,156 @@ const OrganizerDashboard = () => {
     try {
       const { data } = await organizerApi.myEvents();
       setEvents(data);
-    } catch { showToast('Failed to load events.', 'error'); }
+    } catch { showToast('FAILED TO LOAD EVENTS.', 'error'); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  const handleSaved = (msg) => {
-    setModalOpen(false);
-    setEditingEvent(null);
-    showToast(msg);
-    fetchEvents();
-  };
+  const handleSaved = (msg) => { setModalOpen(false); setEditingEvent(null); showToast(msg); fetchEvents(); };
 
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
       await eventsApi.delete(id);
       setEvents(prev => prev.filter(e => e.id !== id));
-      showToast('Event deleted.');
-    } catch { showToast('Failed to delete.', 'error'); }
+      showToast('EVENT DELETED.');
+    } catch { showToast('FAILED TO DELETE.', 'error'); }
     finally { setDeletingId(null); }
   };
 
-  const totalRegistered = events.reduce((s, e) => s + (e.registeredCount ?? 0), 0);
-  const totalCapacity   = events.reduce((s, e) => s + (e.capacity ?? 0), 0);
-  const nearlyFull      = events.filter(e => (e.registeredCount ?? 0) / e.capacity >= 0.9).length;
+
 
   const fmtDate = (iso) => iso
     ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
 
   return (
-    <div style={{
-      minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)',
-      fontFamily: 'Quantico, system-ui, sans-serif',
-      position: 'relative', overflowX: 'hidden',
-    }}>
-      {/* Ambient orbs */}
-      <div style={{ position: 'absolute', top: '-5%', left: '30%', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(var(--glass-rgb),0.025) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(var(--glass-rgb),0.015) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
+    <div style={{ minHeight: '100vh', background: 'var(--anchor)', color: 'var(--structure)', position: 'relative', overflowX: 'hidden' }}>
+      <FilmGrain />
 
-      {/* ── FLOATING TOP NAV ────────────────────────────────────────────────── */}
-      <div style={{ position: 'sticky', top: '1.25rem', zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-        <motion.header
-          initial={{ opacity: 0, y: -20, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ ...SPRING, delay: 0.05 }}
-          style={{
-            pointerEvents: 'auto',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            gap: '2rem',
-            padding: '0 1.25rem',
-            height: '3.25rem',
-            background: 'rgba(var(--glass-rgb),0.055)',
-            backdropFilter: 'blur(32px)',
-            WebkitBackdropFilter: 'blur(32px)',
-            border: '1px solid rgba(var(--glass-rgb),0.10)',
-            borderRadius: '999px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(var(--glass-rgb),0.12)',
-            minWidth: 'min(90vw, 680px)',
-          }}
-        >
-          {/* Brand */}
-          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
-            Studio
-          </span>
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 3rem', height: '64px',
+        background: 'var(--anchor)',
+        borderBottom: '2px solid var(--structure)',
+      }}>
+        {/* Brand */}
+        <div>
+          <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase', color: 'var(--structure)', letterSpacing: '0.05em', lineHeight: 1 }}>
+            EVENTSPHERE
+          </p>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', color: 'var(--structure)', letterSpacing: '0.14em', opacity: 0.45, textTransform: 'uppercase' }}>
+            ORGANIZER STUDIO
+          </p>
+        </div>
 
-          <div style={{ flex: 1 }} />
+        {/* Nav actions */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+
+
+          <button id="header-new-event-btn" className="grit-btn" onClick={() => { setEditingEvent(null); setModalOpen(true); }}
+            style={{ height: '2.5rem', padding: '0 1.5rem', background: 'var(--pop)', border: '2px solid var(--pop)', color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow)', cursor: 'pointer' }}>
+            <Plus size={11} /> DRAFT EVENT
+          </button>
 
           {/* Theme toggle */}
-          <motion.button
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={SPRING}
-            onClick={toggleTheme}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: '2rem', height: '2rem', borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(var(--glass-rgb),0.07)',
-              border: '1px solid rgba(var(--glass-rgb),0.12)',
-              color: 'var(--color-text-subtle)', cursor: 'pointer',
-              transition: 'background 0.2s, color 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.14)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.07)'; e.currentTarget.style.color = 'var(--color-text-subtle)'; }}
-          >
-            {theme === 'dark'
-              ? <Sun  style={{ width: '0.875rem', height: '0.875rem' }} />
-              : <Moon style={{ width: '0.875rem', height: '0.875rem' }} />}
-          </motion.button>
+          <button className="theme-toggle" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
 
-          {/* Logout */}
-          <motion.button
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} transition={SPRING}
-            onClick={() => { logout(); navigate('/login'); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.375rem',
-              padding: '0.5rem 1.25rem', borderRadius: '999px',
-              background: 'var(--color-text-primary)', border: 'none',
-              color: 'var(--color-bg-primary)', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
-            Log Out
-          </motion.button>
-        </motion.header>
-      </div>
+          <button id="header-logout-btn" className="grit-btn" onClick={() => { logout(); navigate('/login'); }}
+            style={{ height: '2.5rem', padding: '0 1.25rem', background: 'transparent', border: '1px solid var(--dim-border)', color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+            <LogOut size={11} /> LOG OUT
+          </button>
+        </nav>
+      </header>
 
-      {/* ── HERO AREA ───────────────────────────────────────────────────────── */}
-      <div style={{ paddingTop: '4.5rem', paddingBottom: '0', textAlign: 'center', position: 'relative', zIndex: 1 }}>
-        <motion.h1
-          initial={{ opacity: 0, y: 24, filter: 'blur(12px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ ...SPRING, delay: 0.12 }}
-          style={{
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 600, letterSpacing: '-0.04em',
-            color: 'var(--color-text-primary)', lineHeight: 1.05,
-          }}
-        >
-          What are we<br />
-          <ScrollBounceText as="span" intensity={1.0} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={32}>
-            <span style={{ color: 'var(--color-text-primary)' }}>hosting next?</span>
-          </ScrollBounceText>
-        </motion.h1>
+      {/* ── MAIN CONTENT ────────────────────────────────────────────────────── */}
+      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '3rem' }}>
 
-      </div>
-
-      {/* ── EVENTS CANVAS ───────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '3rem 2rem 4rem', position: 'relative', zIndex: 1 }}>
-
+        {/* Loading */}
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '4rem' }}>
-            <div style={{ width: '1.5rem', height: '1.5rem', border: '2px solid rgba(var(--glass-rgb),0.08)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '5rem 0' }}>
+            <span className="spin-grit" style={{ display: 'inline-block', width: '18px', height: '18px', border: '2px solid var(--dim-border)', borderTopColor: 'var(--structure)', borderRadius: '50%' }} />
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.45 }}>
+              LOADING STUDIO...
+            </span>
           </div>
         )}
 
         {!loading && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '1.5rem',
-          }}>
-            {/* Draft New Event — dashed placeholder card */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ ...SPRING, delay: 0.05 }}
-              whileHover={{
-                scale: 1.02,
-                borderColor: 'var(--color-text-primary)',
-                background: 'transparent',
-                color: 'var(--color-text-primary)',
-              }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => { setEditingEvent(null); setModalOpen(true); }}
-              style={{
-                borderRadius: '2rem',
-                border: '1.5px dashed var(--color-border-muted, rgba(120,120,140,0.35))',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '0.75rem', minHeight: '240px', cursor: 'pointer',
-                color: 'var(--color-text-subtle, #71717a)', background: 'transparent',
-                transition: 'border-color 0.2s, background 0.2s, color 0.2s',
-              }}
-            >
-              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', border: '1px dashed var(--color-border-muted, rgba(120,120,140,0.35))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Plus style={{ width: '1.25rem', height: '1.25rem' }} />
+          <>
+            {/* Section header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
+              <h2 style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(3rem, 5vw, 4.5rem)', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1.0, whiteSpace: 'nowrap' }}>
+                MY EVENTS
+              </h2>
+              <div style={{ flex: 1, height: '2px', background: 'var(--structure)', opacity: 0.15 }} />
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4 }}>
+                {events.length} TOTAL
+              </span>
+            </div>
+
+            {/* Equal 2-column event grid */}
+            <section aria-label="Event board" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+              {events.map((event) => (
+                <div key={event.id} style={{ gridColumn: 'span 1' }}>
+                  <TactileCard
+                    event={event} isLarge={false}
+                    onEdit={(ev) => { setEditingEvent(ev); setModalOpen(true); }}
+                    onDelete={handleDelete} deletingId={deletingId}
+                    fmtDate={fmtDate}
+                    onCardClick={(id) => navigate(`/organizer/me/event/${id}`)}
+                  />
+                </div>
+              ))}
+
+              {/* Draft new event — dashed tile, always span 1 */}
+              <div style={{ gridColumn: events.length === 0 ? 'span 2' : 'span 1' }}>
+                <button
+                  id="draft-new-event-btn"
+                  className="grit-btn grit-draft"
+                  onClick={() => { setEditingEvent(null); setModalOpen(true); }}
+                  style={{
+                    width: '100%',
+                    minHeight: '260px',
+                    height: '100%',
+                    background: 'transparent',
+                    border: '2px dashed var(--dim-border)',
+                    color: 'var(--structure)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.25rem',
+                    cursor: 'pointer', boxShadow: 'none',
+                    transition: 'border-color 0.1s linear',
+                  }}
+                >
+                  <div style={{ width: '3.5rem', height: '3.5rem', border: '1px dashed var(--dim-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Plus size={20} color="var(--structure)" />
+                  </div>
+                  <span style={{ fontFamily: "'VT323', monospace", fontSize: '1.25rem', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5, letterSpacing: '0.06em' }}>
+                    + DRAFT NEW EVENT
+                  </span>
+                </button>
               </div>
-              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Draft New Event</span>
-            </motion.div>
-
-            {/* Tactile event cards */}
-            {events.map((event, i) => (
-              <TactileCard
-                key={event.id}
-                event={{
-                  ...event,
-                  onClickCard: (id) => navigate(`/organizer/me/event/${id}`)
-                }}
-                index={i}
-                onEdit={(ev) => { setEditingEvent(ev); setModalOpen(true); }}
-                onDelete={handleDelete}
-                deletingId={deletingId}
-                fmtDate={fmtDate}
-              />
-            ))}
-          </div>
+            </section>
+          </>
         )}
+      </main>
 
-        {/* Empty state — no events yet */}
-        {!loading && events.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.3 } }}
-            style={{ textAlign: 'center', paddingTop: '2rem', color: '#3f3f46', fontSize: '0.875rem' }}
-          >
-            <p>Your studio is empty. Create your first event above.</p>
-          </motion.div>
-        )}
-      </div>
-
-      {/* ── Modals & overlays ───────────────────────────────────────────────── */}
+      {/* Modals */}
       <AnimatePresence>
         {modalOpen && (
-          <EventModal
-            editingEvent={editingEvent}
-            onClose={() => { setModalOpen(false); setEditingEvent(null); }}
-            onSaved={handleSaved}
-          />
+          <EventModal editingEvent={editingEvent} onClose={() => { setModalOpen(false); setEditingEvent(null); }} onSaved={handleSaved} />
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {scannerOpen && <ScannerPanel onClose={() => setScannerOpen(false)} />}
-      </AnimatePresence>
+
 
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} />}
       </AnimatePresence>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

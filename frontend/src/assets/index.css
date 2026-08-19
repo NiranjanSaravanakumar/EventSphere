@@ -1,61 +1,56 @@
-@import url('https://fonts.googleapis.com/css2?family=Quantico:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;500;600;700&family=Edu+VIC+WA+NT+Hand+Precursive&family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import "tailwindcss";
-
 /* ============================================================
-   THEME VARIABLES
+   RETRO TERMINAL AMBER — GLOBAL DESIGN SYSTEM
+   EventSphere v2.6
    ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+
+/* ── CSS Custom Properties (Dark Mode — Default) ─────────────── */
 :root {
-  /* Light Mode Colors */
-  --color-bg-primary: #FAFAFA;
-  --bg-primary-rgb: 250, 250, 250;
-  --color-text-primary: #000000;
-  --color-text-muted: #000000;
-  --color-text-subtle: #000000;
-  --color-border: #e4e4e7;
-  --color-border-muted: rgba(100,100,120,0.30);
-  --color-input-bg: #f4f4f5;
-  --color-accent: #6366f1;
-  --draft-hover-bg: rgba(99,102,241,0.06);
+  --anchor: #120E0B;
+  /* dominant background */
+  --structure: #FDF6E3;
+  /* text, borders, empty cards */
+  --pop: #FFB300;
+  /* EXCLUSIVELY active states / buttons */
+  --ink: #FDF6E3;
+  /* shadow base — matches structure so it's visible */
 
-  /* Glass RGB for Light Mode (black base for translucency against light bg) */
-  --glass-rgb: 0, 0, 0;
-  --glass-shadow: 0 20px 50px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.6);
-  --glass-border: rgba(0,0,0,0.08);
+  --dim-border: rgba(253, 246, 227, 0.18);
+  --dim-bg: rgba(253, 246, 227, 0.04);
+  --shadow: 6px 6px 0px var(--structure);
+  --shadow-sm: 3px 3px 0px var(--structure);
+  --shadow-lg: 10px 10px 0px var(--structure);
+
+  /* Derived from structure for opacity variants */
+  --structure-55: rgba(253, 246, 227, 0.55);
+  --structure-40: rgba(253, 246, 227, 0.40);
+  --structure-25: rgba(253, 246, 227, 0.25);
 }
 
-:root.dark {
-  /* Dark Mode Colors */
-  --color-bg-primary: #050505;
-  --bg-primary-rgb: 5, 5, 5;
-  --color-text-primary: #FFFFFF;
-  --color-text-muted: #FFFFFF;
-  --color-text-subtle: #FFFFFF;
-  --color-border: #27272A;
-  --color-border-muted: rgba(180,180,200,0.22);
-  --color-input-bg: rgba(255,255,255,0.05);
-  --color-accent: #818cf8;
-  --draft-hover-bg: rgba(129,140,248,0.07);
+/* ── Light Mode ──────────────────────────────────────────────── */
+[data-theme="light"] {
+  --anchor: #FDF6E3;
+  --structure: #120E0B;
+  --pop: #FFB300;
+  --ink: #120E0B;
+  /* shadow base — matches structure */
 
-  /* Glass RGB for Dark Mode (white base for translucency against dark bg) */
-  --glass-rgb: 255, 255, 255;
-  --glass-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 1px 0 0 rgba(255,255,255,0.1);
-  --glass-border: rgba(255,255,255,0.08);
+  --dim-border: rgba(18, 14, 11, 0.18);
+  --dim-bg: rgba(18, 14, 11, 0.04);
+  --shadow: 6px 6px 0px var(--structure);
+  --shadow-sm: 3px 3px 0px var(--structure);
+  --shadow-lg: 10px 10px 0px var(--structure);
+
+  --structure-55: rgba(18, 14, 11, 0.55);
+  --structure-40: rgba(18, 14, 11, 0.40);
+  --structure-25: rgba(18, 14, 11, 0.25);
 }
 
-/* ============================================================
-   TAILWIND V4 THEME EXTENSIONS
-   ============================================================ */
-@theme {
-  --font-sans: 'Quantico', -apple-system, BlinkMacSystemFont, sans-serif;
-  --animate-float-slow: float 6s ease-in-out infinite;
-  --animate-pulse-slow: pulse 4s ease-in-out infinite;
-}
-
-/* ============================================================
-   GLOBAL RESETS & BASE
-   ============================================================ */
-*, *::before, *::after {
+/* ── Reset ───────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -65,87 +60,280 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
 }
 
 body {
-  font-family: 'Quantico', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: var(--anchor);
+  color: var(--structure);
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  /* NO transitions on body — theme switch is instant, not gradual */
 }
 
-/* ============================================================
-   GLASS UTILITY CLASSES
-   ============================================================ */
-.glass {
-  background: rgba(var(--glass-rgb), 0.04);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
 }
 
-.glass-input {
-  width: 100%;
-  height: 3rem;
-  padding: 0 1rem;
-  background: var(--color-input-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 0.75rem;
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.glass-input:focus {
-  border-color: rgba(var(--glass-rgb), 0.20);
-  box-shadow: 0 0 0 1px rgba(var(--glass-rgb), 0.10);
+::-webkit-scrollbar-thumb {
+  background: var(--dim-border);
 }
 
-.glass-input::placeholder {
-  color: var(--color-text-subtle);
+::-webkit-scrollbar-thumb:hover {
+  background: var(--structure-40);
 }
 
-/* ============================================================
-   SCROLLBAR
-   ============================================================ */
-::-webkit-scrollbar          { width: 6px; }
-::-webkit-scrollbar-track    { background: transparent; }
-::-webkit-scrollbar-thumb    { background: rgba(var(--glass-rgb), 0.10); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(var(--glass-rgb), 0.20); }
-
-/* ============================================================
-   SELECTION
-   ============================================================ */
+/* ── Selection ───────────────────────────────────────────────── */
 ::selection {
-  background: rgba(var(--glass-rgb), 0.15);
-  color: var(--color-text-primary);
+  background: var(--pop);
+  color: var(--anchor);
 }
 
-/* Specific selection for Get Started button */
-#landing-get-started::selection,
-#landing-get-started *::selection {
-  background-color: white;
-  color: black; 
+/* ── Typography Base ─────────────────────────────────────────── */
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'VT323', monospace;
+  text-transform: uppercase;
+  line-height: 1.0;
+  color: var(--structure);
+  letter-spacing: 0.02em;
+}
+
+p,
+span,
+label,
+li,
+td,
+th,
+code,
+address,
+time {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--structure);
 }
 
 /* ============================================================
-   ANIMATION UTILITIES
+   MECHANICAL BUTTON — DEPRESS ON ACTIVE
    ============================================================ */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-12px); }
+.grit-btn {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: transform 0.1s steps(3, end), box-shadow 0.1s steps(3, end);
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+.grit-btn:active {
+  transform: translate(6px, 6px) !important;
+  box-shadow: none !important;
 }
 
-.animate-float-slow { animation: float 6s ease-in-out infinite; }
-.animate-pulse-slow { animation: pulse 4s ease-in-out infinite; }
-.animate-spin       { animation: spin 1s linear infinite; }
+/* ── Card Hover (stutter shift) ──────────────────────────────── */
+.grit-card {
+  transition: transform 0.12s steps(3, end), box-shadow 0.12s steps(3, end);
+  cursor: pointer;
+}
+
+.grit-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0px var(--structure) !important;
+}
+
+/* ── Draft/Dashed Tile Hover ─────────────────────────────────── */
+.grit-draft:hover {
+  border-color: var(--structure) !important;
+}
+
+/* ── Input Focus ─────────────────────────────────────────────── */
+.grit-input {
+  outline: none;
+  background: var(--anchor);
+  border: 2px solid var(--dim-border);
+  color: var(--structure);
+  font-family: 'IBM Plex Mono', monospace;
+  transition: border-color 0.1s linear;
+}
+
+.grit-input:focus {
+  border-color: var(--structure) !important;
+}
+
+.grit-input::placeholder {
+  color: var(--structure-25);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+}
+
+/* ── Sidebar Nav Item ────────────────────────────────────────── */
+.grit-nav-item {
+  transition: background 0.08s linear, color 0.08s linear, border-left-color 0.08s linear;
+}
+
+.grit-nav-item:hover {
+  background: var(--dim-bg) !important;
+  color: var(--structure) !important;
+}
+
+/* ── Table Row Hover ─────────────────────────────────────────── */
+.grit-row {
+  transition: background 0.08s linear;
+}
+
+.grit-row:hover {
+  background: var(--dim-bg);
+}
+
+/* ── Event Card (attendee portal) ────────────────────────────── */
+.grit-event-card {
+  transition: transform 0.12s steps(3, end), box-shadow 0.12s steps(3, end);
+  cursor: pointer;
+}
+
+.grit-event-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0px var(--structure) !important;
+}
+
+/* ── Feature Card (landing) ──────────────────────────────────── */
+.grit-feature-card {
+  transition: transform 0.12s steps(3, end), box-shadow 0.12s steps(3, end);
+}
+
+.grit-feature-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 9px 9px 0px var(--structure) !important;
+}
+
+/* ── Role/Portal Card Hover ──────────────────────────────────── */
+.grit-role-card {
+  transition: border-color 0.1s linear;
+}
+
+.grit-role-card:hover {
+  border-color: var(--structure) !important;
+}
+
+/* ── Portal Card (auth page) ─────────────────────────────────── */
+.grit-portal-card {
+  transition: border-color 0.1s linear;
+  cursor: pointer;
+}
+
+.grit-portal-card:hover {
+  border-color: var(--structure) !important;
+}
+
+/* ── Search Input ────────────────────────────────────────────── */
+.grit-search-input {
+  outline: none;
+}
+
+.grit-search-input:focus {
+  border-color: var(--structure) !important;
+}
+
+.grit-search-input::placeholder {
+  color: var(--structure-25);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.625rem;
+}
+
+/* ── Theme Toggle Button ─────────────────────────────────────── */
+.theme-toggle {
+  cursor: pointer;
+  transition: transform 0.1s steps(3, end), box-shadow 0.1s steps(3, end);
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: transparent;
+  border: 2px solid var(--dim-border);
+  color: var(--structure);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:active {
+  transform: translate(6px, 6px) !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+
+@keyframes spin-grit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cursor-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes tick-line {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    top: -10%;
+  }
+
+  100% {
+    top: 110%;
+  }
+}
+
+/* ── CRT Scanline overlay (used via pseudo-element in pages) ── */
+.crt-scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px);
+  pointer-events: none;
+  z-index: 996;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────── */
+.spin-grit {
+  animation: spin-grit 1s linear infinite;
+}
+
+/* ── Cursor Blink ────────────────────────────────────────────── */
+.cursor-blink {
+  animation: cursor-blink 1s steps(1, end) infinite;
+}
+
+/* ── Tailwind compatibility reset (remove old classes) ────────── */
+/* We are NOT using Tailwind in this design system */

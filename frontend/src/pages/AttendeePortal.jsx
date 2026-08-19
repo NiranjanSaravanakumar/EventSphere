@@ -1,219 +1,240 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useParams } from 'react-router-dom';
-import { Calendar, MapPin, Users, CheckCircle, AlertCircle, Search, Ticket, Clock } from 'lucide-react';
+import {
+  Calendar, MapPin, Users, CheckCircle, AlertCircle,
+  Search, Ticket, Clock,
+} from 'lucide-react';
 import Navbar from '../components/shared/Navbar.jsx';
 import TicketPass from '../components/shared/TicketPass.jsx';
 import EventAccessModal from '../components/ui/EventAccessModal.jsx';
 import { eventsApi, attendeeApi, registrationsApi } from '../services/api.js';
-import ScrollBounceText from '../components/ui/ScrollBounceText.jsx';
 
-// ── Animation variants ─────────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show:   { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
-};
+// ── Film Grain ────────────────────────────────────────────────────────────────
+const FilmGrain = () => (
+  <svg aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 997, opacity: 0.06, mixBlendMode: 'overlay' }}>
+    <filter id="ap-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+    <rect width="100%" height="100%" filter="url(#ap-grain)" />
+  </svg>
+);
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
-  show:   { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 280, damping: 22 } },
-};
-
-const SPRING = { type: 'spring', stiffness: 400, damping: 30 };
-
-// ── Toast ──────────────────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40, scale: 0.9 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: 40, scale: 0.9 }}
-    transition={SPRING}
+  <motion.aside
+    role="alert"
+    initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+    transition={{ duration: 0.1, ease: 'linear' }}
     style={{
-      position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-      zIndex: 200, display: 'flex', alignItems: 'center', gap: '0.625rem',
-      padding: '0.75rem 1.25rem', borderRadius: '0.875rem',
-      background: type === 'success' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.12)',
-      border: `1px solid ${type === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.25)'}`,
-      backdropFilter: 'blur(20px)', color: type === 'success' ? '#6ee7b7' : '#f87171',
-      fontSize: '0.875rem', fontWeight: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      position: 'fixed', bottom: '2rem', left: '2rem', zIndex: 999,
+      display: 'flex', alignItems: 'center', gap: '0.875rem',
+      padding: '1rem 1.5rem', background: 'var(--anchor)',
+      border: `2px solid ${type === 'success' ? 'var(--pop)' : 'var(--structure)'}`,
+      boxShadow: 'var(--shadow)',
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+      color: 'var(--structure)',
     }}
   >
     {type === 'success'
-      ? <CheckCircle style={{ width: '1rem', height: '1rem' }} />
-      : <AlertCircle style={{ width: '1rem', height: '1rem' }} />}
+      ? <CheckCircle size={14} color="var(--pop)" />
+      : <AlertCircle size={14} color="var(--structure)" />}
     {message}
-  </motion.div>
+  </motion.aside>
 );
 
-// ── Tab switch ─────────────────────────────────────────────────────────────────
-const Tab = ({ label, active, onClick }) => (
+// ── Tab button ────────────────────────────────────────────────────────────────
+const TabBtn = ({ id, label, active, onClick }) => (
   <button
+    id={id}
     onClick={onClick}
     style={{
-      padding: '0.5rem 1.25rem', borderRadius: '0.625rem',
-      fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', border: 'none',
-      background: active ? 'rgba(var(--glass-rgb),0.10)' : 'transparent',
-      color: active ? 'var(--color-text-primary)' : 'var(--color-text-subtle)', transition: 'all 0.2s',
+      height: '2.5rem', padding: '0 1.5rem',
+      background: 'transparent',
+      border: 'none', borderBottom: `2px solid ${active ? 'var(--pop)' : 'transparent'}`,
+      color: active ? 'var(--structure)' : 'var(--structure)',
+      opacity: active ? 1 : 0.4,
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+      cursor: 'pointer', transition: 'border-color 0.08s linear, opacity 0.08s linear',
     }}
   >
     {label}
   </button>
 );
 
+// ── Cancel Confirm Modal ───────────────────────────────────────────────────────
+const CancelConfirmModal = ({ eventTitle, onConfirm, onDismiss }) => (
+  <motion.div
+    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    transition={{ duration: 0.1, ease: 'linear' }}
+    style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', padding: '1rem' }}
+    onClick={onDismiss}
+  >
+    <motion.div
+      initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+      transition={{ duration: 0.1, ease: 'linear' }}
+      onClick={e => e.stopPropagation()}
+      style={{ width: '100%', maxWidth: '420px', background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: '10px 10px 0px var(--ink)' }}
+    >
+      <div style={{ padding: '1.5rem 2rem 1.25rem', borderBottom: '1px solid var(--dim-border)' }}>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5, marginBottom: '0.5rem' }}>
+          EVENTSPHERE // REGISTRATION
+        </p>
+        <h2 style={{ fontFamily: "'VT323', monospace", fontSize: '2rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>
+          CANCEL REGISTRATION?
+        </h2>
+      </div>
+      <div style={{ padding: '1.5rem 2rem' }}>
+        <div style={{ border: '1px solid var(--structure)', padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
+            !! WARNING — THIS ACTION IS PERMANENT
+          </p>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.6, lineHeight: 1.8, letterSpacing: '0.04em' }}>
+            Cancelling your spot for <strong style={{ opacity: 1 }}>{eventTitle}</strong> will free
+            the seat and <strong style={{ opacity: 1 }}>permanently block you from re-registering</strong> for this event.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button id="cancel-confirm-btn" className="grit-btn" onClick={onConfirm}
+            style={{ flex: 1, height: '2.875rem', background: 'var(--anchor)', border: '2px solid var(--structure)', color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
+            YES, CANCEL MY SPOT
+          </button>
+          <button id="cancel-dismiss-btn" className="grit-btn" onClick={onDismiss}
+            style={{ flex: 1, height: '2.875rem', background: 'var(--pop)', border: '2px solid var(--pop)', color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'var(--shadow)' }}>
+            KEEP MY SPOT
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
 // ── Capacity bar ───────────────────────────────────────────────────────────────
 const CapacityBar = ({ registered, capacity }) => {
-  const pct = Math.min(100, Math.round((registered / capacity) * 100));
-  const color = pct >= 90 ? '#f87171' : 'var(--color-text-primary)';
+  const pct   = capacity > 0 ? Math.min(100, Math.round((registered / capacity) * 100)) : 0;
+  const atCap = pct >= 90;
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{registered}/{capacity} spots</span>
-        <span style={{ fontSize: '0.6875rem', color }}>{pct}%</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5 }}>
+          {registered}&thinsp;/&thinsp;{capacity} SEATS
+        </span>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, color: atCap ? 'var(--pop)' : 'var(--structure)' }}>
+          {pct}%
+        </span>
       </div>
-      <div style={{ width: '100%', height: '2px', background: 'rgba(var(--glass-rgb),0.08)', borderRadius: '2px', overflow: 'hidden' }}>
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
-          style={{ height: '100%', background: color, borderRadius: '2px' }}
-        />
+      <div style={{ width: '100%', height: '2px', background: 'var(--dim-border)' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: atCap ? 'var(--pop)' : 'var(--structure)', transition: 'width 0.15s linear' }} />
       </div>
     </div>
   );
 };
 
-// ── Event card (Discover tab) ──────────────────────────────────────────────────
+// ── Event card ────────────────────────────────────────────────────────────────
 const EventCard = ({ event, isRegistered, registering, onOpenModal }) => {
   const isSoldOut = (event.availableSeats ?? (event.capacity - (event.registeredCount ?? 0))) <= 0;
-  const fmtDate = (iso) => iso
-    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '—';
-  const fmtShort = (iso) => iso
-    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '';
+  const fmtDate   = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  const fmtShort  = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
   return (
-    <motion.div
-      variants={cardVariants}
-      whileHover={{ y: -5, scale: 1.01 }}
-      transition={SPRING}
+    <article
+      className="grit-event-card"
       style={{
-        padding: '1.5rem', borderRadius: '1.25rem',
-        background: 'rgba(var(--glass-rgb),0.04)', backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: isRegistered ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(var(--glass-rgb),0.08)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(var(--glass-rgb),0.07)',
-        display: 'flex', flexDirection: 'column', gap: '1rem',
-        position: 'relative', overflow: 'hidden',
+        background: 'var(--anchor)',
+        border: `2px solid ${isRegistered ? 'var(--pop)' : 'var(--structure)'}`,
+        boxShadow: isRegistered ? 'var(--shadow)' : 'var(--shadow)',
+        padding: '1.75rem',
+        display: 'flex', flexDirection: 'column', gap: '1.25rem',
+        position: 'relative', height: '100%',
       }}
     >
-      <div style={{
-        position: 'absolute', left: 0, right: 0, top: 0, height: '1px',
-        background: isRegistered
-          ? 'linear-gradient(90deg, transparent, rgba(16,185,129,0.4), transparent)'
-          : 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.12), transparent)',
-      }} />
-
       {isRegistered && (
-        <div style={{
-          position: 'absolute', top: '1rem', right: '1rem',
-          display: 'flex', alignItems: 'center', gap: '0.25rem',
-          padding: '0.25rem 0.625rem', borderRadius: '999px',
-          background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
-          fontSize: '0.6875rem', fontWeight: 600, color: '#6ee7b7',
-        }}>
-          <CheckCircle style={{ width: '0.625rem', height: '0.625rem' }} /> Registered
+        <div style={{ position: 'absolute', top: '1.75rem', right: '1.75rem', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--pop)', border: '1px solid var(--pop)', padding: '0.25rem 0.5rem' }}>
+          REGISTERED
         </div>
       )}
 
-      <div style={{ paddingRight: isRegistered ? '5.5rem' : 0 }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.015em', lineHeight: 1.3 }}>
-          {event.title}
-        </h3>
-        {event.description && (
-          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem', lineHeight: 1.5,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {event.description}
-          </p>
-        )}
-      </div>
+      <h3 style={{ fontFamily: "'VT323', monospace", textTransform: 'uppercase', fontSize: '1.625rem', color: 'var(--structure)', lineHeight: 1.0, paddingRight: isRegistered ? '6.5rem' : 0 }}>
+        {event.title}
+      </h3>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      {event.description && (
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.55, lineHeight: 1.8, letterSpacing: '0.04em', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {event.description}
+        </p>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
         {[
           { Icon: Calendar, text: fmtDate(event.date) },
           { Icon: MapPin,   text: event.location },
-          { Icon: Users,    text: `Hosted by ${event.organizerName}` },
+          { Icon: Users,    text: `HOSTED BY ${(event.organizerName || '').toUpperCase()}` },
         ].map(({ Icon, text }) => (
-          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Icon style={{ width: '0.8125rem', height: '0.8125rem', color: 'var(--color-text-subtle)', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.8125rem', color: '#D4D4D8' }}>{text}</span>
+          <div key={text} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <Icon size={11} color="var(--pop)" style={{ flexShrink: 0 }} />
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.06em', color: 'var(--structure)', opacity: 0.7 }}>
+              {text}
+            </span>
           </div>
         ))}
       </div>
 
       <CapacityBar registered={event.registeredCount ?? 0} capacity={event.capacity} />
 
-      {/* Registration window indicator */}
       {event.registrationEnd && !isRegistered && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-          <Clock style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-            Registration closes {fmtShort(event.registrationEnd)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Clock size={10} color="var(--structure)" style={{ opacity: 0.4 }} />
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.06em', color: 'var(--structure)', opacity: 0.4 }}>
+            CLOSES {fmtShort(event.registrationEnd)}
           </span>
         </div>
       )}
 
-      <motion.button
-        whileHover={!isRegistered && !isSoldOut ? { scale: 1.02 } : undefined}
-        whileTap={!isRegistered && !isSoldOut ? { scale: 0.97 } : undefined}
-        transition={SPRING}
+      <button
+        id={`register-event-${event.id}`}
+        className="grit-btn"
         onClick={() => !isRegistered && !isSoldOut && onOpenModal(event)}
         disabled={isRegistered || isSoldOut || registering}
         style={{
-          width: '100%', height: '2.5rem', borderRadius: '0.75rem', border: 'none',
-          background: isRegistered ? 'rgba(16,185,129,0.10)' : isSoldOut ? 'rgba(var(--glass-rgb),0.04)' : 'var(--color-text-primary)',
-          color: isRegistered ? '#6ee7b7' : isSoldOut ? 'var(--color-text-subtle)' : 'var(--color-bg-primary)',
-          fontSize: '0.875rem', fontWeight: 600,
-          cursor: isRegistered || isSoldOut ? 'default' : 'pointer',
-          opacity: registering ? 0.7 : 1, transition: 'all 0.2s',
+          width: '100%', height: '2.75rem',
+          background: isRegistered ? 'var(--dim-bg)' : isSoldOut ? 'transparent' : 'var(--pop)',
+          border: `2px solid ${isRegistered ? 'var(--pop)' : isSoldOut ? 'var(--dim-border)' : 'var(--pop)'}`,
+          color: isRegistered ? 'var(--pop)' : isSoldOut ? 'var(--structure-40)' : 'var(--anchor)',
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+          boxShadow: isRegistered || isSoldOut ? 'none' : 'var(--shadow-sm)',
+          cursor: isRegistered || isSoldOut ? 'default' : registering ? 'wait' : 'pointer',
+          opacity: registering ? 0.6 : 1,
+          marginTop: 'auto',
         }}
       >
-        {registering ? 'Registering…' : isRegistered ? '✓ Registered' : isSoldOut ? 'Sold Out' : 'Enter Code to Register'}
-      </motion.button>
-    </motion.div>
+        {registering ? 'REGISTERING...' : isRegistered ? '✓ REGISTERED' : isSoldOut ? 'SOLD OUT' : 'ENTER CODE TO REGISTER'}
+      </button>
+    </article>
   );
 };
 
-// ── Format helpers ─────────────────────────────────────────────────────────────
-const fmtDate = (iso) => iso
-  ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  : '—';
-const fmtTime = (iso) => iso
-  ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-  : '—';
+// ── Format helpers ────────────────────────────────────────────────────────────
+const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmtTime = (iso) => iso ? new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—';
 
-/**
- * AttendeePortal Component
- * 
- * Serves as the primary dashboard for users with the ATTENDEE role. 
- * Allows users to discover available events, register via an access code, 
- * view their digital ticket passes, and cancel registrations.
- * 
- * @param {Object} props - Component properties.
- * @param {string} props.initialTab - The default tab to open ('discover' or 'tickets').
- * @returns {JSX.Element} The rendered Attendee Portal view.
- */
-// ── Main AttendeePortal ────────────────────────────────────────────────────────
+const TAB_VARIANTS = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.1, ease: 'linear' } },
+  exit:    { opacity: 0, transition: { duration: 0.08, ease: 'linear' } },
+};
+
+// ── Main AttendeePortal ───────────────────────────────────────────────────────
 const AttendeePortal = ({ initialTab = 'discover' }) => {
-  const { username } = useParams(); // display-only; security from JWT
-  const [tab, setTab]             = useState(initialTab);
-  const [events, setEvents]       = useState([]);
-  const [tickets, setTickets]     = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState('');
+  const { username }  = useParams();
+  const [tab, setTab] = useState(initialTab);
+  const [events, setEvents]     = useState([]);
+  const [tickets, setTickets]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState('');
   const [registering, setRegistering] = useState(null);
-  const [toast, setToast]         = useState(null);
-  const [modalEvent, setModalEvent]   = useState(null); // event shown in EventAccessModal
+  const [toast, setToast]       = useState(null);
+  const [modalEvent, setModalEvent]   = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -223,47 +244,40 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [evRes, tkRes] = await Promise.all([
-        eventsApi.available(),
-        attendeeApi.myTickets(),
-      ]);
-      setEvents(evRes.data);
-      setTickets(tkRes.data);
-    } catch {
-      showToast('Failed to load data.', 'error');
-    } finally {
-      setLoading(false);
-    }
+      const [evRes, tkRes] = await Promise.all([eventsApi.available(), attendeeApi.myTickets()]);
+      setEvents(evRes.data); setTickets(tkRes.data);
+    } catch { showToast('FAILED TO LOAD DATA.', 'error'); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Opens the code modal for a specific event
-  const handleOpenModal = (event) => setModalEvent(event);
-
-  // Called by EventAccessModal when the attendee submits a code
   const handleSubmitCode = async (code) => {
     if (!modalEvent) return;
     setRegistering(modalEvent.id);
     try {
       await registrationsApi.register(modalEvent.id, code);
-      showToast('Successfully registered! Your ticket is ready.');
+      showToast('REGISTERED! YOUR TICKET IS READY.');
       await fetchAll();
       setTab('tickets');
-    } finally {
-      setRegistering(null);
-    }
-    // Errors bubble up to EventAccessModal via the thrown exception
+    } finally { setRegistering(null); }
   };
 
-  const handleCancel = async (registrationId) => {
-    if (!window.confirm('Cancel this registration? Your spot will be freed.')) return;
+  const [confirmCancel, setConfirmCancel] = useState(null); // { registrationId, eventTitle }
+
+  const handleCancel = (registrationId, eventTitle) => {
+    setConfirmCancel({ registrationId, eventTitle });
+  };
+
+  const executeCancel = async () => {
+    const { registrationId } = confirmCancel;
+    setConfirmCancel(null);
     try {
       await registrationsApi.cancel(registrationId);
-      showToast('Registration cancelled.');
+      showToast('REGISTRATION CANCELLED. YOUR SPOT HAS BEEN FREED.');
       await fetchAll();
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Cancellation failed.', 'error');
+      showToast((err?.response?.data?.message || 'CANCELLATION FAILED.').toUpperCase(), 'error');
     }
   };
 
@@ -274,170 +288,147 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Quantico, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--anchor)', color: 'var(--structure)', position: 'relative' }}>
+      <FilmGrain />
       <Navbar />
 
-      <div style={{ position: 'relative', padding: '2.5rem 2rem', maxWidth: '1280px', margin: '0 auto' }}>
+      {/* Cancel confirmation modal */}
+      <AnimatePresence>
+        {confirmCancel && (
+          <CancelConfirmModal
+            key="cancel-modal"
+            eventTitle={confirmCancel.eventTitle}
+            onConfirm={executeCancel}
+            onDismiss={() => setConfirmCancel(null)}
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Ambient orbs */}
-        <div style={{ position: 'absolute', top: '-5%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.02)', filter: 'blur(90px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.015)', filter: 'blur(80px)', pointerEvents: 'none' }} />
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          style={{ marginBottom: '2rem', position: 'relative', zIndex: 10 }}
-        >
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--color-text-primary)' }}>
-            <ScrollBounceText as="span" intensity={1} maxSkewDeg={2.5} maxTranslateY={5} stiffness={350} damping={34}>
-              Event Portal
-            </ScrollBounceText>
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.375rem' }}>
-            Discover events and access your tickets.
+      {/* ── PAGE HEADER ──────────────────────────────────────────────────── */}
+      <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '2.5rem 3rem 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
+        <div>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '0.5rem' }}>
+            EVENTSPHERE&thinsp;//&thinsp;ATTENDEE PORTAL
           </p>
-        </motion.div>
-
-        {/* Tabs + Search */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem', position: 'relative', zIndex: 10,
-        }}>
-          <div style={{
-            display: 'flex', gap: '0.25rem', padding: '0.25rem',
-            background: 'rgba(var(--glass-rgb),0.04)',
-            border: '1px solid rgba(var(--glass-rgb),0.07)', borderRadius: '0.75rem',
-          }}>
-            <Tab label="Discover"                      active={tab === 'discover'} onClick={() => setTab('discover')} />
-            <Tab label={`My Tickets (${tickets.length})`} active={tab === 'tickets'}  onClick={() => setTab('tickets')}  />
-          </div>
-
-          {tab === 'discover' && (
-            <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '0.875rem', height: '0.875rem', color: 'var(--color-text-subtle)', pointerEvents: 'none' }} />
-              <input
-                value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Search events…"
-                style={{
-                  height: '2.5rem', paddingLeft: '2.5rem', paddingRight: '1rem',
-                  background: 'rgba(var(--glass-rgb),0.05)',
-                  border: '1px solid rgba(var(--glass-rgb),0.08)',
-                  borderRadius: '0.75rem', color: 'var(--color-text-primary)', fontSize: '0.875rem', outline: 'none', width: '220px',
-                }}
-              />
-            </div>
-          )}
+          <h1 style={{ fontFamily: "'VT323', monospace", textTransform: 'uppercase', fontSize: 'clamp(3rem, 5vw, 5rem)', color: 'var(--structure)', lineHeight: 1.0 }}>
+            EVENT PORTAL
+          </h1>
         </div>
 
-        {/* Content */}
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '5rem' }}>
-            <div style={{ width: '2rem', height: '2rem', border: '2px solid rgba(var(--glass-rgb),0.12)', borderTopColor: 'rgba(var(--glass-rgb),0.6)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        {/* Search */}
+        {tab === 'discover' && (
+          <div style={{ position: 'relative' }}>
+            <Search size={12} color="var(--structure)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.35, pointerEvents: 'none' }} />
+            <input
+              className="grit-input"
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="SEARCH EVENTS..."
+              style={{
+                height: '2.5rem', paddingLeft: '2.5rem', paddingRight: '1rem',
+                width: '220px', fontSize: '0.6875rem',
+              }}
+            />
           </div>
-        ) : (
+        )}
+      </div>
+
+      {/* ── TABS ─────────────────────────────────────────────────────────── */}
+      <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '0 3rem' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid var(--structure)', marginTop: '1.5rem' }}>
+          <TabBtn id="tab-discover" label="DISCOVER"                             active={tab === 'discover'} onClick={() => setTab('discover')} />
+          <TabBtn id="tab-tickets"  label={`MY TICKETS (${tickets.length})`}     active={tab === 'tickets'}  onClick={() => setTab('tickets')} />
+        </div>
+      </div>
+
+      {/* ── CONTENT ──────────────────────────────────────────────────────── */}
+      <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '2.5rem 3rem' }}>
+
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '5rem 0' }}>
+            <span className="spin-grit" style={{ display: 'inline-block', width: '18px', height: '18px', border: '2px solid var(--dim-border)', borderTopColor: 'var(--structure)', borderRadius: '50%' }} />
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4 }}>
+              LOADING...
+            </span>
+          </div>
+        )}
+
+        {!loading && (
           <AnimatePresence mode="wait">
-            {tab === 'discover' ? (
-              /* ── Discover grid ── */
-              <motion.div
-                key="discover"
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-                exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: '1.25rem', position: 'relative', zIndex: 10,
-                }}
-              >
+
+            {/* ── DISCOVER ──────────────────────────────────────────────── */}
+            {tab === 'discover' && (
+              <motion.div key="discover" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
                 {filteredEvents.length === 0 ? (
-                  <motion.div
-                    variants={cardVariants}
-                    style={{ gridColumn: '1/-1', textAlign: 'center', paddingTop: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
-                  >
-                    <div style={{ width: '4rem', height: '4rem', borderRadius: '1.25rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Calendar style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-text-subtle)' }} />
+                  <div style={{ paddingTop: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ width: '4rem', height: '4rem', border: '2px solid var(--dim-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Calendar size={20} color="var(--structure)" style={{ opacity: 0.35 }} />
                     </div>
-                    <p style={{ color: 'var(--color-text-subtle)' }}>
-                      {search ? `No events found for "${search}"` : 'No upcoming events.'}
+                    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.35 }}>
+                      {search ? `NO EVENTS FOUND FOR "${search.toUpperCase()}"` : 'NO UPCOMING EVENTS'}
                     </p>
-                  </motion.div>
-                ) : filteredEvents.map(event => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    isRegistered={registeredEventIds.has(event.id)}
-                    registering={registering === event.id}
-                    onOpenModal={handleOpenModal}
-                  />
-                ))}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                    {filteredEvents.map(event => (
+                      <EventCard
+                        key={event.id} event={event}
+                        isRegistered={registeredEventIds.has(event.id)}
+                        registering={registering === event.id}
+                        onOpenModal={ev => setModalEvent(ev)}
+                      />
+                    ))}
+                  </div>
+                )}
               </motion.div>
-            ) : (
-              /* ── My Tickets — TicketPass gallery ── */
-              <motion.div
-                key="tickets"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                style={{ position: 'relative', zIndex: 10 }}
-              >
+            )}
+
+            {/* ── MY TICKETS ────────────────────────────────────────────── */}
+            {tab === 'tickets' && (
+              <motion.div key="tickets" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
                 {tickets.length === 0 ? (
-                  <div style={{ paddingTop: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
-                    <div style={{ width: '5rem', height: '5rem', borderRadius: '1.5rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ticket style={{ width: '2rem', height: '2rem', color: 'var(--color-text-subtle)' }} />
+                  <div style={{ paddingTop: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ width: '4rem', height: '4rem', border: '2px solid var(--dim-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ticket size={20} color="var(--structure)" style={{ opacity: 0.35 }} />
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>No tickets yet</p>
-                      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-subtle)', marginTop: '0.25rem' }}>
-                        Register for an event to receive your Wallet Pass.
+                      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.35, marginBottom: '0.75rem' }}>
+                        NO TICKETS YET
+                      </p>
+                      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.25, letterSpacing: '0.04em' }}>
+                        REGISTER FOR AN EVENT TO RECEIVE YOUR WALLET PASS.
                       </p>
                     </div>
-                    <motion.button
-                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} transition={SPRING}
+                    <button
+                      className="grit-btn"
                       onClick={() => setTab('discover')}
                       style={{
-                        padding: '0.625rem 1.5rem', borderRadius: '0.875rem',
-                        background: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
-                        border: 'none', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                        height: '2.75rem', padding: '0 2rem',
+                        background: 'var(--pop)', border: '2px solid var(--pop)',
+                        color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+                        boxShadow: 'var(--shadow)', cursor: 'pointer',
                       }}
                     >
-                      Browse Events
-                    </motion.button>
+                      BROWSE EVENTS
+                    </button>
                   </div>
                 ) : (
                   <>
-                    {/* Section label */}
-                    <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-subtle)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '1.5rem' }}>
-                      {tickets.length} Ticket{tickets.length !== 1 ? 's' : ''}
+                    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4, marginBottom: '2rem' }}>
+                      {tickets.length} TICKET{tickets.length !== 1 ? 'S' : ''} ISSUED
                     </p>
 
-                    {/* Ticket pass gallery — horizontal wrap */}
-                    <div style={{
-                      display: 'flex', flexWrap: 'wrap', gap: '2rem',
-                      justifyContent: 'flex-start',
-                      perspective: '1200px',
-                    }}>
-                      {tickets.map((ticket, i) => (
-                        <motion.div
-                          key={ticket.registrationId}
-                          initial={{ opacity: 0, y: 32 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ type: 'spring', stiffness: 280, damping: 24, delay: i * 0.08 }}
-                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}
-                        >
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'flex-start' }}>
+                      {tickets.map((ticket) => (
+                        <div key={ticket.registrationId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                           {ticket.isDeleted ? (
-                            <div style={{
-                              padding: '1.5rem', borderRadius: '1.25rem',
-                              background: 'rgba(239,68,68,0.08)',
-                              border: '1px solid rgba(239,68,68,0.2)',
-                              color: '#f87171', fontSize: '0.875rem',
-                              textAlign: 'center', width: '280px', height: '100%',
-                              display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                            }}>
-                              <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{ticket.eventTitle}</h4>
-                              <p>Sorry, this event was deleted by the organizer.</p>
+                            <div style={{ padding: '1.5rem', background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', color: 'var(--structure)', width: '280px', textAlign: 'center' }}>
+                              <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase', color: 'var(--structure)', marginBottom: '0.5rem', lineHeight: 1 }}>
+                                {ticket.eventTitle}
+                              </p>
+                              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.06em', color: 'var(--structure)', opacity: 0.65 }}>
+                                !! THIS EVENT WAS DELETED BY THE ORGANIZER.
+                              </p>
                             </div>
                           ) : (
                             <>
@@ -446,30 +437,29 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
                                 date={fmtDate(ticket.eventDate)}
                                 time={fmtTime(ticket.eventDate)}
                                 location={ticket.eventLocation}
-                                attendeeName="Your Ticket"
+                                attendeeName="YOUR TICKET"
                                 qrBase64={ticket.qrBase64}
                                 qrToken={ticket.qrToken}
                                 status={ticket.status}
                               />
-                              {/* Cancel button — only for REGISTERED tickets */}
                               {ticket.status === 'REGISTERED' && (
-                                <motion.button
-                                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                                  onClick={() => handleCancel(ticket.registrationId)}
+                                <button
+                                  className="grit-btn"
+                                  onClick={() => handleCancel(ticket.registrationId, ticket.eventTitle)}
                                   style={{
-                                    padding: '0.4rem 1.25rem', borderRadius: '0.625rem',
-                                    background: 'rgba(239,68,68,0.08)',
-                                    border: '1px solid rgba(239,68,68,0.2)',
-                                    color: '#f87171', fontSize: '0.75rem',
-                                    fontWeight: 600, cursor: 'pointer',
+                                    padding: '0.5rem 1.5rem',
+                                    background: 'transparent', border: '1px solid var(--dim-border)',
+                                    color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace",
+                                    fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+                                    cursor: 'pointer', opacity: 0.6,
                                   }}
                                 >
-                                  Cancel Registration
-                                </motion.button>
+                                  CANCEL REGISTRATION
+                                </button>
                               )}
                             </>
                           )}
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   </>
@@ -480,11 +470,11 @@ const AttendeePortal = ({ initialTab = 'discover' }) => {
         )}
       </div>
 
+      {/* Toasts & Modals */}
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} />}
       </AnimatePresence>
 
-      {/* Event access code modal */}
       <EventAccessModal
         isOpen={!!modalEvent}
         onClose={() => setModalEvent(null)}

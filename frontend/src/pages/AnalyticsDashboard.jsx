@@ -1,227 +1,215 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3, Users, CheckSquare, Percent, Calendar,
+  BarChart3, Users, CheckSquare, Calendar,
   TrendingUp, RefreshCw, Layers, Activity, Shield,
-  ChevronRight, LogOut, Globe, Trash2, Key, Mail,
-  UserCheck, AlertTriangle, Clock
+  LogOut, Globe, Trash2, Key, Mail,
+  UserCheck, AlertTriangle, Clock, ChevronDown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import AnimatedCounter from '../components/ui/AnimatedCounter.jsx';
 import { adminApi, eventsApi } from '../services/api.js';
+import { useTheme } from '../components/shared/Navbar.jsx';
 
-// ── Spring config ──────────────────────────────────────────────────────────────
-const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
-
-// ── Tab animation variants ─────────────────────────────────────────────────────
-const TAB_VARIANTS = {
-  initial: { opacity: 0, y: 12, filter: 'blur(4px)' },
-  animate: { opacity: 1, y: 0,  filter: 'blur(0px)', transition: { ...SPRING, duration: 0.25 } },
-  exit:    { opacity: 0, y: -8, filter: 'blur(4px)', transition: { duration: 0.15 } },
-};
-
-// ── Sidebar nav item ───────────────────────────────────────────────────────────
-const NavItem = ({ icon: Icon, label, active, onClick }) => (
-  <motion.button
-    onClick={onClick}
-    whileHover={{ x: 3 }}
-    transition={SPRING}
-    style={{
-      width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-      padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none',
-      background: active ? 'rgba(var(--glass-rgb),0.07)' : 'transparent',
-      borderLeft: active ? '2px solid rgba(var(--glass-rgb),0.5)' : '2px solid transparent',
-      color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-      fontSize: '0.8125rem', fontWeight: active ? 600 : 400,
-      cursor: 'pointer', textAlign: 'left', transition: 'color 0.15s',
-    }}
-  >
-    <Icon style={{ width: '0.875rem', height: '0.875rem', flexShrink: 0 }} />
-    {label}
-  </motion.button>
+// ── Film Grain ────────────────────────────────────────────────────────────────
+const FilmGrain = () => (
+  <svg aria-hidden="true" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 997, opacity: 0.06, mixBlendMode: 'overlay' }}>
+    <filter id="ad-grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#ad-grain)" />
+  </svg>
 );
 
-// ── Bento stat block ───────────────────────────────────────────────────────────
-const BentoStat = ({ icon: Icon, label, value, suffix = '', decimals = 0, style: extraStyle = {} }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.97 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={SPRING}
+// ── Sidebar Nav Item ──────────────────────────────────────────────────────────
+const NavItem = ({ icon: Icon, label, active, onClick, id }) => (
+  <button
+    id={id}
+    className="grit-nav-item"
+    onClick={onClick}
     style={{
-      position: 'relative', padding: '1.5rem',
-      background: 'rgba(var(--glass-rgb),0.02)',
-      border: '1px solid rgba(var(--glass-rgb),0.06)',
-      borderRadius: '0.875rem', overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-      ...extraStyle,
+      width: '100%',
+      display: 'flex', alignItems: 'center', gap: '0.875rem',
+      padding: '0.75rem 1rem',
+      border: 'none', borderLeft: `2px solid ${active ? 'var(--pop)' : 'transparent'}`,
+      background: active ? 'var(--dim-bg)' : 'transparent',
+      color: active ? 'var(--structure)' : 'var(--structure-40)',
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+      cursor: 'pointer', textAlign: 'left',
     }}
   >
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.08), transparent)' }} />
+    <Icon size={13} />
+    {label}
+  </button>
+);
+
+// ── Bento Stat Block ──────────────────────────────────────────────────────────
+// 60/30/10 RULE:
+//   accent=true  => --anchor bg, --pop border + text (pop = border/text only, <=10%)
+//   accent=false => --anchor bg, --structure border + text
+const BentoStat = ({ icon: Icon, label, value, suffix = '', decimals = 0, accent = false }) => (
+  <div style={{
+    background: 'var(--anchor)',
+    border: `2px solid ${accent ? 'var(--pop)' : 'var(--structure)'}`,
+    boxShadow: 'var(--shadow)',
+    padding: '1.75rem',
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+    gap: '1.25rem',
+  }}>
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>
+      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent ? 'var(--pop)' : 'var(--structure)', opacity: accent ? 0.85 : 0.5 }}>
         {label}
       </p>
-      <div style={{ width: '1.75rem', height: '1.75rem', borderRadius: '0.4rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-subtle)' }} />
-      </div>
+      <Icon size={12} color={accent ? 'var(--pop)' : 'var(--structure)'} style={{ opacity: 0.5 }} />
     </div>
-    <div style={{ fontSize: '2.5rem', fontWeight: 300, color: 'var(--color-text-primary)', lineHeight: 1, letterSpacing: '-0.02em', marginTop: '1.5rem' }}>
+    <div style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(2.5rem, 3vw, 3.25rem)', lineHeight: 1, textTransform: 'uppercase', color: accent ? 'var(--pop)' : 'var(--structure)' }}>
       <AnimatedCounter value={value} suffix={suffix} decimals={decimals} />
     </div>
-  </motion.div>
+  </div>
 );
 
-// ── Analytics breakdown table row ──────────────────────────────────────────────
-const TableRow = ({ stat, index }) => {
+// ── Table Row ─────────────────────────────────────────────────────────────────
+const TableRow = ({ stat }) => {
   const fill = Math.min(100, Math.round(stat.fillRate));
   const status = fill >= 90 ? 'FULL' : fill >= 60 ? 'BUSY' : 'OPEN';
-  const statusColor = fill >= 90 ? '#f87171' : fill >= 60 ? '#fbbf24' : '#34d399';
+  const statusColor = fill >= 90 ? 'var(--pop)' : fill >= 60 ? 'var(--structure)' : 'var(--structure-40)';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ ...SPRING, delay: index * 0.04 }}
-      style={{
-        display: 'grid', gridTemplateColumns: '1fr auto auto auto auto',
-        alignItems: 'center', gap: '1.5rem',
-        padding: '0.875rem 1.25rem',
-        borderBottom: '1px solid rgba(var(--glass-rgb),0.04)',
-      }}
-    >
+    <div className="grit-row" style={{ display: 'grid', gridTemplateColumns: '1fr 80px auto auto 64px', alignItems: 'center', gap: '1.5rem', padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--dim-border)' }}>
       <div style={{ minWidth: 0 }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#D4D4D8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stat.title}</p>
-        <p style={{ fontSize: '0.6875rem', color: '#3f3f46', marginTop: '0.125rem' }}>{stat.date}</p>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.75rem', fontWeight: 700, color: 'var(--structure)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stat.title}</p>
+        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.4, marginTop: '0.2rem' }}>{stat.date}</p>
       </div>
       <div style={{ width: '80px' }}>
-        <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-          <motion.div initial={{ width: 0 }} animate={{ width: `${fill}%` }} transition={{ duration: 1.2, ease: 'easeOut', delay: 0.1 + index * 0.04 }} style={{ height: '100%', background: statusColor, borderRadius: '3px' }} />
+        <div style={{ width: '100%', height: '3px', background: 'var(--dim-border)' }}>
+          <div style={{ width: `${fill}%`, height: '100%', background: fill >= 90 ? 'var(--pop)' : 'var(--structure)', opacity: fill >= 90 ? 1 : 0.6 }} />
         </div>
       </div>
-      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-        {stat.registered.toLocaleString()} / {stat.capacity.toLocaleString()}
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', color: 'var(--structure)', opacity: 0.7, whiteSpace: 'nowrap' }}>
+        {stat.registered.toLocaleString()}&thinsp;/&thinsp;{stat.capacity.toLocaleString()}
       </span>
-      <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-subtle)', letterSpacing: '0.10em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.04)', border: '1px solid rgba(var(--glass-rgb),0.07)', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, color: 'var(--structure)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', border: '1px solid var(--dim-border)', whiteSpace: 'nowrap' }}>
         {stat.eventCode ?? '—'}
       </span>
-      <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${statusColor}15`, border: `1px solid ${statusColor}30`, color: statusColor, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', color: statusColor, border: `1px solid ${statusColor}`, padding: '0.25rem 0.5rem', whiteSpace: 'nowrap' }}>
         {status}
       </span>
-    </motion.div>
-  );
-};
-
-// ── Ring chart ─────────────────────────────────────────────────────────────────
-const RingChart = ({ value, max, label }) => {
-  const pct    = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-  const radius = 32;
-  const circ   = 2 * Math.PI * radius;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-      <div style={{ position: 'relative', width: '80px', height: '80px' }}>
-        <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(var(--glass-rgb),0.05)" strokeWidth="5" />
-          <motion.circle cx="40" cy="40" r={radius} fill="none" stroke="rgba(var(--glass-rgb),0.55)" strokeWidth="5" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ - (pct / 100) * circ }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.4 }} />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{Math.round(pct)}%</span>
-        </div>
-      </div>
-      <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', textAlign: 'center', letterSpacing: '0.04em' }}>{label}</p>
     </div>
   );
 };
 
-// ── Role badge ─────────────────────────────────────────────────────────────────
+// ── Ring Chart ────────────────────────────────────────────────────────────────
+const RingChart = ({ value, max, label }) => {
+  const pct  = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const r    = 32;
+  const circ = 2 * Math.PI * r;
+  return (
+    <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+      <div style={{ position: 'relative', width: '80px', height: '80px' }}>
+        <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="40" cy="40" r={r} fill="none" stroke="var(--dim-border)" strokeWidth="4" />
+          <motion.circle
+            cx="40" cy="40" r={r}
+            fill="none" stroke="var(--pop)" strokeWidth="4" strokeLinecap="square"
+            strokeDasharray={circ}
+            initial={{ strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: circ - (pct / 100) * circ }}
+            transition={{ duration: 1.2, ease: 'linear', delay: 0.3 }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: '1.25rem', color: 'var(--structure)' }}>
+            {Math.round(pct)}%
+          </span>
+        </div>
+      </div>
+      <figcaption style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5 }}>
+        {label}
+      </figcaption>
+    </figure>
+  );
+};
+
+// ── Role Badge ────────────────────────────────────────────────────────────────
 const RoleBadge = ({ role }) => {
   const map = {
-    ROLE_ADMIN:     { label: 'Admin',     color: '#a78bfa' },
-    ROLE_ORGANIZER: { label: 'Organizer', color: '#60a5fa' },
-    ROLE_ATTENDEE:  { label: 'Attendee',  color: '#34d399' },
+    ROLE_ADMIN:     { label: 'ADMIN',     color: 'var(--pop)' },
+    ROLE_ORGANIZER: { label: 'ORGANIZER', color: 'var(--structure)' },
+    ROLE_ATTENDEE:  { label: 'ATTENDEE',  color: 'var(--structure-40)' },
   };
-  const cfg = map[role] ?? { label: role, color: 'var(--color-text-subtle)' };
+  const cfg = map[role] ?? { label: role, color: 'var(--dim-border)' };
   return (
-    <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${cfg.color}15`, border: `1px solid ${cfg.color}30`, color: cfg.color, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', color: cfg.color, border: `1px solid ${cfg.color}`, padding: '0.2rem 0.5rem' }}>
       {cfg.label}
     </span>
   );
 };
 
-// ── Drilldown Card (Accordion) ────────────────────────────────────────────────
+// ── Drilldown Accordion Card ──────────────────────────────────────────────────
 const DrilldownCard = ({ title, icon: Icon, items, type }) => {
   const [expanded, setExpanded] = useState(null);
-
   return (
-    <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: 'rgba(var(--glass-rgb),0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon style={{ width: '1rem', height: '1rem', color: '#a5b4fc' }} />
-        </div>
+    <div style={{ background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+      <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--dim-border)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <Icon size={16} color="var(--pop)" />
         <div>
-          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{title}</h3>
-          <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)' }}>{items.length} total</p>
+          <h3 style={{ fontFamily: "'VT323', monospace", fontSize: '1.5rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>{title}</h3>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4, marginTop: '0.375rem' }}>
+            {items.length} REGISTERED
+          </p>
         </div>
       </div>
-      <div style={{ padding: '0.5rem' }}>
-        {items.map((item, idx) => {
-          const isExpanded = expanded === item.id;
+      <div>
+        {items.map((item) => {
+          const isOpen = expanded === item.id;
           return (
-            <div key={item.id} style={{ marginBottom: idx === items.length - 1 ? 0 : '0.25rem' }}>
-              <motion.button
-                onClick={() => setExpanded(isExpanded ? null : item.id)}
-                style={{
-                  width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: 'none',
-                  background: isExpanded ? 'rgba(var(--glass-rgb),0.04)' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  cursor: 'pointer', textAlign: 'left'
-                }}
+            <div key={item.id} style={{ borderBottom: '1px solid var(--dim-border)' }}>
+              <button
+                onClick={() => setExpanded(isOpen ? null : item.id)}
+                className="grit-nav-item"
+                style={{ width: '100%', padding: '1rem 1.5rem', border: 'none', borderLeft: 'none', background: isOpen ? 'var(--dim-bg)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left', color: 'var(--structure)' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 500, color: isExpanded ? 'var(--color-text-primary)' : '#D4D4D8' }}>{item.name}</span>
-                  <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>{item.email}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', fontWeight: 700, color: 'var(--structure)' }}>{item.name}</span>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.4, letterSpacing: '0.04em' }}>{item.email}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)', background: 'rgba(var(--glass-rgb),0.05)', padding: '0.2rem 0.5rem', borderRadius: '99px' }}>
-                    {type === 'organizer' ? `${item.eventTitles.length} events` : `${item.registeredEvents.length} registrations`}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5, border: '1px solid var(--dim-border)', padding: '0.2rem 0.5rem' }}>
+                    {type === 'organizer' ? `${item.eventTitles.length} EVENTS` : `${item.registeredEvents.length} REG`}
                   </span>
-                  <motion.div animate={{ rotate: isExpanded ? 90 : 0 }}>
-                    <ChevronRight style={{ width: '1rem', height: '1rem', color: 'var(--color-text-subtle)' }} />
-                  </motion.div>
+                  <span style={{ fontFamily: "'VT323', monospace", fontSize: '1.25rem', color: 'var(--structure)', display: 'inline-block', lineHeight: 1, transition: 'transform 0.1s steps(2, end)', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                    {isOpen ? '−' : '+'}
+                  </span>
                 </div>
-              </motion.button>
+              </button>
               <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    <div style={{ padding: '0.5rem 1rem 1rem 2.75rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                {isOpen && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.1, ease: 'linear' }} style={{ overflow: 'hidden' }}>
+                    <div style={{ padding: '0.75rem 1.5rem 1.25rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {type === 'organizer' && item.eventTitles.map((title, i) => (
-                        <div key={i} style={{ fontSize: '0.75rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#a5b4fc' }} />
-                          {title}
+                        <div key={i} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem', color: 'var(--structure)', opacity: 0.65, display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                          <span style={{ color: 'var(--pop)', fontWeight: 700 }}>—</span>{title}
                         </div>
                       ))}
                       {type === 'organizer' && item.eventTitles.length === 0 && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No events created yet.</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.35, letterSpacing: '0.08em', textTransform: 'uppercase' }}>NO EVENTS YET</span>
                       )}
-                      
                       {type === 'attendee' && item.registeredEvents.map((evt, i) => (
-                        <div key={i} style={{ fontSize: '0.75rem', color: '#a1a1aa', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: evt.status === 'CHECKED_IN' ? '#34d399' : '#60a5fa' }} />
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem', color: 'var(--structure)', opacity: 0.65 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                            <span style={{ color: evt.status === 'CHECKED_IN' ? 'var(--pop)' : 'var(--structure)', fontWeight: 700 }}>—</span>
                             {evt.title}
                           </div>
-                          <span style={{ fontSize: '0.625rem', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', background: evt.status === 'CHECKED_IN' ? 'rgba(52,211,153,0.1)' : 'rgba(96,165,250,0.1)', color: evt.status === 'CHECKED_IN' ? '#34d399' : '#60a5fa' }}>
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', color: evt.status === 'CHECKED_IN' ? 'var(--pop)' : 'var(--structure)', border: `1px solid ${evt.status === 'CHECKED_IN' ? 'var(--pop)' : 'var(--dim-border)'}`, padding: '0.15rem 0.4rem' }}>
                             {evt.status}
                           </span>
                         </div>
                       ))}
                       {type === 'attendee' && item.registeredEvents.length === 0 && (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No registrations.</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.35, letterSpacing: '0.08em', textTransform: 'uppercase' }}>NO REGISTRATIONS</span>
                       )}
                     </div>
                   </motion.div>
@@ -231,70 +219,64 @@ const DrilldownCard = ({ title, icon: Icon, items, type }) => {
           );
         })}
         {items.length === 0 && (
-          <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>None found.</div>
+          <div style={{ padding: '2rem 1.5rem', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>
+            NONE FOUND
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-
-// ── Toast ──────────────────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
 const Toast = ({ message, type }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40, scale: 0.9 }}
-    animate={{ opacity: 1, y: 0, scale: 1 }}
-    exit={{ opacity: 0, y: 40, scale: 0.9 }}
-    transition={SPRING}
-    style={{
-      position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-      zIndex: 200, display: 'flex', alignItems: 'center', gap: '0.625rem',
-      padding: '0.75rem 1.5rem', borderRadius: '2rem',
-      background: type === 'success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.10)',
-      border: `1px solid ${type === 'success' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.22)'}`,
-      backdropFilter: 'blur(24px)',
-      color: type === 'success' ? '#6ee7b7' : '#f87171',
-      fontSize: '0.875rem', fontWeight: 500,
-      boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-    }}
-  >
+  <motion.aside role="alert" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.1, ease: 'linear' }}
+    style={{ position: 'fixed', bottom: '2rem', left: '2rem', zIndex: 999, display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '1rem 1.5rem', background: 'var(--anchor)', border: `2px solid ${type === 'success' ? 'var(--pop)' : 'var(--structure)'}`, boxShadow: 'var(--shadow)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
     {message}
-  </motion.div>
+  </motion.aside>
 );
 
-// ── Main Admin Dashboard ───────────────────────────────────────────────────────
+// ── Spinner ───────────────────────────────────────────────────────────────────
+const Spinner = ({ label }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '4rem 0' }}>
+    <span className="spin-grit" style={{ display: 'inline-block', width: '18px', height: '18px', border: '2px solid var(--dim-border)', borderTopColor: 'var(--structure)', borderRadius: '50%' }} />
+    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.4 }}>{label}</span>
+  </div>
+);
+
+const TAB_VARIANTS = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.1, ease: 'linear' } },
+  exit:    { opacity: 0, transition: { duration: 0.08, ease: 'linear' } },
+};
+
+// ── Main Admin Dashboard ──────────────────────────────────────────────────────
 const AnalyticsDashboard = () => {
   const navigate   = useNavigate();
   const { logout } = useAuth();
+  const { theme, toggle } = useTheme();
 
-  // Overview analytics data
   const [data, setData]             = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
   const [refreshing, setRefreshing] = useState(false);
-
-  // Tab state
   const [activeNav, setActiveNav]   = useState('overview');
 
-  // God-Mode events tab
-  const [allEvents, setAllEvents]     = useState([]);
+  const [allEvents, setAllEvents]         = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsLoaded, setEventsLoaded]   = useState(false);
   const [deletingId, setDeletingId]       = useState(null);
 
-  // User directory tab
-  const [allUsers, setAllUsers]       = useState([]);
+  const [allUsers, setAllUsers]         = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded]   = useState(false);
 
-  // Toast
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  // ── Fetch: overview analytics ──────────────────────────────────────────────
   const fetchData = useCallback(async (isRefresh = false) => {
     isRefresh ? setRefreshing(true) : setLoading(true);
     setError('');
@@ -302,463 +284,348 @@ const AnalyticsDashboard = () => {
       const { data: metrics } = await adminApi.analytics();
       setData(metrics);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to load analytics.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setError(err?.response?.data?.message || 'FAILED TO LOAD ANALYTICS.');
+    } finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // ── Fetch: all events (lazy — only when tab is opened) ────────────────────
   const fetchAllEvents = useCallback(async () => {
     if (eventsLoaded) return;
     setEventsLoading(true);
     try {
       const { data: events } = await adminApi.getEvents();
-      setAllEvents(events);
-      setEventsLoaded(true);
-    } catch {
-      showToast('Failed to load events.', 'error');
-    } finally {
-      setEventsLoading(false);
-    }
+      setAllEvents(events); setEventsLoaded(true);
+    } catch { showToast('FAILED TO LOAD EVENTS.', 'error'); }
+    finally { setEventsLoading(false); }
   }, [eventsLoaded]);
 
-  // ── Fetch: all users (lazy) ────────────────────────────────────────────────
   const fetchAllUsers = useCallback(async () => {
     if (usersLoaded) return;
     setUsersLoading(true);
     try {
       const { data: users } = await adminApi.getUsers();
-      setAllUsers(users);
-      setUsersLoaded(true);
-    } catch {
-      showToast('Failed to load users.', 'error');
-    } finally {
-      setUsersLoading(false);
-    }
+      setAllUsers(users); setUsersLoaded(true);
+    } catch { showToast('FAILED TO LOAD USERS.', 'error'); }
+    finally { setUsersLoading(false); }
   }, [usersLoaded]);
 
-  // ── Tab switch ─────────────────────────────────────────────────────────────
   const handleNavClick = (tab) => {
     setActiveNav(tab);
     if (tab === 'events') fetchAllEvents();
     if (tab === 'users')  fetchAllUsers();
   };
 
-  // ── God-Mode delete ────────────────────────────────────────────────────────
   const handleDeleteEvent = async (eventId, title) => {
-    if (!window.confirm(`Master Override: Permanently delete "${title}"?\n\nThis will remove all registrations for this event.`)) return;
+    if (!window.confirm(`MASTER OVERRIDE: Permanently delete "${title}"?\n\nAll registrations for this event will be removed.`)) return;
     setDeletingId(eventId);
     try {
       await eventsApi.delete(eventId);
       setAllEvents(prev => prev.filter(e => e.id !== eventId));
-      showToast('Event forcefully deleted.', 'success');
-      // Invalidate overview so stats refresh on next visit
-      setData(null);
-      fetchData(true);
+      showToast('EVENT FORCEFULLY DELETED.', 'success');
+      setData(null); fetchData(true);
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Delete failed.', 'error');
-    } finally {
-      setDeletingId(null);
-    }
+      showToast(err?.response?.data?.message || 'DELETE FAILED.', 'error');
+    } finally { setDeletingId(null); }
   };
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  // ── Dynamic header config ──────────────────────────────────────────────────
-  const headerConfig = {
-    overview:  { title: 'System Overview',   sub: 'Global platform metrics · All events · All organizers' },
-    events:    { title: 'Global Events',      sub: 'Master view — all events across all organizers, including secret invite codes' },
-    users:     { title: 'User Directory',     sub: 'All registered accounts across every role' },
-    analytics: { title: 'System Overview',   sub: 'Global platform metrics · All events · All organizers' },
+  const headerMap = {
+    overview:  { title: 'SYSTEM OVERVIEW',    sub: 'GLOBAL METRICS // ALL EVENTS // ALL ORGANIZERS' },
+    events:    { title: 'ALL EVENTS',          sub: 'MASTER VIEW — EVERY EVENT ACROSS ALL ORGANIZERS' },
+    users:     { title: 'USER DIRECTORY',      sub: 'ALL REGISTERED ACCOUNTS ACROSS EVERY ROLE' },
+    analytics: { title: 'PLATFORM ANALYTICS',  sub: 'FUNNEL BREAKDOWN // FILL RATES // CHECK-IN DATA' },
   };
-  const header = headerConfig[activeNav] ?? headerConfig.overview;
+  const hdr = headerMap[activeNav] ?? headerMap.overview;
+
+  const SectionDivider = ({ title }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '2.5rem' }}>
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--pop)', flexShrink: 0 }}>{title}</span>
+      <div style={{ flex: 1, height: '1px', background: 'var(--dim-border)' }} />
+    </div>
+  );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: 'Quantico, system-ui, sans-serif', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--anchor)', color: 'var(--structure)', display: 'flex' }}>
+      <FilmGrain />
 
-      {/* ── FIXED LEFT SIDEBAR ────────────────────────────────────────────────── */}
+      {/* ── FIXED SIDEBAR ───────────────────────────────────────────────────── */}
       <aside style={{
-        width: '220px', flexShrink: 0,
-        borderRight: '1px solid rgba(var(--glass-rgb),0.05)',
-        background: 'rgba(var(--glass-rgb),0.01)',
+        width: '200px', flexShrink: 0,
+        borderRight: '2px solid var(--structure)',
+        background: 'var(--anchor)',
         display: 'flex', flexDirection: 'column',
-        padding: '1.75rem 1rem',
+        padding: '2rem 0',
         position: 'sticky', top: 0, height: '100vh',
       }}>
-        {/* Logo */}
-        <div style={{ paddingLeft: '0.875rem', marginBottom: '2.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Shield style={{ width: '1rem', height: '1rem', color: 'var(--color-text-muted)' }} />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>EventSphere</span>
-          </div>
-          <p style={{ fontSize: '0.6875rem', color: '#27272a', marginTop: '0.2rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Admin Console</p>
+        {/* Brand */}
+        <div style={{ padding: '0 1.25rem 2rem', borderBottom: '1px solid var(--dim-border)' }}>
+          <p style={{ fontFamily: "'VT323', monospace", fontSize: '1.25rem', textTransform: 'uppercase', color: 'var(--structure)', letterSpacing: '0.05em', lineHeight: 1 }}>
+            EVENTSPHERE
+          </p>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--pop)', marginTop: '0.375rem' }}>
+            ADMIN CONSOLE
+          </p>
         </div>
 
-        {/* Nav */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-          <p style={{ fontSize: '0.625rem', fontWeight: 600, color: '#27272a', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 0.875rem', marginBottom: '0.5rem' }}>System</p>
-          <NavItem icon={Activity}  label="Overview"       active={activeNav === 'overview'}  onClick={() => handleNavClick('overview')} />
-          <NavItem icon={Globe}     label="All Events"     active={activeNav === 'events'}    onClick={() => handleNavClick('events')} />
-          <NavItem icon={Users}     label="User Directory" active={activeNav === 'users'}     onClick={() => handleNavClick('users')} />
-          <NavItem icon={BarChart3} label="Analytics"      active={activeNav === 'analytics'} onClick={() => handleNavClick('analytics')} />
+        {/* Navigation */}
+        <nav style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '1rem 0' }}>
+          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3, padding: '0 1.25rem', marginBottom: '0.5rem' }}>
+            SYSTEM
+          </p>
+          <NavItem id="nav-overview"  icon={Activity}  label="OVERVIEW"   active={activeNav === 'overview'}  onClick={() => handleNavClick('overview')} />
+          <NavItem id="nav-events"    icon={Globe}     label="ALL EVENTS" active={activeNav === 'events'}    onClick={() => handleNavClick('events')} />
+          <NavItem id="nav-users"     icon={Users}     label="DIRECTORY"  active={activeNav === 'users'}     onClick={() => handleNavClick('users')} />
+          <NavItem id="nav-analytics" icon={BarChart3} label="ANALYTICS"  active={activeNav === 'analytics'} onClick={() => handleNavClick('analytics')} />
         </nav>
 
         {/* Bottom actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', borderTop: '1px solid rgba(var(--glass-rgb),0.05)', paddingTop: '1rem' }}>
-          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={() => fetchData(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
-            <motion.div animate={{ rotate: refreshing ? 360 : 0 }} transition={{ duration: 0.8, repeat: refreshing ? Infinity : 0, ease: 'linear' }}>
-              <RefreshCw style={{ width: '0.875rem', height: '0.875rem' }} />
-            </motion.div>
-            Refresh
-          </motion.button>
-          <motion.button whileHover={{ x: 3 }} transition={SPRING} onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', borderRadius: '0.625rem', border: 'none', background: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.8125rem', cursor: 'pointer', textAlign: 'left' }}>
-            <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
-            Sign Out
-          </motion.button>
+        <div style={{ borderTop: '1px solid var(--dim-border)', padding: '1rem 0 0' }}>
+          {/* Theme toggle */}
+          <button
+            className="grit-nav-item"
+            onClick={toggle}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.75rem 1.25rem', border: 'none', borderLeft: '2px solid transparent', background: 'transparent', color: 'var(--structure-40)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <span style={{ fontSize: '1rem' }}>{theme === 'dark' ? '☀' : '☾'}</span>
+            {theme === 'dark' ? 'LIGHT' : 'DARK'}
+          </button>
+          <button
+            id="sidebar-refresh-btn"
+            className="grit-btn grit-nav-item"
+            onClick={() => fetchData(true)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.75rem 1.25rem', border: 'none', borderLeft: '2px solid transparent', background: 'transparent', color: 'var(--structure-40)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <RefreshCw size={13} style={{ animation: refreshing ? 'spin-grit 0.8s linear infinite' : 'none' }} />
+            REFRESH
+          </button>
+          <button
+            id="sidebar-logout-btn"
+            className="grit-btn grit-nav-item"
+            onClick={handleLogout}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.75rem 1.25rem', border: 'none', borderLeft: '2px solid transparent', background: 'transparent', color: 'var(--structure-40)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <LogOut size={13} /> SIGN OUT
+          </button>
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ──────────────────────────────────────────────────────── */}
-      <main style={{ flex: 1, padding: '2rem 2.5rem', minWidth: 0, overflowY: 'auto' }}>
+      {/* ── MAIN CONTENT ────────────────────────────────────────────────────── */}
+      <main style={{ flex: 1, overflowY: 'auto', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 
-        {/* Dynamic page header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        {/* Page Header */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 50, padding: '1.75rem 3rem', background: 'var(--anchor)', borderBottom: '2px solid var(--structure)', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeNav}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text-primary)', letterSpacing: '-0.025em' }}>
-                <ScrollBounceText as="span" intensity={0.9} maxSkewDeg={2} maxTranslateY={3} stiffness={360} damping={34}>
-                  {header.title}
-                </ScrollBounceText>
+            <motion.div key={activeNav} variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '0.5rem' }}>
+                {hdr.sub}
+              </p>
+              <h1 style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(2.5rem, 3vw, 3.5rem)', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>
+                {hdr.title}
               </h1>
-              <p style={{ fontSize: '0.75rem', color: '#3f3f46', marginTop: '0.25rem' }}>{header.sub}</p>
             </motion.div>
           </AnimatePresence>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.875rem', background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '0.5rem' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-            <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: '#34d399' }}>System Online</span>
+
+          {/* System status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.5rem 1rem', border: '1px solid var(--pop)', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ width: '6px', height: '6px', background: 'var(--pop)' }} />
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pop)' }}>
+              SYSTEM ONLINE
+            </span>
           </div>
         </div>
 
-        {/* ── TAB CONTENT with AnimatePresence ──────────────────────────────── */}
-        <AnimatePresence mode="wait">
+        {/* Tab Content */}
+        <div style={{ padding: '3rem', flex: 1 }}>
+          <AnimatePresence mode="wait">
 
-          {/* ── OVERVIEW ─────────────────────────────────────────── */}
-          {activeNav === 'overview' && (
-            <motion.div key="overview" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
-              {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
-                </div>
-              )}
-              {error && !loading && (
-                <div style={{ padding: '1.5rem', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '0.75rem', color: '#f87171', fontSize: '0.875rem' }}>
-                  {error} — <button onClick={() => fetchData()} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer' }}>retry</button>
-                </div>
-              )}
-              {!loading && !error && data && (
-                <>
-                  {/* Overview Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
-                    <BentoStat icon={Layers}      label="Active Events"   value={data.activeEventsCount} />
-                    <BentoStat icon={Calendar}    label="Completed"       value={data.completedEventsCount} />
-                    <BentoStat icon={Users}       label="Registrations"   value={data.totalRegistrations} />
-                    <BentoStat icon={CheckSquare} label="Checked In"      value={data.totalCheckIns} />
+            {/* OVERVIEW */}
+            {activeNav === 'overview' && (
+              <motion.div key="overview" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+                {loading && <Spinner label="LOADING SYSTEM DATA..." />}
+                {error && !loading && (
+                  <div style={{ padding: '1.5rem', border: '1px solid var(--structure)', color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', letterSpacing: '0.06em' }}>
+                    !! {error} — <button onClick={() => fetchData()} style={{ background: 'none', border: 'none', color: 'var(--pop)', textDecoration: 'underline', cursor: 'pointer', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem' }}>RETRY</button>
                   </div>
-
-                  {/* Drilldown Grids */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                    <DrilldownCard title="Organizers" icon={Shield} items={data.organizers || []} type="organizer" />
-                    <DrilldownCard title="Attendees" icon={Users} items={data.attendees || []} type="attendee" />
-                  </div>
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── ANALYTICS ─────────────────────────────────────────── */}
-          {activeNav === 'analytics' && (
-            <motion.div key="analytics" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
-              {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading system data…</span>
-                </div>
-              )}
-              {error && !loading && (
-                <div style={{ padding: '1.5rem', background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '0.75rem', color: '#f87171', fontSize: '0.875rem' }}>
-                  {error} — <button onClick={() => fetchData()} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer' }}>retry</button>
-                </div>
-              )}
-              {!loading && !error && data && (
-                <>
-                  {/* Analytics Funnel */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '2rem' }}>
-                    <div style={{ gridColumn: '1 / 3', background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.10), transparent)' }} />
-                      <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46', marginBottom: '1.75rem' }}>Attendee Funnel</p>
-                      {[
-                        { label: 'Total Capacity',   value: data.totalCapacity,      max: data.totalCapacity },
-                        { label: 'Registered',        value: data.totalRegistrations, max: data.totalCapacity },
-                        { label: 'Checked In',        value: data.totalCheckIns,      max: data.totalCapacity },
-                      ].map(({ label, value, max }, i) => {
-                        const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-                        return (
-                          <div key={label} style={{ marginBottom: i < 2 ? '1.5rem' : 0 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{label}</span>
-                              <span style={{ fontSize: '1.25rem', fontWeight: 300, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>{value.toLocaleString()}</span>
-                            </div>
-                            <div style={{ width: '100%', height: '3px', background: 'rgba(var(--glass-rgb),0.04)', borderRadius: '3px', overflow: 'hidden' }}>
-                              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.4, ease: 'easeOut', delay: 0.2 + i * 0.15 }} style={{ height: '100%', background: `rgba(var(--glass-rgb),${0.15 + i * 0.15})`, borderRadius: '3px' }} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(var(--glass-rgb),0.04)' }}>
-                        <RingChart value={data.totalRegistrations} max={data.totalCapacity}      label="Fill Rate" />
-                        <RingChart value={data.totalCheckIns}      max={data.totalRegistrations} label="Attendance" />
-                      </div>
+                )}
+                {!loading && !error && data && (
+                  <>
+                    <section aria-label="System statistics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
+                      <BentoStat icon={Layers}      label="Active Events"  value={data.activeEventsCount} />
+                      <BentoStat icon={Calendar}    label="Completed"      value={data.completedEventsCount} />
+                      <BentoStat icon={Users}       label="Registrations"  value={data.totalRegistrations} />
+                      <BentoStat icon={CheckSquare} label="Checked In"     value={data.totalCheckIns} accent />
+                    </section>
+                    <SectionDivider title="USER BREAKDOWN" />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                      <DrilldownCard title="ORGANIZERS" icon={Shield} items={data.organizers || []} type="organizer" />
+                      <DrilldownCard title="ATTENDEES"  icon={Users}  items={data.attendees  || []} type="attendee" />
                     </div>
-                    
-                    <div style={{ gridColumn: '3 / 5', background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.08), transparent)' }} />
-                      <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>Total Platform Capacity</p>
-                        <p style={{ fontSize: '3rem', fontWeight: 300, color: 'var(--color-text-primary)', lineHeight: 1, marginTop: '1rem', letterSpacing: '-0.02em' }}>
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            {/* ANALYTICS */}
+            {activeNav === 'analytics' && (
+              <motion.div key="analytics" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+                {loading && <Spinner label="LOADING ANALYTICS..." />}
+                {error && !loading && <div style={{ padding: '1.5rem', border: '1px solid var(--structure)', color: 'var(--structure)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem' }}>!! {error}</div>}
+                {!loading && !error && data && (
+                  <>
+                    <section aria-label="Attendee funnel" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '3rem' }}>
+                      {/* Funnel bars */}
+                      <div style={{ background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', padding: '2rem' }}>
+                        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5, marginBottom: '2rem' }}>ATTENDEE FUNNEL</p>
+                        {[
+                          { label: 'TOTAL CAPACITY', value: data.totalCapacity,      max: data.totalCapacity },
+                          { label: 'REGISTERED',      value: data.totalRegistrations, max: data.totalCapacity },
+                          { label: 'CHECKED IN',      value: data.totalCheckIns,      max: data.totalCapacity },
+                        ].map(({ label, value, max }, i) => {
+                          const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+                          return (
+                            <div key={label} style={{ marginBottom: i < 2 ? '1.75rem' : 0 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.625rem' }}>
+                                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.55 }}>{label}</span>
+                                <span style={{ fontFamily: "'VT323', monospace", fontSize: '1.75rem', color: i === 2 ? 'var(--pop)' : 'var(--structure)', lineHeight: 1 }}>{value.toLocaleString()}</span>
+                              </div>
+                              <div style={{ width: '100%', height: '3px', background: 'var(--dim-border)' }}>
+                                <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: 'linear', delay: 0.15 + i * 0.1 }} style={{ height: '100%', background: i === 2 ? 'var(--pop)' : 'var(--structure)', opacity: i === 2 ? 1 : 0.5 + i * 0.25 }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div style={{ display: 'flex', gap: '2.5rem', marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid var(--dim-border)' }}>
+                          <RingChart value={data.totalRegistrations} max={data.totalCapacity}      label="FILL RATE" />
+                          <RingChart value={data.totalCheckIns}      max={data.totalRegistrations} label="ATTENDANCE" />
+                        </div>
+                      </div>
+
+                      {/* Platform totals */}
+                      <div style={{ background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: '1.5rem' }}>
+                        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.45 }}>TOTAL PLATFORM CAPACITY</p>
+                        <p style={{ fontFamily: "'VT323', monospace", fontSize: 'clamp(3rem, 5vw, 5.5rem)', lineHeight: 1, color: 'var(--structure)' }}>
                           <AnimatedCounter value={data.totalCapacity} />
                         </p>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#3f3f46', fontSize: '0.875rem' }}>
-                        <TrendingUp style={{ width: '1.25rem', height: '1.25rem' }} />
-                        {data.totalEvents} event{data.totalEvents !== 1 ? 's' : ''} tracked
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Analytics breakdown table */}
-                  {data.eventBreakdown?.length > 0 && (
-                    <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: '1.5rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
-                        {['Event', 'Fill', 'Registered / Cap', 'Code', 'Status'].map(h => (
-                          <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
-                        ))}
-                      </div>
-                      {data.eventBreakdown.map((stat, i) => <TableRow key={stat.id} stat={stat} index={i} />)}
-                    </div>
-                  )}
-                  {(!data.eventBreakdown || data.eventBreakdown.length === 0) && (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3f3f46', fontSize: '0.8125rem' }}>
-                      <Calendar style={{ width: '2rem', height: '2rem', margin: '0 auto 0.75rem', opacity: 0.3 }} />
-                      No event data yet.
-                    </div>
-                  )}
-                </>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── GOD-MODE EVENTS TABLE ──────────────────────────────────────────── */}
-          {activeNav === 'events' && (
-            <motion.div key="events" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
-              {eventsLoading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading all events…</span>
-                </div>
-              )}
-              {!eventsLoading && (
-                <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
-                  {/* Admin-only warning banner */}
-                  <div style={{ padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(239,68,68,0.12)', background: 'rgba(239,68,68,0.04)', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                    <AlertTriangle style={{ width: '0.875rem', height: '0.875rem', color: '#f87171', flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.6875rem', color: '#f87171', fontWeight: 500 }}>
-                      God-Mode View — Includes secret invite codes and organizer details. Admin eyes only.
-                    </span>
-                  </div>
-
-                  {/* Table header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
-                    {['Event', 'Organizer', 'Code', 'Seats', 'Status', ''].map(h => (
-                      <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
-                    ))}
-                  </div>
-
-                  {/* Rows */}
-                  {allEvents.length === 0 && !eventsLoading && (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3f3f46', fontSize: '0.8125rem' }}>
-                      <Globe style={{ width: '2rem', height: '2rem', margin: '0 auto 0.75rem', opacity: 0.3 }} />
-                      No events on the platform yet.
-                    </div>
-                  )}
-
-                  {allEvents.map((event, i) => {
-                    const fill = event.capacity > 0 ? Math.min(100, Math.round((event.registeredCount / event.capacity) * 100)) : 0;
-                    const status = fill >= 90 ? 'FULL' : fill >= 60 ? 'BUSY' : 'OPEN';
-                    const statusColor = fill >= 90 ? '#f87171' : fill >= 60 ? '#fbbf24' : '#34d399';
-                    const isDeleting = deletingId === event.id;
-
-                    return (
-                      <motion.div
-                        key={event.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 10, transition: { duration: 0.2 } }}
-                        transition={{ ...SPRING, delay: i * 0.03 }}
-                        style={{
-                          display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto auto',
-                          alignItems: 'center', gap: '1rem',
-                          padding: '0.875rem 1.25rem',
-                          borderBottom: '1px solid rgba(var(--glass-rgb),0.04)',
-                          opacity: isDeleting ? 0.4 : 1,
-                          transition: 'opacity 0.2s',
-                        }}
-                      >
-                        {/* Event info */}
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#D4D4D8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</p>
-                          <p style={{ fontSize: '0.6875rem', color: '#3f3f46', marginTop: '0.1rem' }}>
-                            {event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                          </p>
-                        </div>
-
-                        {/* Organizer */}
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {event.organizerName}
-                          </p>
-                        </div>
-
-                        {/* Secret code */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                          <Key style={{ width: '0.625rem', height: '0.625rem', color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                          <span style={{ fontFamily: 'Quantico, monospace', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.10)' }}>
-                            {event.eventCode ?? '—'}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <TrendingUp size={14} color="var(--pop)" />
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.55 }}>
+                            {data.totalEvents} EVENT{data.totalEvents !== 1 ? 'S' : ''} TRACKED
                           </span>
                         </div>
+                      </div>
+                    </section>
 
-                        {/* Seats */}
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-subtle)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                          {event.registeredCount ?? 0} / {event.capacity}
+                    {data.eventBreakdown?.length > 0 && (
+                      <>
+                        <SectionDivider title="EVENT BREAKDOWN" />
+                        <div style={{ border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px auto auto 64px', gap: '1.5rem', padding: '0.875rem 1.5rem', borderBottom: '2px solid var(--structure)', background: 'var(--dim-bg)' }}>
+                            {['EVENT', 'FILL', 'REG / CAP', 'CODE', 'STATUS'].map(h => (
+                              <span key={h} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5 }}>{h}</span>
+                            ))}
+                          </div>
+                          {data.eventBreakdown.map((stat, i) => <TableRow key={stat.id} stat={stat} index={i} />)}
+                        </div>
+                      </>
+                    )}
+                    {(!data.eventBreakdown || data.eventBreakdown.length === 0) && (
+                      <div style={{ textAlign: 'center', padding: '4rem', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>NO EVENT DATA YET</div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            {/* ALL EVENTS */}
+            {activeNav === 'events' && (
+              <motion.div key="events" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+                {eventsLoading && <Spinner label="LOADING ALL EVENTS..." />}
+                {!eventsLoading && (
+                  <div style={{ border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+                    <div style={{ padding: '0.875rem 1.5rem', borderBottom: '1px solid var(--structure)', background: 'var(--dim-bg)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <AlertTriangle size={13} color="var(--pop)" />
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--pop)' }}>
+                        GOD-MODE VIEW — INCLUDES INVITE CODES. ADMIN EYES ONLY.
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto 2rem', gap: '1rem', padding: '0.875rem 1.5rem', borderBottom: '2px solid var(--structure)', background: 'var(--dim-bg)' }}>
+                      {['EVENT', 'ORGANIZER', 'CODE', 'SEATS', 'STATUS', ''].map(h => (
+                        <span key={h + 'ev'} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5 }}>{h}</span>
+                      ))}
+                    </div>
+                    {allEvents.length === 0 && <div style={{ padding: '4rem', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>NO EVENTS ON THE PLATFORM YET</div>}
+                    {allEvents.map((event) => {
+                      const fill = event.capacity > 0 ? Math.min(100, Math.round((event.registeredCount / event.capacity) * 100)) : 0;
+                      const status = fill >= 90 ? 'FULL' : fill >= 60 ? 'BUSY' : 'OPEN';
+                      const statusColor = fill >= 90 ? 'var(--pop)' : fill >= 60 ? 'var(--structure)' : 'var(--structure-40)';
+                      const isDeleting = deletingId === event.id;
+                      return (
+                        <div key={event.id} className="grit-row" style={{ display: 'grid', gridTemplateColumns: '1fr 0.6fr auto auto auto 2rem', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem', borderBottom: '1px solid var(--dim-border)', opacity: isDeleting ? 0.4 : 1, transition: 'opacity 0.1s linear' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.75rem', fontWeight: 700, color: 'var(--structure)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{event.title}</p>
+                            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', color: 'var(--structure)', opacity: 0.4, marginTop: '0.2rem' }}>
+                              {event.date ? new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                            </p>
+                          </div>
+                          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.625rem', color: 'var(--structure)', opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{event.organizerName}</p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                            <Key size={10} color="var(--structure)" style={{ opacity: 0.4 }} />
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', fontWeight: 700, color: 'var(--structure)', letterSpacing: '0.12em', padding: '0.2rem 0.5rem', border: '1px solid var(--dim-border)' }}>{event.eventCode ?? '—'}</span>
+                          </div>
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.6875rem', color: 'var(--structure)', opacity: 0.65, whiteSpace: 'nowrap' }}>{event.registeredCount ?? 0}&thinsp;/&thinsp;{event.capacity}</span>
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', color: statusColor, border: `1px solid ${statusColor}`, padding: '0.25rem 0.5rem', whiteSpace: 'nowrap' }}>{status}</span>
+                          <button id={`admin-delete-event-${event.id}`} className="grit-btn" disabled={isDeleting} onClick={() => handleDeleteEvent(event.id, event.title)} title="Master Override: Delete event"
+                            style={{ width: '2rem', height: '2rem', background: 'transparent', border: '1px solid var(--structure)', color: 'var(--structure)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', cursor: isDeleting ? 'not-allowed' : 'pointer' }}>
+                            {isDeleting ? <span className="spin-grit" style={{ display: 'inline-block', width: '0.625rem', height: '0.625rem', border: '1.5px solid var(--structure)', borderTopColor: 'transparent', borderRadius: '50%' }} /> : <Trash2 size={11} />}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* USER DIRECTORY */}
+            {activeNav === 'users' && (
+              <motion.div key="users" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
+                {usersLoading && <Spinner label="LOADING USER DIRECTORY..." />}
+                {!usersLoading && (
+                  <div style={{ border: '2px solid var(--structure)', boxShadow: 'var(--shadow)', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: '1rem', padding: '0.875rem 1.5rem', borderBottom: '2px solid var(--structure)', background: 'var(--dim-bg)' }}>
+                      {['NAME / EMAIL', 'JOINED', 'ROLE', 'ACTIVITY'].map(h => (
+                        <span key={h + 'us'} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.5 }}>{h}</span>
+                      ))}
+                    </div>
+                    {allUsers.length === 0 && <div style={{ padding: '4rem', textAlign: 'center', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.3 }}>NO USERS FOUND</div>}
+                    {allUsers.map((user) => (
+                      <div key={user.id} className="grit-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem', borderBottom: '1px solid var(--dim-border)' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.75rem', fontWeight: 700, color: 'var(--structure)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || user.username || '—'}</p>
+                          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', color: 'var(--structure)', opacity: 0.4, marginTop: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                        </div>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.5 }}>
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                         </span>
-
-                        {/* Status */}
-                        <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.3rem', background: `${statusColor}15`, border: `1px solid ${statusColor}30`, color: statusColor, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                          {status}
+                        <RoleBadge role={user.role} />
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.45, border: '1px solid var(--dim-border)', padding: '0.2rem 0.5rem', whiteSpace: 'nowrap' }}>
+                          {user.role === 'ROLE_ORGANIZER' ? `${(user.eventTitles || []).length} EVENTS` : `${(user.registeredEvents || []).length} REG`}
                         </span>
-
-                        {/* Delete button */}
-                        <motion.button
-                          id={`admin-delete-event-${event.id}`}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          transition={SPRING}
-                          disabled={isDeleting}
-                          onClick={() => handleDeleteEvent(event.id, event.title)}
-                          title="Master Override: Delete event"
-                          style={{
-                            width: '2rem', height: '2rem', borderRadius: '0.5rem',
-                            background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.16)',
-                            color: '#f87171', cursor: isDeleting ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {isDeleting
-                            ? <div style={{ width: '0.75rem', height: '0.75rem', border: '1.5px solid #f87171', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                            : <Trash2 style={{ width: '0.75rem', height: '0.75rem' }} />
-                          }
-                        </motion.button>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* ── USER DIRECTORY ────────────────────────────────────────────────── */}
-          {activeNav === 'users' && (
-            <motion.div key="users" variants={TAB_VARIANTS} initial="initial" animate="animate" exit="exit">
-              {usersLoading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '3rem' }}>
-                  <div style={{ width: '1.25rem', height: '1.25rem', border: '1.5px solid rgba(var(--glass-rgb),0.10)', borderTopColor: 'rgba(var(--glass-rgb),0.5)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span style={{ fontSize: '0.8125rem', color: '#3f3f46' }}>Loading user directory…</span>
-                </div>
-              )}
-              {!usersLoading && (
-                <div style={{ background: 'rgba(var(--glass-rgb),0.02)', border: '1px solid rgba(var(--glass-rgb),0.06)', borderRadius: '0.875rem', overflow: 'hidden' }}>
-                  {/* Table header */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', gap: '1rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.05)', background: 'rgba(var(--glass-rgb),0.01)' }}>
-                    {['#', 'Name', 'Email', 'Role', 'Joined'].map(h => (
-                      <span key={h} style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3f3f46' }}>{h}</span>
+                      </div>
                     ))}
                   </div>
-
-                  {allUsers.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3f3f46', fontSize: '0.8125rem' }}>
-                      <Users style={{ width: '2rem', height: '2rem', margin: '0 auto 0.75rem', opacity: 0.3 }} />
-                      No users registered yet.
-                    </div>
-                  )}
-
-                  {allUsers.map((user, i) => (
-                    <motion.div
-                      key={user.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ ...SPRING, delay: i * 0.025 }}
-                      style={{ display: 'grid', gridTemplateColumns: '2rem 1fr 1fr auto auto', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.25rem', borderBottom: '1px solid rgba(var(--glass-rgb),0.04)' }}
-                    >
-                      {/* Avatar */}
-                      <div style={{ width: '2rem', height: '2rem', borderRadius: '50%', background: 'rgba(var(--glass-rgb),0.06)', border: '1px solid rgba(var(--glass-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--color-text-subtle)' }}>
-                          {(user.name ?? '?').charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-
-                      {/* Name */}
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: '#D4D4D8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
-                      </div>
-
-                      {/* Email */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', minWidth: 0 }}>
-                        <Mail style={{ width: '0.625rem', height: '0.625rem', color: '#3f3f46', flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</span>
-                      </div>
-
-                      {/* Role */}
-                      <RoleBadge role={user.role} />
-
-                      {/* Join date */}
-                      <span style={{ fontSize: '0.6875rem', color: '#3f3f46', whiteSpace: 'nowrap' }}>
-                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-        </AnimatePresence>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
-      {/* Toast */}
-      <AnimatePresence>{toast && <Toast message={toast.message} type={toast.type} />}</AnimatePresence>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} />}
+      </AnimatePresence>
     </div>
   );
 };

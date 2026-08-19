@@ -2,33 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, X, ArrowRight, Clock, Users } from 'lucide-react';
 
-const SPRING = { type: 'spring', stiffness: 380, damping: 30 };
-
 /**
- * Liquid-glass modal that prompts an attendee for an event access code before
- * hitting the registration API. The parent controls open/close state and
- * provides the async onSubmitCode handler.
+ * EventAccessModal — Retro Terminal Amber version.
+ * Hard 2px border, unblurred 10px shadow, VT323 title, IBM Plex Mono body.
+ * No blur, no rounded corners, no spring physics.
+ * Parent controls open/close state and provides async onSubmitCode handler.
  */
 export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode }) {
-  const [code, setCode]               = useState('');
-  const [error, setError]             = useState('');
+  const [code, setCode]                 = useState('');
+  const [error, setError]               = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset when the modal opens for a new event
   useEffect(() => {
     if (isOpen) { setCode(''); setError(''); }
   }, [isOpen, event?.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!code.trim()) { setError('Please enter the event code.'); return; }
+    if (!code.trim()) { setError('ENTER THE EVENT CODE.'); return; }
     setError('');
     setIsSubmitting(true);
     try {
       await onSubmitCode(code.trim());
       onClose();
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || 'Invalid event code.');
+      const msg = err?.response?.data?.message || err?.message || 'INVALID EVENT CODE.';
+      setError(msg.toUpperCase());
     } finally {
       setIsSubmitting(false);
     }
@@ -38,9 +37,7 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
 
   const fmtWindow = (iso) =>
     iso
-      ? new Date(iso).toLocaleDateString('en-US', {
-          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-        })
+      ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
       : '—';
 
   return (
@@ -48,151 +45,113 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
       {isOpen && event && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
 
-          {/* Backdrop */}
+          {/* Backdrop — flat dark, no blur */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.1, ease: 'linear' }}
             onClick={onClose}
-            style={{
-              position: 'absolute', inset: 0,
-              background: 'rgba(0,0,0,0.72)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-            }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)' }}
           />
 
-          {/* Liquid-glass panel */}
+          {/* Modal panel */}
           <motion.div
             key="modal"
-            initial={{ opacity: 0, scale: 0.94, y: 24, filter: 'blur(6px)' }}
-            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, scale: 0.94, y: 16, filter: 'blur(6px)' }}
-            transition={SPRING}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.12, ease: 'linear' }}
             style={{
               position: 'relative',
-              width: '100%', maxWidth: '420px',
-              borderRadius: '2rem',
-              background: 'rgba(var(--glass-rgb),0.06)',
-              backdropFilter: 'blur(48px)',
-              WebkitBackdropFilter: 'blur(48px)',
-              border: '1px solid rgba(var(--glass-rgb),0.12)',
-              boxShadow: '0 40px 100px rgba(0,0,0,0.8), inset 0 1px 0 rgba(var(--glass-rgb),0.14)',
-              overflow: 'hidden',
+              width: '100%', maxWidth: '440px',
+              background: 'var(--anchor)',
+              border: '2px solid var(--structure)',
+              boxShadow: '10px 10px 0px var(--ink)',
             }}
           >
-            {/* Top specular line */}
+            {/* Header strip */}
             <div style={{
-              height: '1px',
-              background: 'linear-gradient(90deg, transparent, rgba(var(--glass-rgb),0.22), transparent)',
-            }} />
-
-            <div style={{ padding: '2rem' }}>
-
-              {/* Close button */}
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                transition={SPRING}
-                onClick={onClose}
-                style={{
-                  position: 'absolute', top: '1.5rem', right: '1.5rem',
-                  width: '2rem', height: '2rem', borderRadius: '50%',
-                  background: 'rgba(var(--glass-rgb),0.07)',
-                  border: '1px solid rgba(var(--glass-rgb),0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', color: 'var(--color-text-subtle)',
-                }}
-              >
-                <X style={{ width: '0.9rem', height: '0.9rem' }} />
-              </motion.button>
-
-              {/* Header */}
-              <div style={{ marginBottom: '1.75rem' }}>
-                <div style={{
-                  width: '3rem', height: '3rem', borderRadius: '1rem',
-                  background: 'rgba(var(--glass-rgb),0.08)',
-                  border: '1px solid rgba(var(--glass-rgb),0.10)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '1.25rem',
-                }}>
-                  <Lock style={{ width: '1.25rem', height: '1.25rem', color: 'var(--color-text-primary)' }} />
-                </div>
-                <h2 style={{
-                  fontSize: '1.375rem', fontWeight: 600,
-                  color: 'var(--color-text-primary)', letterSpacing: '-0.025em',
-                  lineHeight: 1.2, marginBottom: '0.5rem',
-                }}>
-                  Unlock Access
+              padding: '2rem 2.5rem 1.75rem',
+              borderBottom: '1px solid var(--dim-border)',
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            }}>
+              <div>
+                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--pop)', marginBottom: '0.625rem' }}>
+                  EVENTSPHERE&thinsp;//&thinsp;GATE CHECK
+                </p>
+                <h2 style={{ fontFamily: "'VT323', monospace", fontSize: '2.25rem', textTransform: 'uppercase', color: 'var(--structure)', lineHeight: 1 }}>
+                  ENTER ACCESS CODE
                 </h2>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-subtle)', lineHeight: 1.6 }}>
-                  Enter the invite code provided by the organizer to register for{' '}
-                  <span style={{ color: '#D4D4D8', fontWeight: 500 }}>{event.title}</span>.
+                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', opacity: 0.55, lineHeight: 1.8, letterSpacing: '0.04em', marginTop: '0.625rem', maxWidth: '320px' }}>
+                  TYPE THE INVITE CODE PROVIDED BY THE ORGANIZER FOR{' '}
+                  <strong style={{ color: 'var(--structure)', opacity: 1 }}>{event.title.toUpperCase()}</strong>.
                 </p>
               </div>
 
-              {/* Info pills */}
-              <div style={{ display: 'flex', gap: '0.625rem', marginBottom: '1.75rem', flexWrap: 'wrap' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.375rem 0.75rem', borderRadius: '999px',
-                  background: isSoldOut ? 'rgba(239,68,68,0.08)' : 'rgba(var(--glass-rgb),0.05)',
-                  border: `1px solid ${isSoldOut ? 'rgba(239,68,68,0.2)' : 'rgba(var(--glass-rgb),0.08)'}`,
-                  fontSize: '0.75rem', fontWeight: 500,
-                  color: isSoldOut ? '#f87171' : '#D4D4D8',
-                }}>
-                  <Users style={{ width: '0.75rem', height: '0.75rem' }} />
-                  {isSoldOut ? 'Sold Out' : `${event.availableSeats} seats left`}
-                </div>
+              {/* Close button */}
+              <button
+                id="modal-close-btn"
+                className="grit-btn"
+                onClick={onClose}
+                aria-label="Close modal"
+                style={{
+                  width: '2.5rem', height: '2.5rem', flexShrink: 0,
+                  background: 'transparent', border: '1px solid var(--dim-border)',
+                  color: 'var(--structure)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
 
+            {/* Body */}
+            <div style={{ padding: '2rem 2.5rem 2.5rem' }}>
+
+              {/* Info badges */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.75rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.3rem 0.75rem', border: `1px solid ${isSoldOut ? 'var(--structure)' : 'var(--dim-border)'}`, fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: isSoldOut ? 'var(--structure)' : 'var(--structure)', opacity: isSoldOut ? 1 : 0.65 }}>
+                  <Users size={10} />
+                  {isSoldOut ? 'SOLD OUT' : `${event.availableSeats} SEATS LEFT`}
+                </div>
                 {event.registrationEnd && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '0.4rem',
-                    padding: '0.375rem 0.75rem', borderRadius: '999px',
-                    background: 'rgba(var(--glass-rgb),0.05)',
-                    border: '1px solid rgba(var(--glass-rgb),0.08)',
-                    fontSize: '0.75rem', fontWeight: 500, color: '#D4D4D8',
-                  }}>
-                    <Clock style={{ width: '0.75rem', height: '0.75rem' }} />
-                    Closes {fmtWindow(event.registrationEnd)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.3rem 0.75rem', border: '1px solid var(--dim-border)', fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--structure)', opacity: 0.55 }}>
+                    <Clock size={10} />
+                    CLOSES {fmtWindow(event.registrationEnd)}
                   </div>
                 )}
               </div>
 
               {/* Code form */}
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
+                    INVITE CODE
+                  </label>
                   <input
                     id="event-code-input"
                     type="text"
                     maxLength={12}
-                    placeholder="XXXXXX"
+                    placeholder="ES-XX-XXXXXX"
                     value={code}
-                    onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                    onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
                     disabled={isSoldOut || isSubmitting}
                     autoFocus
+                    className="grit-input"
                     style={{
-                      width: '100%', boxSizing: 'border-box',
-                      height: '3.75rem',
-                      background: 'rgba(0,0,0,0.35)',
-                      border: error
-                        ? '1px solid rgba(239,68,68,0.45)'
-                        : '1px solid rgba(var(--glass-rgb),0.10)',
-                      borderRadius: '1rem',
-                      padding: '0 1.25rem',
+                      width: '100%', height: '4rem',
+                      padding: '0 1.5rem',
                       textAlign: 'center',
-                      fontSize: '1.5rem',
-                      letterSpacing: '0.3em',
-                      fontFamily: 'Quantico, monospace',
-                      fontWeight: 600,
-                      color: 'var(--color-text-primary)',
-                      outline: 'none',
-                      transition: 'border-color 0.2s',
+                      fontSize: '1.375rem',
+                      letterSpacing: '0.25em',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontWeight: 700,
+                      border: error ? '2px solid var(--structure)' : undefined,
                       opacity: isSoldOut ? 0.4 : 1,
                     }}
-                    onFocus={(e) => { if (!error) e.target.style.borderColor = 'rgba(var(--glass-rgb),0.28)'; }}
-                    onBlur={(e)  => { if (!error) e.target.style.borderColor = 'rgba(var(--glass-rgb),0.10)'; }}
                   />
 
                   <AnimatePresence>
@@ -200,50 +159,46 @@ export default function EventAccessModal({ isOpen, onClose, event, onSubmitCode 
                       <motion.p
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        style={{
-                          marginTop: '0.5rem',
-                          fontSize: '0.8125rem', color: '#f87171',
-                          textAlign: 'center',
-                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.1, ease: 'linear' }}
+                        style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', letterSpacing: '0.06em', opacity: 0.8 }}
                       >
-                        {error}
+                        !! {error}
                       </motion.p>
                     )}
                   </AnimatePresence>
                 </div>
 
                 {/* CTA */}
-                <motion.button
+                <button
                   id="event-code-submit"
                   type="submit"
-                  whileHover={!isSoldOut && !isSubmitting ? { scale: 1.02 } : undefined}
-                  whileTap={!isSoldOut && !isSubmitting ? { scale: 0.97 } : undefined}
-                  transition={SPRING}
+                  className="grit-btn"
                   disabled={isSubmitting || isSoldOut}
                   style={{
-                    width: '100%', height: '3rem',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                    background: isSoldOut ? 'rgba(var(--glass-rgb),0.05)' : isSubmitting ? 'rgba(var(--glass-rgb),0.55)' : 'var(--color-text-primary)',
-                    border: 'none',
-                    borderRadius: '1rem',
-                    color: isSoldOut ? 'var(--color-text-muted)' : 'var(--color-bg-primary)',
-                    fontSize: '0.9375rem', fontWeight: 700,
+                    width: '100%', height: '3.25rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem',
+                    background: isSoldOut ? 'var(--dim-bg)' : 'var(--pop)',
+                    border: `2px solid ${isSoldOut ? 'var(--dim-border)' : 'var(--pop)'}`,
+                    color: isSoldOut ? 'var(--structure)' : 'var(--anchor)',
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+                    boxShadow: isSoldOut ? 'none' : 'var(--shadow)',
                     cursor: isSoldOut || isSubmitting ? 'not-allowed' : 'pointer',
-                    transition: 'background 0.2s',
+                    opacity: isSubmitting ? 0.65 : 1,
                   }}
                 >
-                  {isSubmitting
-                    ? 'Verifying…'
-                    : isSoldOut
-                    ? 'Sold Out'
-                    : (
-                      <>
-                        Confirm Registration
-                        <ArrowRight style={{ width: '1rem', height: '1rem' }} />
-                      </>
-                    )}
-                </motion.button>
+                  {isSubmitting ? (
+                    <>
+                      <span className="spin-grit" style={{ display: 'inline-block', width: '0.875rem', height: '0.875rem', border: '2px solid var(--anchor)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                      VERIFYING...
+                    </>
+                  ) : isSoldOut ? (
+                    'SOLD OUT'
+                  ) : (
+                    <>CONFIRM REGISTRATION <ArrowRight size={13} /></>
+                  )}
+                </button>
               </form>
             </div>
           </motion.div>

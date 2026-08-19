@@ -1,115 +1,112 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, LogOut, User, Sun, Moon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { LogOut, LayoutGrid } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { useTheme } from '../../context/ThemeContext.jsx';
 
+// ── Theme Toggle Hook ─────────────────────────────────────────────────────────
+export const useTheme = () => {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('es-theme') || 'dark';
+  });
+
+  const toggle = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('es-theme', next);
+      if (next === 'light') {
+        document.documentElement.dataset.theme = 'light';
+      } else {
+        delete document.documentElement.dataset.theme;
+      }
+      return next;
+    });
+  }, []);
+
+  return { theme, toggle };
+};
+
+// ── Navbar ────────────────────────────────────────────────────────────────────
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggle } = useTheme();
 
   return (
-    <motion.nav
-      initial={{ opacity: 0, y: -16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 2rem',
-        height: '4rem',
-        background: 'rgba(var(--glass-rgb), 0.05)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(var(--glass-rgb),0.07)',
-      }}
-    >
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+    <nav style={{
+      position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 3rem', height: '64px',
+      background: 'var(--anchor)',
+      borderBottom: '2px solid var(--structure)',
+    }}>
+      {/* Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
         <div style={{
-          width: '1.75rem', height: '1.75rem',
-          borderRadius: '0.5rem',
-          background: 'rgba(var(--glass-rgb),0.08)',
-          border: '1px solid rgba(var(--glass-rgb),0.12)',
+          width: '2rem', height: '2rem',
+          border: '1px solid var(--pop)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Sparkles style={{ width: '0.875rem', height: '0.875rem', color: 'var(--color-text-primary)' }} />
+          <LayoutGrid size={14} color="var(--pop)" />
         </div>
-        <span style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
-          Event<span style={{ color: 'var(--color-text-subtle)' }}>Sphere</span>
-        </span>
+        <div>
+          <p style={{
+            fontFamily: "'VT323', monospace",
+            fontSize: '1.5rem', color: 'var(--structure)',
+            letterSpacing: '0.05em', lineHeight: 1,
+            textTransform: 'uppercase',
+          }}>
+            EVENTSPHERE
+          </p>
+          <p style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.4375rem', color: 'var(--structure)',
+            letterSpacing: '0.16em', opacity: 0.45, textTransform: 'uppercase',
+            marginTop: '0.125rem',
+          }}>
+            {user?.role?.replace('ROLE_', '') || 'PORTAL'}
+          </p>
+        </div>
       </div>
 
-      {/* User info + logout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-          <div style={{
-            width: '2rem', height: '2rem',
-            borderRadius: '50%',
-            background: 'rgba(var(--glass-rgb),0.08)',
-            border: '1px solid rgba(var(--glass-rgb),0.10)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <User style={{ width: '0.875rem', height: '0.875rem', color: 'var(--color-text-primary)' }} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-primary)', lineHeight: 1.2 }}>
-              {user?.name}
-            </p>
-            <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-subtle)', lineHeight: 1.2 }}>
-              {user?.role?.replace('ROLE_', '')}
-            </p>
-          </div>
-        </div>
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* User identity */}
+        <p style={{
+          fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: '0.5625rem', fontWeight: 700,
+          color: 'var(--structure)', letterSpacing: '0.08em', textTransform: 'uppercase',
+          opacity: 0.6,
+        }}>
+          {user?.name || 'USER'}
+        </p>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={toggleTheme}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: '2rem', height: '2rem',
-            borderRadius: '0.625rem',
-            background: 'rgba(var(--glass-rgb),0.05)',
-            border: '1px solid rgba(var(--glass-rgb),0.08)',
-            color: 'var(--color-text-subtle)',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.08)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-subtle)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.05)'; }}
+        {/* Theme toggle */}
+        <button
+          className="theme-toggle"
+          onClick={toggle}
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label="Toggle theme"
         >
-          {theme === 'dark' ? <Sun style={{ width: '0.875rem', height: '0.875rem' }} /> : <Moon style={{ width: '0.875rem', height: '0.875rem' }} />}
-        </motion.button>
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        {/* Sign out */}
+        <button
+          className="grit-btn"
           onClick={logout}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.375rem',
-            padding: '0.375rem 0.75rem',
-            borderRadius: '0.625rem',
-            background: 'rgba(var(--glass-rgb),0.05)',
-            border: '1px solid rgba(var(--glass-rgb),0.08)',
-            color: 'var(--color-text-subtle)',
-            fontSize: '0.8125rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            height: '2.5rem', padding: '0 1.25rem',
+            background: 'transparent', border: '2px solid var(--dim-border)',
+            color: 'var(--structure)',
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+            boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.08)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-subtle)'; e.currentTarget.style.background = 'rgba(var(--glass-rgb),0.05)'; }}
         >
-          <LogOut style={{ width: '0.875rem', height: '0.875rem' }} />
-          Sign out
-        </motion.button>
+          <LogOut size={11} />
+          SIGN OUT
+        </button>
       </div>
-    </motion.nav>
+    </nav>
   );
 };
 
