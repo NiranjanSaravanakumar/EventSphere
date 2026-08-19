@@ -13,7 +13,7 @@ secrets/
 
 # Local test credentials — NEVER commit
 TEST_CREDENTIALS.env
-
+postman_api_guide.env
 # ── Java / Maven (backend/) ──────────────────────────────────
 target/
 *.class
