@@ -29,9 +29,28 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        // ── Password policy enforcement ──────────────────────────────────────
+        String pw = request.password();
+        if (pw == null || pw.length() < 8 || pw.length() > 16) {
+            throw new IllegalArgumentException("Password must be 8-16 characters.");
+        }
+        if (!pw.matches(".*[A-Z].*")) {
+            throw new IllegalArgumentException("Password must contain at least 1 uppercase letter.");
+        }
+        if (!pw.matches(".*[a-z].*")) {
+            throw new IllegalArgumentException("Password must contain at least 1 lowercase letter.");
+        }
+        if (!pw.matches(".*[0-9].*")) {
+            throw new IllegalArgumentException("Password must contain at least 1 number.");
+        }
+        if (!pw.matches(".*[@$!%*?&#^()_\\-+=].*")) {
+            throw new IllegalArgumentException("Password must contain at least 1 special symbol (@$!%*?&).");
+        }
+
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email is already registered: " + request.email());
         }
+
 
         String rawRole = (request.role() != null && !request.role().isBlank())
                 ? request.role().toUpperCase()

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Mail, Lock, User, ArrowRight, ArrowLeft,
-  Ticket, Mic2, ShieldCheck,
+  Ticket, Mic2, ShieldCheck, Calendar, MapPin, Eye, EyeOff,
 } from 'lucide-react';
 import { useAuth, emailToSlug } from '../context/AuthContext.jsx';
 
@@ -31,7 +31,7 @@ const useTheme = () => {
 };
 
 // ── Form field ────────────────────────────────────────────────────────────────
-const Field = ({ label, type = 'text', name, value, onChange, placeholder, icon: Icon, required, autoComplete }) => (
+const Field = ({ label, type = 'text', name, value, onChange, placeholder, icon: Icon, required = true, autoComplete }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
     <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--structure)' }}>
       {label}
@@ -52,7 +52,123 @@ const Field = ({ label, type = 'text', name, value, onChange, placeholder, icon:
   </div>
 );
 
-// ── Portal card ───────────────────────────────────────────────────────────────
+// ── Phone Field (+91 locked) ─────────────────────────────────────────────────
+const inputBase = {
+  height: '3rem', background: 'transparent',
+  border: '2px solid var(--structure)', color: 'var(--structure)',
+  fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.8125rem',
+  outline: 'none', borderRadius: 0, transition: 'border-color 0s',
+};
+const labelBase = {
+  fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem',
+  fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+  color: 'var(--structure)', marginBottom: '0.5rem', display: 'block',
+};
+const PhoneField = ({ value, onChange }) => (
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <label style={labelBase}>PHONE NUMBER</label>
+    <div style={{ display: 'flex' }}>
+      <div style={{ ...inputBase, flexShrink: 0, padding: '0 0.875rem', borderRight: 'none', display: 'flex', alignItems: 'center', userSelect: 'none' }}>+91</div>
+      <input id="phone-number-input" type="tel" name="phoneNumber" value={value}
+        onChange={e => { const d = e.target.value.replace(/\D/g,'').slice(0,10); onChange({ target: { name: 'phoneNumber', value: d } }); }}
+        placeholder="9876543210" maxLength={10} required autoComplete="tel-national"
+        style={{ ...inputBase, flex: 1, borderLeft: '2px solid var(--structure)', paddingLeft: '0.75rem' }}
+        onFocus={e => { e.target.style.borderColor = 'var(--pop)' }}
+        onBlur={e => { e.target.style.borderColor = 'var(--structure)' }} />
+    </div>
+    {value.length > 0 && value.length < 10 && (
+      <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.06em', color: 'var(--structure)', opacity: 0.55, marginTop: '0.25rem' }}>
+        !! {value.length}/10 DIGITS ENTERED
+      </p>
+    )}
+  </div>
+);
+
+
+// ── DOB Field ─────────────────────────────────────────────────────────────────
+const DobField = ({ value, onChange }) => (
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <label style={labelBase}>DATE OF BIRTH</label>
+    <div style={{ position: 'relative' }}>
+      <Calendar size={13} color="var(--structure)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.45, zIndex: 1 }} />
+      <input id="dob-input" type="date" name="dob" value={value} onChange={onChange}
+        required
+        max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().split('T')[0]; })()}
+        min={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 100); return d.toISOString().split('T')[0]; })()}
+        style={{ ...inputBase, width: '100%', paddingLeft: '2.75rem', colorScheme: 'dark' }}
+        onFocus={e => e.target.style.borderColor = 'var(--pop)'}
+        onBlur={e  => e.target.style.borderColor = 'var(--structure)'} />
+    </div>
+  </div>
+);
+
+// ── Password rules ────────────────────────────────────────────────────────────
+const pwRules = [
+  { id: 'len',   label: '8 – 16 CHARACTERS',    test: (p) => p.length >= 8 && p.length <= 16 },
+  { id: 'upper', label: '1 UPPERCASE LETTER',    test: (p) => /[A-Z]/.test(p) },
+  { id: 'lower', label: '1 LOWERCASE LETTER',    test: (p) => /[a-z]/.test(p) },
+  { id: 'num',   label: '1 NUMBER',              test: (p) => /[0-9]/.test(p) },
+  { id: 'sym',   label: '1 SPECIAL SYMBOL',      test: (p) => /[@$!%*?&#^()_\-+=]/.test(p) },
+];
+const pwValid = (p) => p.length > 0 && pwRules.every(r => r.test(p));
+
+// ── Password Field (show/hide toggle) ────────────────────────────────────────
+const PasswordField = ({ label, name, value, onChange, autoComplete, id: fieldId }) => {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <label style={labelBase}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <Lock size={13} color="var(--structure)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.45 }} />
+        <input
+          id={fieldId} type={show ? 'text' : 'password'} name={name} value={value} onChange={onChange}
+          placeholder="••••••••" required autoComplete={autoComplete}
+          style={{ ...inputBase, width: '100%', paddingLeft: '2.75rem', paddingRight: '5.5rem' }}
+          onFocus={e => e.target.style.borderColor = 'var(--pop)'}
+          onBlur={e  => e.target.style.borderColor = 'var(--structure)'}
+        />
+        <button type="button" onClick={() => setShow(s => !s)}
+          title={show ? 'Hide password' : 'Show password'}
+          style={{
+            position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem',
+            color: 'var(--structure)', display: 'flex', alignItems: 'center',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--pop)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--structure)'}
+        >
+          {show ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Password Checklist (real-time terminal diagnostic) ────────────────────────
+const PasswordChecklist = ({ password }) => (
+  <div style={{
+    border: '1px solid var(--dim-border)', padding: '0.875rem 1rem',
+    display: 'flex', flexDirection: 'column', gap: '0.375rem',
+  }}>
+    <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', letterSpacing: '0.16em', color: 'var(--pop)', marginBottom: '0.25rem' }}>
+      SYS::PASSWORD DIAGNOSTIC
+    </p>
+    {pwRules.map(rule => {
+      const ok = rule.test(password);
+      return (
+        <div key={rule.id} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.08em', color: ok ? 'var(--pop)' : 'var(--structure)', opacity: ok ? 1 : 0.45, minWidth: '3rem' }}>
+            {ok ? '[ OK ]' : '[ ERR]'}
+          </span>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', letterSpacing: '0.06em', color: ok ? 'var(--pop)' : 'var(--structure)', opacity: ok ? 1 : 0.55 }}>
+            {rule.label}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+);
+
 const PortalCard = ({ id, icon: Icon, title, description, onClick }) => (
   <button
     id={id} type="button" onClick={onClick}
@@ -146,7 +262,8 @@ const AuthPage = () => {
   const [role, setRole]       = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
-  const [form, setForm]       = useState({ name: '', email: '', password: '' });
+  const [form, setForm]       = useState({ name: '', email: '', password: '', confirmPassword: '', dob: '', phoneNumber: '', city: '' });
+  const emptyForm = { name: '', email: '', password: '', confirmPassword: '', dob: '', phoneNumber: '', city: '' };
 
   const portals = {
     ROLE_ATTENDEE:  { icon: Ticket, label: 'Attendee Portal', loginTitle: 'IDENTITY CHECK', loginSub: 'SIGN IN TO YOUR ATTENDEE PORTAL.', registerTitle: 'JOIN THE PLATFORM', registerSub: 'CREATE YOUR ATTENDEE ACCOUNT.' },
@@ -156,9 +273,9 @@ const AuthPage = () => {
   const portal  = role ? portals[role] : null;
   const isLogin = step === 'login';
 
-  const selectPortal = (r) => { setRole(r); setStep('login'); setError(''); setForm({ name: '', email: '', password: '' }); };
-  const goBack       = () => { setStep('selection'); setRole(null); setError(''); setForm({ name: '', email: '', password: '' }); };
-  const toggleMode   = () => { setStep(isLogin ? 'register' : 'login'); setError(''); setForm({ name: '', email: '', password: '' }); };
+  const selectPortal = (r) => { setRole(r); setStep('login'); setError(''); setForm(emptyForm); };
+  const goBack       = () => { setStep('selection'); setRole(null); setError(''); setForm(emptyForm); };
+  const toggleMode   = () => { setStep(isLogin ? 'register' : 'login'); setError(''); setForm(emptyForm); };
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const navigateAfterAuth = (authUser) => {
@@ -175,7 +292,34 @@ const AuthPage = () => {
         const authUser = await login(form.email, form.password);
         navigateAfterAuth(authUser);
       } else {
-        await register(form.name, form.email, form.password, role);
+        // Email format check
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+          setError('INVALID EMAIL ADDRESS FORMAT. CHECK AND TRY AGAIN.');
+          setLoading(false); return;
+        }
+        // Phone must be exactly 10 digits
+        if (!/^\d{10}$/.test(form.phoneNumber)) {
+          setError('PHONE NUMBER MUST BE EXACTLY 10 DIGITS.');
+          setLoading(false); return;
+        }
+        if (form.dob) {
+          const born = new Date(form.dob);
+          const cutoff = new Date();
+          cutoff.setFullYear(cutoff.getFullYear() - 18);
+          if (born > cutoff) {
+            setError('YOU MUST BE AT LEAST 18 YEARS OLD TO REGISTER.');
+            setLoading(false); return;
+          }
+        }
+        if (!pwValid(form.password)) {
+          setError('PASSWORD DOES NOT MEET SECURITY REQUIREMENTS.');
+          setLoading(false); return;
+        }
+        if (form.password !== form.confirmPassword) {
+          setError('PASSWORDS DO NOT MATCH. RE-ENTER AND TRY AGAIN.');
+          setLoading(false); return;
+        }
+        await register(form.name, form.email, form.password, role, form.dob, form.phoneNumber, form.city);
         const slug = emailToSlug(form.email);
         if (role === 'ROLE_ORGANIZER') navigate(`/organizer/${slug}/dashboard`, { replace: true });
         else                           navigate(`/attendee/${slug}/dashboard`,  { replace: true });
@@ -299,10 +443,27 @@ const AuthPage = () => {
 
                   <form id={isLogin ? 'login-form' : 'register-form'} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {!isLogin && (
-                      <Field label="FULL NAME" name="name" value={form.name} onChange={handleChange} placeholder="Jane Smith" autoComplete="name" required icon={User} />
+                      <>
+                        <Field label="FULL NAME" name="name" value={form.name} onChange={handleChange} placeholder="YOUR NAME" autoComplete="name" required icon={User} />
+                        <DobField value={form.dob} onChange={handleChange} />
+                        <PhoneField value={form.phoneNumber} onChange={handleChange} />
+                        <Field label="CITY" name="city" value={form.city} onChange={handleChange} placeholder="YOUR CITY" autoComplete="address-level2" required icon={MapPin} />
+                      </>
                     )}
-                    <Field label="EMAIL ADDRESS" type="email" name="email" value={form.email} onChange={handleChange} placeholder="jane@company.com" autoComplete="email" required icon={Mail} />
-                    <Field label="PASSWORD" type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" autoComplete={isLogin ? 'current-password' : 'new-password'} required icon={Lock} />
+                    <Field label="EMAIL ADDRESS" type="email" name="email" value={form.email} onChange={handleChange} placeholder="[EMAIL_ADDRESS]" autoComplete="email" required icon={Mail} />
+                    {/* Password — login uses plain Field, register uses PasswordField + checklist + confirm */}
+                    {isLogin ? (
+                      <Field label="PASSWORD" type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" autoComplete="current-password" required icon={Lock} />
+                    ) : (
+                      <>
+                        <PasswordField label="PASSWORD" name="password" value={form.password} onChange={handleChange} autoComplete="new-password" id="register-password" />
+                        {form.password.length > 0 && <PasswordChecklist password={form.password} />}
+                        <PasswordField label="RE-ENTER PASSWORD" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} autoComplete="new-password" id="register-confirm-password" />
+                        {form.confirmPassword.length > 0 && form.password !== form.confirmPassword && (
+                          <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5rem', color: 'var(--structure)', letterSpacing: '0.06em', opacity: 0.7 }}>!! PASSWORDS DO NOT MATCH</p>
+                        )}
+                      </>
+                    )}
 
                     {error && (
                       <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.5625rem', color: 'var(--structure)', border: '1px solid var(--structure)', padding: '0.75rem 1rem', letterSpacing: '0.04em', opacity: 0.8 }}>
@@ -312,14 +473,17 @@ const AuthPage = () => {
 
                     <button
                       id={isLogin ? 'login-submit' : 'register-submit'}
-                      type="submit" className="grit-btn" disabled={loading}
+                      type="submit" className="grit-btn"
+                      disabled={loading || (!isLogin && (!pwValid(form.password) || form.password !== form.confirmPassword))}
                       style={{
                         width: '100%', height: '3rem',
                         background: 'var(--pop)', border: '2px solid var(--pop)',
                         color: 'var(--anchor)', fontFamily: "'IBM Plex Mono', monospace",
                         fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
                         boxShadow: 'var(--shadow)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                        opacity: loading ? 0.65 : 1, cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: (loading || (!isLogin && (!pwValid(form.password) || form.password !== form.confirmPassword))) ? 0.45 : 1,
+                        cursor: (loading || (!isLogin && (!pwValid(form.password) || form.password !== form.confirmPassword))) ? 'not-allowed' : 'pointer',
+                        pointerEvents: (!isLogin && (!pwValid(form.password) || form.password !== form.confirmPassword)) ? 'none' : 'auto',
                       }}
                     >
                       {loading ? (
@@ -365,6 +529,13 @@ const AuthPage = () => {
       </AnimatePresence>
 
       <style>{`
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          position: absolute; inset: 0; width: 100%; height: 100%;
+          opacity: 0; cursor: pointer;
+        }
+        input[type="date"] { font-family: 'IBM Plex Mono', monospace; cursor: pointer; position: relative; }
+        input[type="tel"]::-webkit-outer-spin-button, input[type="tel"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 50px var(--anchor) inset !important; -webkit-text-fill-color: var(--structure) !important; }
         @media (max-width: 768px) {
           .auth-right-panel { display: none !important; }
           .auth-left-panel  { flex: 0 0 100% !important; border-right: none !important; }
