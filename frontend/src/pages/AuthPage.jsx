@@ -230,17 +230,19 @@ const AuthPage = () => {
         <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '440px', background: 'var(--anchor)', border: '2px solid var(--structure)', boxShadow: '12px 12px 0px var(--ink)' }}>
 
           {/* Card header bar */}
-          <div style={{ borderBottom: '1px solid var(--dim-border)', padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.4375rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)' }}>
-              {step === 'selection' ? '// CHOOSE PORTAL' : isLogin ? '// SIGN IN' : '// REGISTER'}
+          <div style={{ borderBottom: '1px solid var(--dim-border)', padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              id={step === 'selection' ? 'back-to-landing' : 'back-to-selection'}
+              className="grit-btn" type="button"
+              onClick={step === 'selection' ? () => navigate('/') : goBack}
+              title={step === 'selection' ? 'Back to home' : 'Back to portal selection'}
+              style={{ flexShrink: 0, width: '2rem', height: '2rem', background: 'transparent', border: '1px solid var(--dim-border)', color: 'var(--structure)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
+              <ArrowLeft size={12} />
+            </button>
+            <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '0.9rem', fontWeight: 1000, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--pop)' }}>
+              {step === 'selection' ? ' // CHOOSE PORTAL' : isLogin ? ' // SIGN IN' : ':// REGISTER'}
             </p>
-            {step !== 'selection' && (
-              <button id="back-to-selection" className="grit-btn" type="button" onClick={goBack}
-                style={{ width: '2rem', height: '2rem', background: 'transparent', border: '1px solid var(--dim-border)', color: 'var(--structure)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)', cursor: 'pointer' }}>
-                <ArrowLeft size={12} />
-              </button>
-            )}
-          </div>
+            </div>
 
           {/* Card body */}
           <div style={{ padding: '2rem' }}>
