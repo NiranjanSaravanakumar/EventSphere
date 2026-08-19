@@ -1,7 +1,7 @@
 # EventSphere — Frontend
 
 React 19 + Vite 8 SPA for the EventSphere event management platform.  
-Styled with a premium **"Liquid Glass"** design language — heavy backdrop blur, monochrome palette, Framer Motion physics animations, and Apple-inspired UI components.
+Styled with the **Hardware Brutalism** monochrome design language — IBM Plex Mono + VT323 typefaces, a strict 60/30/10 CSS variable color system, CRT scanline overlays, mechanical press animations, and hard-offset box shadows. No design framework; all styling is pure CSS variables and `grit-*` utility classes from `index.css`.
 
 ---
 
@@ -12,10 +12,12 @@ Styled with a premium **"Liquid Glass"** design language — heavy backdrop blur
 | Framework | React 19 (JSX only — no TypeScript) |
 | Bundler | Vite 8 |
 | Animations | Framer Motion 13 |
+| Charts | Apache ECharts (`echarts-for-react`) |
+| QR Reader | `@zxing/browser` (BrowserMultiFormatReader) |
 | Icons | Lucide React |
 | HTTP | Axios |
 | Routing | React Router DOM v7 |
-| Fonts | Inter (Google Fonts) |
+| Fonts | VT323 + IBM Plex Mono (Google Fonts) |
 
 ---
 
@@ -84,40 +86,101 @@ frontend/src/
 ├── App.jsx                       # Root — router, role-based route guards
 ├── main.jsx                      # React DOM entry point
 │
+├── assets/
+│   └── index.css                 # Hardware Brutalism design system
+│                                   CSS variables (--anchor, --structure, --pop)
+│                                   grit-* utility classes, keyframe animations,
+│                                   light/dark theme switching via [data-theme]
+│
 ├── context/
-│   └── AuthContext.jsx           # JWT state management
-│                                   login(), register(), logout()
-│                                   Token rehydrated from localStorage on refresh
-│                                   login() returns user object for role checks
+│   ├── AuthContext.jsx           # JWT state management
+│   │                               login(email, password) → persists to localStorage
+│   │                               register(name, email, password, role, dob, phoneNumber, city)
+│   │                               logout() → clears localStorage
+│   │                               Rehydrates on page refresh from eventsphere_token / eventsphere_user
+│   └── ThemeContext.jsx          # data-theme attribute provider (dark / light toggle)
 │
 ├── services/
 │   └── api.js                    # Axios instance + all endpoint wrappers
-│                                   authApi, eventsApi, registrationsApi,
-│                                   checkInApi, analyticsApi, adminApi
+│                                   authApi, eventsApi, organizerApi, attendeeApi,
+│                                   registrationsApi, adminApi, checkInApi
 │
 ├── pages/
 │   ├── AdminLoginPage.jsx        # Dedicated admin login at /adminlogin
-│   │                               Indigo accent design, role guard after login
-│   ├── AnalyticsDashboard.jsx    # Animated stat cards, ring charts, funnel bars
-│   │                               Admin → global; Organizer → own events only
+│   ├── AnalyticsDashboard.jsx    # Bento Box metrics grid + ECharts donuts
+│   │                               Admin → global scope; Organizer → own events
 │   ├── AttendeePortal.jsx        # Discover events + My Tickets + Cancel Registration
-│   ├── AuthPage.jsx              # Liquid Glass login / sign-up (role selector)
-│   └── OrganizerDashboard.jsx    # Event CRUD, stats row, scanner, analytics link
+│   ├── AuthPage.jsx              # 3-step portal selection → login / register
+│   │                               Expanded registration: Name, DOB, Phone, City, Email, Password
+│   │                               Real-time SYS::PASSWORD DIAGNOSTIC checklist
+│   ├── LandingPage.jsx           # Public marketing page at /
+│   ├── OrganizerDashboard.jsx    # Event CRUD — equal 2-col CSS Grid, no metrics
+│   └── OrganizerEventDetails.jsx # Per-event Bento Box: 6-col metric strip +
+│                                   guest list table + ECharts donuts + scanner trigger
 │
 └── components/
     ├── shared/
-    │   ├── Navbar.jsx            # Top navigation with role-based menu links
-    │   ├── ScannerPanel.jsx      # QR token input modal for organizer check-in
-    │   └── TicketPass.jsx        # 3D magnetic Apple Wallet-style ticket card
-    │                               Physics hover (useSpring + useTransform)
-    │                               Cursor-chasing specular glare overlay
-    │                               REGISTERED / CHECKED_IN status variants
+    │   ├── Navbar.jsx            # Top navigation; exports useTheme() hook
+    │   ├── ScannerPanel.jsx      # Check-In Command Center overlay modal
+    │   │                           Camera Scan tab (@zxing auto-detect) + Manual Entry tab
+    │   └── TicketPass.jsx        # QR ticket punch-card (REGISTERED / CHECKED_IN variants)
     └── ui/
-        ├── AnimatedCounter.jsx   # useSpring count-up animation
-        ├── GlassButton.jsx       # Reusable glass-morphism button
-        ├── GlassCard.jsx         # Card with backdrop blur and specular border
-        └── GlassInput.jsx        # Icon-prefixed glass-style input field
+        ├── AnimatedCounter.jsx   # Count-up stat numbers (Framer Motion)
+        └── EventAccessModal.jsx  # Invite-code entry dialog for gated events
 ```
+
+> **Note on removed components:** `GlassButton.jsx`, `GlassCard.jsx`, and `GlassInput.jsx` (Liquid Glass design system) have been removed. All styling now uses CSS variables and `grit-*` utility classes from `index.css` directly.
+
+---
+
+## Design System — Hardware Brutalism Monochrome
+
+All colors across the entire application are governed by three CSS variable tokens. **No hardcoded color values (`black`, `white`, `#FDF6E3`, etc.) are permitted in component code.**
+
+### 60/30/10 Color Rule
+
+| Token | CSS Variable | Dark Mode | Light Mode | Role |
+|---|---|---|---|---|
+| **Anchor** (60%) | `var(--anchor)` | `#120E0B` | `#FDF6E3` | Dominant background — every surface |
+| **Structure** (30%) | `var(--structure)` | `#FDF6E3` | `#120E0B` | Text, borders, empty states |
+| **Pop** (10%) | `var(--pop)` | `#FFB300` | `#FFB300` | Accent only — CTAs, active states |
+
+The **Pop** colour (`#FFB300` amber) is identical in both modes and is **never** used as a large surface background.
+
+### Theme Switching
+
+The `ThemeContext.jsx` sets a `data-theme` attribute on `<html>`. The stylesheet defines:
+
+```css
+/* Default — Dark Mode */
+:root {
+  --anchor:    #120E0B;
+  --structure: #FDF6E3;
+  --pop:       #FFB300;
+}
+
+/* Light Mode */
+[data-theme="light"] {
+  --anchor:    #FDF6E3;
+  --structure: #120E0B;
+  --pop:       #FFB300;   /* unchanged */
+}
+```
+
+The theme toggle button (☀ / ☾) is in the header of every authenticated page.
+
+### Typography
+
+| Font | Usage |
+|---|---|
+| `VT323` | All `<h1>–<h4>` headings, large stat numbers — uppercase, terminal feel |
+| `IBM Plex Mono` | All body text, labels, inputs, code — uppercase with letter-spacing |
+
+### Micro-Animations
+
+- **`.grit-btn:active`** — `translate(6px, 6px)` + `box-shadow: none` via `steps(3, end)` — mechanical depress
+- **`.grit-card:hover`** — `translate(-3px, -3px)` + increased shadow offset — haptic lift
+- **Film Grain SVG** — fixed, full-viewport `feTurbulence` overlay at 6% opacity on every page
 
 ---
 
@@ -125,36 +188,44 @@ frontend/src/
 
 | Path | Component | Access |
 |---|---|---|
+| `/` | `LandingPage` | Public |
 | `/auth` | `AuthPage` | Public (redirects if authenticated) |
-| `/adminlogin` | `AdminLoginPage` | Public — Admin portal |
-| `/` | `HomeRedirect` | Smart redirect based on role |
-| `/portal` | `AttendeePortal` | All authenticated users |
-| `/dashboard` | `OrganizerDashboard` | ORGANIZER, ADMIN |
-| `/analytics` | `AnalyticsDashboard` | ORGANIZER, ADMIN |
+| `/login` | `AuthPage` | Public alias |
+| `/adminlogin` | `AdminLoginPage` | Public — Admin-only portal |
+| `/organizer/:username/dashboard` | `OrganizerDashboard` | ORGANIZER, ADMIN |
+| `/organizer/:username/event/:id` | `OrganizerEventDetails` | ORGANIZER, ADMIN |
+| `/attendee/:username/dashboard` | `AttendeePortal` | ATTENDEE |
 | `/admin/dashboard` | `AnalyticsDashboard` | ADMIN only |
 
-All protected routes use the `<ProtectedRoute roles={[...]}>` guard.  
-Unauthorized role access redirects to `/portal`.
+The URL slug (`:username`) is derived from the email address: `alice@acme.com → alice` via `emailToSlug()` in `AuthContext.jsx`.
 
 ---
 
 ## Authentication Flow
 
 ```
-User submits login form
-  └─► authApi.login({ email, password })
-        └─► POST /api/auth/login
-              ← { accessToken, userId, name, email, role }
-              → Stored in localStorage (eventsphere_token, eventsphere_user)
-              → AuthContext sets user + token state
-              → App re-renders with new auth state
-              → HomeRedirect sends to /dashboard or /portal
+Registration (new user):
+  AuthPage (step 1: portal selection → role locked)
+  AuthPage (step 2: fill Name, DOB, Phone, City, Email, Password)
+    └─► real-time SYS::PASSWORD DIAGNOSTIC checklist (5 rules)
+    └─► submit button disabled until all rules pass + passwords match
+  authApi.register({ name, email, password, role, dob, phoneNumber, city })
+    └─► POST /api/auth/register
+          ← { accessToken, tokenType, userId, name, email, role }
+          → Stored in localStorage (eventsphere_token, eventsphere_user)
+          → Navigate to role-specific dashboard URL
+
+Login:
+  authApi.login({ email, password })
+    └─► POST /api/auth/login
+          ← { accessToken, tokenType, userId, name, email, role }
+          → Same persist + navigate flow
 
 On page refresh:
   AuthProvider reads localStorage → sets user + token without API call
 
-On 401 response:
-  Axios interceptor → clears localStorage → redirects to /auth
+On 401/403 response:
+  Axios interceptor → clears localStorage → redirects to /login
 ```
 
 ---
@@ -162,41 +233,37 @@ On 401 response:
 ## Key Pages
 
 ### AuthPage (`/auth`)
-- Toggle between **Sign In** and **Sign Up** with animated panel transition
-- Sign Up includes a role dropdown: `Attendee` or `Organizer`
-- Liquid Glass card with specular top border and ambient orbs
+- **Step 1:** Portal selection — "Attendee Portal" or "Creator Studio" (role locked)
+- **Step 2:** Login or Register (role badge shown, back button returns to step 1)
+- **Register fields:** Full Name · Date of Birth (≥18 enforced) · Phone Number (`+91` prefix locked, 10 digits) · City · Email · Password · Confirm Password
+- **`SYS::PASSWORD DIAGNOSTIC` panel:** 5-rule real-time checklist appears as the user types — `[ ERR]` / `[ OK ]` terminal format
+- **Right panel:** animated terminal log scrolling `TerminalPanel` (hidden on mobile)
 
 ### AdminLoginPage (`/adminlogin`)
-- Separate styled portal with indigo accent
-- Credential hint box showing default credentials
-- After login, verifies `user.role === 'ROLE_ADMIN'`; rejects non-admins
+- Separate portal hidden from the main auth flow
+- After login, verifies `user.role === 'ROLE_ADMIN'`; non-admins are rejected and logged out
 
-### OrganizerDashboard (`/dashboard`)
-- Stats row: Total Events · Total Registered · Total Capacity · Almost Full
-- Event card grid with edit/delete inline actions
-- `+ Create Event` modal
-- **Scanner** button opens `ScannerPanel` modal for QR check-in
-- **View Analytics** link navigates to `/analytics`
+### OrganizerDashboard (`/organizer/:username/dashboard`)
+- Equal 2-column CSS Grid of `TactileCard` event tiles — no asymmetric hero cards
+- Per-card: capacity fill bar, `AT CAPACITY` tag (≥90%), access code copy badge
+- Dashed-border draft tile always appears as the last slot
+- **No global metrics row** — all analytics live in the per-event details page
 
-### AttendeePortal (`/portal`)
-- **Discover** tab: event grid with live search and capacity bars
-- **My Tickets** tab: gallery of `TicketPass` Apple Wallet cards
-- Each registered ticket shows a **Cancel Registration** button (red, REGISTERED only)
-- After registration, auto-switches to "My Tickets" tab
+### OrganizerEventDetails (`/organizer/:username/event/:id`)
+- **Top row:** 6-column metric strip (Total Registered, Checked In, Pending, Capacity, Fill Rate, Available Seats)
+- **Body:** 2-column layout — left: event info + full guest list table; right sidebar: two ECharts donut charts + "People Inside Now" counter
+- `OPEN SCANNER` button triggers `ScannerPanel` full-screen overlay
+  - **Camera Scan** tab: `@zxing/browser` auto-detect, live CRT overlay, amber sweep reticle
+  - **Manual Entry** tab: paste/type `qr_token`, activate `VALIDATE` button
 
-### AnalyticsDashboard (`/analytics` or `/admin/dashboard`)
-- Animated count-up stat cards (AnimatedCounter via useSpring)
-- Two SVG ring charts: Fill Rate · Attendance Rate
-- Animated horizontal funnel (Capacity → Registered → Checked In)
-- Per-event breakdown rows with dual-layer progress bars
-- Refresh button with spinning icon animation
+### AttendeePortal (`/attendee/:username/dashboard`)
+- **Discover** tab: event grid with live search filter, capacity bars, register button
+- **My Tickets** tab: `TicketPass` QR punch-card tickets (REGISTERED / CHECKED_IN variants)
+- Cancel Registration button (only active on REGISTERED tickets)
 
-### TicketPass (component)
-- `300×300` QR code rendered as `<img src="data:image/png;base64,...">`
-- 3D hover: `rotateX` / `rotateY` driven by mouse position via `useSpring`
-- Cursor-chasing specular glare with `useTransform` + radial gradient
-- Perforated divider: notched circles + dashed line (pure CSS)
-- CHECKED_IN state: muted green badge
+### AnalyticsDashboard (`/admin/dashboard`)
+- Global metrics for Admin role (all organizers' data combined)
+- Animated count-up stat cards + ECharts donut charts
 
 ---
 
@@ -204,34 +271,41 @@ On 401 response:
 
 ```js
 // Auth
-authApi.register({ name, email, password, role })
+authApi.register({ name, email, password, role, dob, phoneNumber, city })
 authApi.login({ email, password })
 authApi.me()
 
 // Events
-eventsApi.getAll()
+eventsApi.available()                  // GET /events/available
 eventsApi.getById(id)
-eventsApi.getMyEvents()
 eventsApi.create(data)
 eventsApi.update(id, data)
 eventsApi.delete(id)
 
+// Organizer (scoped to JWT holder)
+organizerApi.myEvents()               // GET /organizers/me/events
+organizerApi.myDashboard()            // GET /organizers/me/dashboard
+
+// Attendee (scoped to JWT holder)
+attendeeApi.myTickets()               // GET /attendees/me/tickets
+
 // Registrations
-registrationsApi.register(eventId)
-registrationsApi.myTickets()
-registrationsApi.cancel(registrationId)       // DELETE /registrations/{id}
-registrationsApi.guestList(eventId)           // GET /registrations/event/{id}/guests
+registrationsApi.register(eventId, eventCode)
+registrationsApi.cancel(registrationId)
+registrationsApi.guestList(eventId)
 
 // Check-In
-checkInApi.validate(qrToken)
-
-// Analytics
-analyticsApi.dashboard()
+checkInApi.validate(qrToken)          // POST /events/check-in
 
 // Admin
-adminApi.getUsers()                           // GET /admin/users
-adminApi.getEvents()                          // GET /admin/events
+adminApi.getUsers()
+adminApi.getEvents()
+adminApi.analytics()
 ```
+
+All endpoints share one Axios instance with:
+- **Request interceptor:** attaches `Authorization: Bearer <token>` from `localStorage`
+- **Response interceptor:** on `401`/`403` → clears storage + redirects to `/login`
 
 ---
 
@@ -257,21 +331,16 @@ ESLint with `eslint-plugin-react-hooks` and `eslint-plugin-react-refresh`.
 
 ---
 
-## Design System
+## Password Requirements (UI-side enforcement)
 
-All styling is **vanilla CSS-in-JS** (inline `style` props) with design tokens:
+The `SYS::PASSWORD DIAGNOSTIC` checklist in `AuthPage.jsx` enforces these rules in real-time. The submit button is disabled until all pass:
 
-| Token | Value |
+| Rule | Status display |
 |---|---|
-| Background | `#050505` |
-| Surface | `rgba(255,255,255,0.04)` |
-| Border | `rgba(255,255,255,0.08)` |
-| Primary text | `#FAFAFA` |
-| Secondary text | `#71717A` |
-| Muted | `#3f3f46` |
-| Success accent | `#34d399` |
-| Danger | `#f87171` |
-| Admin accent | `#6366f1` (indigo) |
-| Backdrop blur | `20–32px` |
-| Border radius | `0.75rem` – `1.5rem` |
-| Font | Inter, system-ui, sans-serif |
+| 8 – 16 characters | `[ OK ]` amber / `[ ERR]` dim |
+| 1 uppercase letter (A–Z) | `[ OK ]` amber / `[ ERR]` dim |
+| 1 lowercase letter (a–z) | `[ OK ]` amber / `[ ERR]` dim |
+| 1 number (0–9) | `[ OK ]` amber / `[ ERR]` dim |
+| 1 special symbol (`@$!%*?&#^()_-+=`) | `[ OK ]` amber / `[ ERR]` dim |
+
+The backend enforces the identical ruleset independently. See `TROUBLESHOOTING.md #25` if the frontend checklist and backend validation drift out of sync.

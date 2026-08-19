@@ -45,6 +45,8 @@ The `DataSeeder.java` component seeds a default Admin account on first boot:
 | Password | `admin123` |
 | Role | `ROLE_ADMIN` |
 
+> ⚠️ Change the admin password immediately in any staging or production environment.
+
 ---
 
 ## Configuration
@@ -167,7 +169,7 @@ com.eventsphere/
 │
 ├── services/
 │   ├── AnalyticsService.java         # Scoped (organizer) or global (admin) metrics
-│   ├── AuthService.java              # Register, login, getCurrentUser
+│   ├── AuthService.java              # Register (+ password policy), login, getCurrentUser
 │   ├── CheckInService.java           # QR token validation + status update
 │   ├── EventService.java             # CRUD with Admin override bypass
 │   ├── QRCodeService.java            # ZXing Base64 PNG generator
@@ -178,7 +180,7 @@ com.eventsphere/
 │   ├── Registration.java    # Status enum: REGISTERED / CHECKED_IN / CANCELLED
 │   ├── Role.java
 │   ├── Ticket.java          # qr_token (unique TEXT)
-│   └── User.java
+│   └── User.java            # Expanded: name, email, password, dob, phoneNumber, city
 │
 ├── repositories/            # Spring Data JPA interfaces
 │   ├── EventRepository.java
@@ -189,28 +191,74 @@ com.eventsphere/
 │
 ├── dto/                     # Java records for request/response bodies
 │   ├── AnalyticsDashboardDTO.java
-│   ├── AuthDTOs.java
+│   ├── AuthDTOs.java        # RegisterRequest (7 fields), LoginRequest, AuthResponse, UserResponse
 │   ├── CheckInDTOs.java
 │   └── EventDTOs.java
 │
 └── security/
     ├── CustomUserDetailsService.java     # Loads user by email for Spring Security
     ├── JwtAuthenticationFilter.java      # @Component — reads Bearer token, sets context
-    └── JwtTokenProvider.java             # Token generation and validation
+    └── JwtTokenProvider.java             # HS256 token generation and validation
 ```
+
+---
+
+## User Entity — Expanded Schema
+
+The `User` entity and the corresponding `users` table carry the full personnel record. All fields marked **required** must be present in the `RegisterRequest` payload:
+
+| Column | Java Type | Constraint | Notes |
+|---|---|---|---|
+| `id` | `Long` | PK, auto-increment | — |
+| `name` | `String` | `@NotBlank`, 2–100 chars | Full display name |
+| `email` | `String` | `@Email`, unique | Immutable after creation |
+| `password` | `String` | BCrypt hash stored | See password policy below |
+| `dob` | `LocalDate` | `yyyy-MM-dd` string parsed | Age ≥ 18 enforced by frontend |
+| `phone_number` | `String` | `^[0-9]{10}$` | 10 digits, no country prefix |
+| `city` | `String` | max 100 chars | City of residence |
+| `created_at` | `LocalDateTime` | auto-set | — |
+
+> **Phone number:** The UI displays a static `+91` prefix but sends only the 10-digit string to the backend. Do not include `+91` in API calls made directly via Postman.
+
+---
+
+## Password Policy
+
+Enforced in `AuthService.java` **before** saving. A `400 Bad Request` with a specific message is returned for each failing rule:
+
+| Rule | Regex / Check | Error message |
+|---|---|---|
+| Length | `pw.length() >= 8 && <= 16` | `"Password must be 8-16 characters."` |
+| Uppercase | `.*[A-Z].*` | `"Password must contain at least 1 uppercase letter."` |
+| Lowercase | `.*[a-z].*` | `"Password must contain at least 1 lowercase letter."` |
+| Number | `.*[0-9].*` | `"Password must contain at least 1 number."` |
+| Special symbol | `.*[@$!%*?&#^()_\-+=].*` | `"Password must contain at least 1 special symbol (@$!%*?&)."` |
+
+Valid example: `Terminal@2026!`
+
+The frontend enforces the **same rules** in real-time via the `SYS::PASSWORD DIAGNOSTIC` checklist in `AuthPage.jsx`. Both layers must stay in sync — see `TROUBLESHOOTING.md #25` if they drift.
 
 ---
 
 ## API Endpoints
 
 ### Authentication
+
 ```
-POST  /api/auth/register    → { accessToken, userId, name, email, role }
-POST  /api/auth/login       → { accessToken, userId, name, email, role }
-GET   /api/auth/me          → { id, name, email, role }   [Bearer]
+POST  /api/auth/register
+  Body: { name, email, password, role, dob, phoneNumber, city }
+  Returns: { accessToken, tokenType: "Bearer", userId, name, email, role }
+
+POST  /api/auth/login
+  Body: { email, password }
+  Returns: { accessToken, tokenType: "Bearer", userId, name, email, role }
+
+GET   /api/auth/me                    [Bearer]
+  Returns: { id, name, email, role, dob, phoneNumber, city }
 ```
 
 ### Events
+
 ```
 GET    /api/events                  → List<EventResponse>   [Public]
 GET    /api/events/{id}             → EventResponse         [Public]
@@ -221,6 +269,7 @@ DELETE /api/events/{id}             → 204 No Content        [ORGANIZER (own), 
 ```
 
 ### Registrations
+
 ```
 POST   /api/registrations/event/{id}           → 200 OK              [Authenticated]
 GET    /api/registrations/my-tickets           → List<TicketView>    [Authenticated]
@@ -228,24 +277,28 @@ DELETE /api/registrations/{id}                 → 200 OK              [Authenti
 GET    /api/registrations/event/{id}/guests    → List<GuestView>     [ORGANIZER (own), ADMIN (any)]
 ```
 
-`TicketView` includes `qrToken` (raw text) and `qrBase64` (data URI for `<img>`).
+`TicketView` includes `qrToken` (raw text) and `qrBase64` (data URI for `<img>`).  
 `GuestView` includes attendee name, email, status, and registration time.
 
 ### Check-In
+
 ```
 POST  /api/check-in    body: { qrToken }   → CheckInResponse   [ORGANIZER, ADMIN]
 ```
 `CheckInResponse`: `{ success, message, attendeeName, eventTitle }`
 
 ### Analytics
+
 ```
 GET   /api/analytics/dashboard   → AnalyticsDashboardDTO   [ORGANIZER (own), ADMIN (global)]
 ```
 
 ### Admin
+
 ```
-GET   /api/admin/users    → List<UserView>     [ADMIN only]
-GET   /api/admin/events   → List<EventResponse>[ADMIN only]
+GET   /api/admin/users    → List<UserResponse>   [ADMIN only]   (includes dob, phoneNumber, city)
+GET   /api/admin/events   → List<EventResponse>  [ADMIN only]
+GET   /api/admin/analytics → platform-wide metrics [ADMIN only]
 ```
 
 ---
@@ -256,13 +309,16 @@ GET   /api/admin/events   → List<EventResponse>[ADMIN only]
 Request
   └─► JwtAuthenticationFilter  (@Component, OncePerRequestFilter)
         ├─ Extract Bearer token from Authorization header
-        ├─ Validate signature + expiry (JwtTokenProvider)
+        ├─ Validate signature + expiry (JwtTokenProvider — HS256)
         └─ Set SecurityContext → Spring applies @PreAuthorize rules
 
 Roles (stored as ROLE_* in DB):
   ROLE_ADMIN      → all endpoints; bypasses ownership checks in EventService
   ROLE_ORGANIZER  → own events CRUD, check-in, analytics (scoped), guest lists (own)
   ROLE_ATTENDEE   → registration, cancel, my-tickets
+
+FilterRegistrationBean disables auto-registration of JwtAuthenticationFilter
+as a raw Servlet filter (prevents the double-filter 403 bug — see TROUBLESHOOTING #1).
 ```
 
 ---

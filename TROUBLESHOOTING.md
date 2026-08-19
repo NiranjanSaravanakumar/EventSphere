@@ -1,4 +1,4 @@
-﻿# EventSphere — Troubleshooting Notes
+# EventSphere — Troubleshooting Notes
 
 > All real issues encountered and resolved during development.
 > Use this file as the first reference before digging through code.
@@ -40,6 +40,11 @@
 22. [Camera stream stays active after closing scanner](#22-camera-stream-stays-active-after-closing-scanner)
 23. [Scanner detects QR but check-in always fails](#23-scanner-detects-qr-but-check-in-always-fails)
 24. [NotFoundException spam in browser console during Camera Scan](#24-notfoundexception-spam-in-browser-console-during-camera-scan)
+
+### Frontend — Auth & Registration
+25. [Password validation checklist falls out of sync with backend](#25-password-validation-checklist-falls-out-of-sync-with-backend)
+26. [Profile View/Edit state toggle bugs — Email stays enabled / mode doesn't revert](#26-profile-viewedit-state-toggle-bugs--email-stays-enabled--mode-doesnt-revert)
+27. [API 400 Bad Request — phone number +91 prefix or dob format rejected](#27-api-400-bad-request--phone-number-91-prefix-or-dob-format-rejected)
 
 ---
 
@@ -812,3 +817,198 @@ When something is broken after a code change:
 > **Tip:** After any change to `application.properties` (especially the JWT secret), restart the backend AND log out all active sessions — existing tokens will be invalid.
 
 > **Tip:** After any change to `index.css` (theme tokens or utility classes), do a hard refresh (`Ctrl+Shift+R`) to ensure Vite picks up the latest CSS and doesn't serve a cached version.
+
+---
+
+## 25. Password Validation Checklist Falls Out of Sync with Backend
+
+**Symptom**
+A user completes registration with all five checklist items showing `[ OK ]` in the UI, but the backend returns:
+```
+400 Bad Request
+{"message": "Password must contain at least 1 special symbol (@$!%*?&)."}
+```
+Or conversely, the UI checklist shows `[ ERR]` for a symbol that the backend accepts (or vice versa).
+
+**Root Cause — Regex mismatch between frontend and backend**
+
+The frontend rule is defined in `AuthPage.jsx`:
+```js
+// AuthPage.jsx — pwRules special symbol test
+{ id: 'sym', label: '1 SPECIAL SYMBOL', test: (p) => /[@$!%*?&#^()_\-+=]/.test(p) }
+```
+
+The backend rule is in `AuthService.java`:
+```java
+// AuthService.java — special symbol check
+if (!pw.matches(".*[@$!%*?&#^()_\\-+=].*")) {
+    throw new IllegalArgumentException("Password must contain at least 1 special symbol (@$!%*?&).");
+}
+```
+
+Both regexes must be **character-for-character identical** (allowing for language escape differences). If a developer adds a new allowed symbol (e.g. `~`) to the backend but not the frontend, the checklist will show `[ ERR]` even though the backend would accept the password.
+
+**Debugging Steps**
+
+1. **Compare the character sets side-by-side.** Open `AuthPage.jsx` line ~111 and `AuthService.java` line ~46. List every character inside the `[...]` brackets in both and diff them.
+2. **Test in browser console.** Paste the regex and a test password:
+   ```js
+   /[@$!%*?&#^()_\-+=]/.test('Terminal@2026!')  // should return true
+   ```
+3. **Test the backend directly via Postman.** Send a `POST /api/auth/register` payload with a password that only has the symbol in question (but satisfies all other rules). If the backend accepts it but the frontend shows `[ ERR]`, the frontend regex is the stale one. If the backend rejects it, both need updating.
+4. **After fixing**, update **both** files in the same commit and add the new symbol to the checklist label text so the user knows it's valid.
+
+**Checklist display stuck on `[ ERR]` even with a valid character:**
+
+The `PasswordChecklist` component reads `password` directly from the parent `form` state. If the `onChange` handler is not propagating correctly (e.g., a `name` mismatch on the password field), the checklist receives a stale empty string and all rules fail.
+
+```jsx
+// Verify the password field has the correct name attribute:
+<input name="password" ... />
+// And handleChange updates via e.target.name:
+const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+```
+
+If `name` is misspelled (e.g., `name="pw"` instead of `name="password"`), the `form.password` state never updates and the checklist always shows `[ ERR]`.
+
+---
+
+## 26. Profile View/Edit State Toggle Bugs — Email Stays Enabled / Mode Doesn't Revert
+
+**Symptom A: Email field is editable in Edit mode**
+After clicking `[ EDIT RECORD ]` on the Personnel Record profile page, the Email input becomes editable and the user can type into it. The backend then rejects the update (or silently ignores the changed email).
+
+**Root Cause**
+The `disabled` attribute on the Email input was conditionally tied to `!isEditing` instead of being unconditionally `true`:
+```jsx
+// WRONG — email becomes editable when isEditing = true
+<input name="email" value={form.email} disabled={!isEditing} />
+
+// CORRECT — email is ALWAYS disabled, regardless of edit mode
+<input name="email" value={form.email} disabled />
+// or equivalently:
+<input name="email" value={form.email} disabled={true} />
+```
+
+**Fix:** The Email `<input>` must have a hard-coded `disabled` prop. It must **never** be toggled by `isEditing`. Verify in both the Read-Only display and the Edit mode render paths.
+
+---
+
+**Symptom B: Mode doesn't revert to Read-Only after cancel**
+Clicking `[ CANCEL ]` does not reset the form data — the user's mid-edit changes persist visually even after returning to Diagnostic mode.
+
+**Root Cause**
+The cancel handler set `isEditing = false` but didn't reset `localForm` back to the last-known API data:
+```jsx
+// WRONG — only hides inputs, keeps stale form data
+const handleCancel = () => setIsEditing(false);
+
+// CORRECT — also reset local form state to original fetched data
+const handleCancel = () => {
+  setLocalForm({ ...apiUserData });  // revert to server state
+  setIsEditing(false);
+};
+```
+
+---
+
+**Symptom C: After a successful profile update, the page stays in Edit mode**
+The `COMMIT CHANGES` button is clicked, the API call succeeds, but the profile page stays in edit mode showing the new values in editable inputs instead of switching back to the Diagnostic read-only view.
+
+**Root Cause**
+The `onSuccess` handler called `setApiUserData(response.data)` but forgot to call `setIsEditing(false)`:
+```jsx
+try {
+  const response = await api.put('/api/auth/me', localForm);
+  setApiUserData(response.data);   // ← updates displayed data
+  setIsEditing(false);             // ← REQUIRED: return to read-only mode
+} catch (err) {
+  setError(err.response?.data?.message || 'UPDATE FAILED.');
+}
+```
+
+---
+
+## 27. API 400 Bad Request — Phone Number +91 Prefix or DOB Format Rejected
+
+### Phone Number: `+91` prefix sent to backend
+
+**Symptom**
+Registration via Postman returns:
+```
+400 Bad Request
+{"message": "Phone number must be exactly 10 digits"}
+```
+...even though you provided `"phoneNumber": "+919876543210"` (13 characters).
+
+**Root Cause**
+The frontend `PhoneField` component in `AuthPage.jsx` **displays** a static `+91` block but **strips it** before sending. The value bound to `form.phoneNumber` is always the raw 10-digit string only:
+
+```jsx
+// PhoneField onChange handler strips non-digits and caps at 10:
+onChange={e => {
+  const d = e.target.value.replace(/\D/g, '').slice(0, 10);
+  onChange({ target: { name: 'phoneNumber', value: d } });
+}}
+```
+
+**Fix for Postman / direct API calls:**
+Send the 10-digit number **without** any country code prefix:
+```json
+{
+  "phoneNumber": "9876543210"   // ✔ correct
+}
+```
+Not:
+```json
+{
+  "phoneNumber": "+919876543210"   // ✘ will be rejected — 13 chars, not 10 digits
+}
+```
+
+**Validation rule (frontend + backend both enforce):** `phoneNumber` must match `/^\d{10}$/` — exactly 10 numeric characters, no spaces, no dashes, no prefix.
+
+---
+
+### Date of Birth: Wrong Format Rejected
+
+**Symptom**
+Registration via Postman returns:
+```
+400 Bad Request
+{"message": "Invalid date of birth format. Use yyyy-MM-dd."}
+```
+
+**Root Cause**
+The backend's `AuthService.java` parses `dob` using `LocalDate.parse(request.dob())` which requires the **ISO-8601** format `YYYY-MM-DD` with **zero-padded** month and day.
+
+**Common wrong formats that will be rejected:**
+
+| Sent value | Problem |
+|---|---|
+| `"15-06-1995"` | DD-MM-YYYY — wrong order |
+| `"06/15/1995"` | MM/DD/YYYY with slashes — wrong separator |
+| `"1995-6-15"` | Non-padded month — `LocalDate.parse` is strict |
+| `"June 15, 1995"` | Plaintext — completely wrong format |
+
+**Fix for Postman / direct API calls:**
+Always send `dob` as a zero-padded ISO date string:
+```json
+{
+  "dob": "1995-06-15"   // ✔ correct: YYYY-MM-DD, zero-padded
+}
+```
+
+The frontend `DobField` component uses `<input type="date">` which natively produces the correct `YYYY-MM-DD` string in its `value`, so this error should only occur on raw API calls that bypass the UI.
+
+**Age gate:** The backend does not currently enforce the 18-year minimum — that check is done only in the frontend `handleSubmit`. When calling the API directly, a future-dated or under-18 `dob` will be accepted. The frontend blocks it with:
+```js
+const cutoff = new Date();
+cutoff.setFullYear(cutoff.getFullYear() - 18);
+if (born > cutoff) {
+  setError('YOU MUST BE AT LEAST 18 YEARS OLD TO REGISTER.');
+  return;
+}
+```
+If backend enforcement is required, add an age check to `AuthService.java` after the `LocalDate.parse()` call.
+
